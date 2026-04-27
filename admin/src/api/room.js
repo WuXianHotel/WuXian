@@ -1,0 +1,15 @@
+import http from './http'
+
+export const getRooms     = (params) => http.get('/rooms', { params })
+export const getRoom      = (id) => http.get(`/rooms/${id}`)
+export const createRoom   = (data) => http.post('/rooms', data)
+export const updateRoom   = (id, data) => http.put(`/rooms/${id}`, data)
+export const setStatus    = (id, status) => http.patch(`/rooms/${id}/status`, { status })
+export const deleteRoom   = (id) => http.delete(`/rooms/${id}`)
+export const uploadImages = (formData) => http.post('/rooms/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const getCalendar  = (params) => http.get('/rooms/calendar', { params })
+export const setCalendar  = (data) => http.post('/rooms/calendar', data)
+export const getRoomList     = (id) => http.get(`/rooms/${id}/rooms`)
+export const addRoom         = (id, data) => http.post(`/rooms/${id}/rooms`, data)
+export const setRoomStatus   = (typeId, roomId, status) => http.patch(`/rooms/${typeId}/rooms/${roomId}/status`, { status })
+export const deleteRoomItem  = (typeId, roomId) => http.delete(`/rooms/${typeId}/rooms/${roomId}`)
