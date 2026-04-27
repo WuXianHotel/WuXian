@@ -1,0 +1,52 @@
+/* pages/profile_edit/profile_edit.wxss */
+.page { background: #f7f7f7; min-height: 100vh; }
+
+.content { padding: 20rpx 24rpx; padding-bottom: calc(env(safe-area-inset-bottom) + 40rpx); }
+
+.section { margin-bottom: 20rpx; padding: 24rpx; }
+.section-title { font-size: 30rpx; font-weight: 700; margin-bottom: 16rpx; }
+.section-hint { font-size: 24rpx; color: #94a3b8; margin-bottom: 20rpx; }
+
+/* ─── 头像选择 ─── */
+.avatar-section .form-item { justify-content: space-between; }
+.avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  line-height: normal;
+}
+.avatar-btn::after { display: none; }
+.avatar-img {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  display: block;
+}
+.avatar-placeholder {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: #f0f0f0;
+  font-size: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-hint { font-size: 24rpx; color: #999; }
+
+.form-item { display: flex; align-items: center; padding: 16rpx 0; }
+.form-label { font-size: 28rpx; color: #666; width: 150rpx; flex-shrink: 0; }
+.form-input { flex: 1; font-size: 28rpx; color: #1a1a1a; text-align: right; }
+.divider { height: 1rpx; background: #f0f0f0; }
+
+.radio-group { flex: 1; display: flex; justify-content: flex-end; gap: 24rpx; }
+.radio-label { font-size: 28rpx; color: #333; display: flex; align-items: center; gap: 6rpx; }
+
+.picker-value { flex: 1; font-size: 28rpx; color: #1a1a1a; text-align: right; }
+.picker-arrow { color: #ccc; margin-left: 8rpx; }
+
+.save-btn { margin-top: 40rpx; }

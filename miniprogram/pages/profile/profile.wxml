@@ -1,0 +1,111 @@
+<!-- pages/profile/profile.wxml -->
+<view class="page">
+  <!-- Hero -->
+  <view class="hero">
+    <!-- 头像：已有头像显示图片，无头像显示默认 + 点击授权 -->
+    <button
+      class="hero-avatar-btn"
+      open-type="chooseAvatar"
+      bindchooseavatar="onChooseAvatar"
+    >
+      <image
+        wx:if="{{userInfo.avatar_url}}"
+        class="hero-avatar-img"
+        src="{{userInfo.avatar_url}}"
+        mode="aspectFill"
+      />
+      <view wx:else class="hero-avatar-default">😊</view>
+      <view class="avatar-edit-hint" wx:if="{{!userInfo.avatar_url && userInfo.nickname}}">点击设置</view>
+    </button>
+    <view class="hero-info">
+      <view class="hero-name" wx:if="{{userInfo.nickname}}">{{userInfo.nickname}}</view>
+      <!-- 未设置昵称时，用 input type=nickname 获取微信昵称建议 -->
+      <view wx:elif="{{globalToken}}" class="nickname-setup">
+        <input
+          type="nickname"
+          class="nickname-input"
+          placeholder="点击设置昵称"
+          bindchange="onNicknameChange"
+        />
+      </view>
+      <view wx:else class="hero-name">点击登录</view>
+      <view class="hero-phone" wx:if="{{userInfo.phone}}">{{maskedPhone}}</view>
+      <view class="hero-member" wx:if="{{memberInfo.levelName}}">
+        💎 {{memberInfo.levelName}} · 积分 {{memberInfo.points}}
+      </view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="content safe-bottom">
+    <!-- 菜单组1 -->
+    <view class="menu-group">
+      <view class="menu-item" bindtap="goOrders" data-tab="">
+        <view class="menu-icon" style="background:#e8f0fe">📋</view>
+        <text class="menu-label">我的订单</text>
+        <view class="menu-badge" wx:if="{{orderBadge > 0}}">{{orderBadge}}</view>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="goMember">
+        <view class="menu-icon" style="background:#fff3e0">💎</view>
+        <text class="menu-label">会员中心</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="goCoupons">
+        <view class="menu-icon" style="background:#fce4ec">🎫</view>
+        <text class="menu-label">我的优惠券</text>
+        <view class="menu-badge" wx:if="{{couponBadge > 0}}">{{couponBadge}}</view>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="goInvoice">
+        <view class="menu-icon" style="background:#e8f5e9">🧾</view>
+        <text class="menu-label">发票管理</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 菜单组2 -->
+    <view class="menu-group">
+      <view class="menu-item" bindtap="goPersonalInfo">
+        <view class="menu-icon" style="background:#f3e5f5">👤</view>
+        <text class="menu-label">个人资料</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="goSecurity">
+        <view class="menu-icon" style="background:#e3f2fd">🔒</view>
+        <text class="menu-label">账号安全</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="goPersonalInfo">
+        <view class="menu-icon" style="background:#e8f5e9">🆔</view>
+        <text class="menu-label">实名认证</text>
+        <view class="menu-badge-green" wx:if="{{userInfo.verified}}">已认证</view>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 菜单组3 -->
+    <view class="menu-group">
+      <view class="menu-item" bindtap="goNotifications">
+        <view class="menu-icon" style="background:#fff3e0">📢</view>
+        <text class="menu-label">消息通知</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="goHelp">
+        <view class="menu-icon" style="background:#f3e5f5">❓</view>
+        <text class="menu-label">帮助与反馈</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="contactService">
+        <view class="menu-icon" style="background:#e8f0fe">📞</view>
+        <text class="menu-label">联系客服</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 退出 -->
+    <view class="logout-btn" wx:if="{{globalToken}}" bindtap="logout">退出登录</view>
+
+    <!-- 未登录 -->
+    <view class="login-btn btn btn-primary btn-block" wx:else bindtap="doLogin">一键登录</view>
+  </scroll-view>
+</view>

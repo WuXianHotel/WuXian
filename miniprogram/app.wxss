@@ -1,0 +1,144 @@
+/* app.wxss */
+page {
+  font-family: 'PingFang SC', -apple-system, sans-serif;
+  font-size: 28rpx;
+  color: #1a1a1a;
+  background-color: #f7f7f7;
+  box-sizing: border-box;
+}
+
+view, text, image, input, button, scroll-view, swiper, swiper-item, picker {
+  box-sizing: border-box;
+}
+
+/* ─── 通用工具类 ─── */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-1 { flex: 1; }
+
+.text-primary { color: #1a56db; }
+.text-red { color: #ff4d4f; }
+.text-gray { color: #999; }
+.text-dark { color: #1a1a1a; }
+.text-bold { font-weight: 700; }
+.text-sm { font-size: 24rpx; }
+.text-xs { font-size: 22rpx; }
+.text-lg { font-size: 32rpx; }
+.text-xl { font-size: 36rpx; }
+
+.mt-8 { margin-top: 8rpx; }
+.mt-16 { margin-top: 16rpx; }
+.mt-24 { margin-top: 24rpx; }
+.mb-8 { margin-bottom: 8rpx; }
+.mb-16 { margin-bottom: 16rpx; }
+.px-24 { padding-left: 24rpx; padding-right: 24rpx; }
+.py-16 { padding-top: 16rpx; padding-bottom: 16rpx; }
+
+/* ─── Card ─── */
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+/* ─── 按钮 ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 40rpx;
+  padding: 16rpx 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1;
+  border: none;
+}
+.btn::after { border: none; }
+
+.btn-primary {
+  background: #1a56db;
+  color: #fff;
+}
+.btn-primary:active { background: #1448c0; }
+
+.btn-outline {
+  background: #fff;
+  color: #1a56db;
+  border: 2rpx solid #1a56db;
+}
+
+.btn-gray {
+  background: #fff;
+  color: #666;
+  border: 2rpx solid #e0e0e0;
+}
+
+.btn-danger {
+  background: #fff;
+  color: #ff4d4f;
+  border: 2rpx solid #ff4d4f;
+}
+
+.btn-block {
+  width: 100%;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 30rpx;
+}
+
+/* ─── 标签 ─── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+}
+.tag-blue { background: #e8f0fe; color: #1a56db; }
+.tag-green { background: #e8f5e9; color: #2e7d32; }
+.tag-orange { background: #fff3e0; color: #e65100; }
+.tag-gray { background: #f0f0f0; color: #666; }
+.tag-red { background: #fff1f0; color: #ff4d4f; }
+
+/* ─── 底部安全区 ─── */
+.safe-bottom {
+  /* padding-bottom: calc(env(safe-area-inset-bottom) + 60px); */
+}
+
+/* ─── 底部固定栏 ─── */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 20rpx 32rpx;
+  /* padding-bottom: calc(env(safe-area-inset-bottom) + 10px); */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1rpx solid #f0f0f0;
+  z-index: 100;
+}
+
+/* ─── 分割线 ─── */
+.divider {
+  height: 1rpx;
+  background: #f0f0f0;
+  margin: 0 24rpx;
+}
+
+/* ─── 空状态 ─── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  color: #999;
+}
+.empty-icon { font-size: 80rpx; margin-bottom: 16rpx; }
+.empty-text { font-size: 28rpx; }

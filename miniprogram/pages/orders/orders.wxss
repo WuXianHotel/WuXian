@@ -1,0 +1,82 @@
+/* pages/orders/orders.wxss */
+.page { background: #f7f7f7; min-height: 100vh; }
+
+.tabs-scroll { background: #fff; border-bottom: 1rpx solid #f0f0f0; white-space: nowrap; }
+.tabs { display: inline-flex; padding: 0 16rpx; }
+.tab {
+  padding: 24rpx 20rpx;
+  font-size: 26rpx;
+  color: #666;
+  position: relative;
+  white-space: nowrap;
+}
+.tab.active {
+  color: #1a56db;
+  font-weight: 600;
+}
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 20%; right: 20%;
+  height: 4rpx;
+  background: #1a56db;
+  border-radius: 2rpx;
+}
+
+.order-list { height: calc(100vh - 50px); }
+
+/* ─── 订单卡片 ─── */
+.order-card {
+  margin: 20rpx 24rpx 0;
+  overflow: hidden;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+.order-no { font-size: 24rpx; color: #999; }
+.order-status { font-size: 26rpx; font-weight: 600; }
+
+.countdown-bar {
+  background: #fff3e0;
+  color: #e65100;
+  font-size: 24rpx;
+  padding: 12rpx 24rpx;
+}
+.countdown-bar text { color: #ff4d4f; font-weight: 700; }
+
+.review-prompt {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 24rpx;
+  padding: 12rpx 24rpx;
+}
+.review-link { color: #1a56db; }
+
+.card-body {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 24rpx;
+}
+.order-img { width: 140rpx; height: 110rpx; border-radius: 12rpx; flex-shrink: 0; }
+.order-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8rpx; }
+.order-room-name { font-size: 28rpx; font-weight: 700; color: #1a1a1a; }
+.order-dates { font-size: 24rpx; color: #666; }
+.order-meta { font-size: 24rpx; color: #999; }
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 24rpx;
+  border-top: 1rpx solid #f5f5f5;
+}
+.order-price { font-size: 32rpx; font-weight: 700; color: #ff4d4f; }
+.action-btns { display: flex; gap: 12rpx; }
+.btn-xs { font-size: 24rpx; padding: 10rpx 20rpx; border-radius: 20rpx; }
+
+.no-more { text-align: center; padding: 32rpx; font-size: 26rpx; color: #ccc; }
+.loading-wrap { text-align: center; padding: 60rpx; color: #999; font-size: 28rpx; }

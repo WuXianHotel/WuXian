@@ -1,0 +1,90 @@
+<!-- pages/order_detail/order_detail.wxml -->
+<view class="page">
+  <!-- 状态 Banner -->
+  <view class="status-banner" style="background:{{statusGradient}}">
+    <view class="status-icon">🏨</view>
+    <view class="status-text">{{order.statusText}}</view>
+    <view class="status-hint" wx:if="{{statusHint}}">{{statusHint}}</view>
+  </view>
+
+  <scroll-view scroll-y class="content safe-bottom">
+    <!-- 入住凭证 (待入住/已入住) -->
+    <view class="qr-card card" wx:if="{{showQRCode}}">
+      <view class="qr-title">入住凭证 · 扫码核验</view>
+      <view class="qr-wrap">
+        <image class="qr-img" wx:if="{{order.qrCodeUrl}}" src="{{order.qrCodeUrl}}" mode="aspectFit"/>
+        <view class="qr-placeholder" wx:else>
+          <text class="qr-text">{{order.orderNo}}</text>
+        </view>
+      </view>
+      <view class="qr-hint">凭此二维码至前台办理入住</view>
+      <view class="qr-no">{{order.orderNo}}</view>
+    </view>
+
+    <!-- 订单信息 -->
+    <view class="info-card card">
+      <view class="card-title">📋 订单信息</view>
+      <view class="info-row">
+        <text class="info-label">房型</text>
+        <text class="info-val">{{order.roomName}} × {{order.qty}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">入住</text>
+        <text class="info-val">{{checkInDisplay}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">退房</text>
+        <text class="info-val">{{checkOutDisplay}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">入住人</text>
+        <view class="info-val">
+          <view wx:for="{{guests}}" wx:key="index" class="guest-line">
+            {{item.name}} · {{item.maskedPhone}}
+          </view>
+        </view>
+      </view>
+      <view class="info-row" wx:if="{{order.roomNo}}">
+        <text class="info-label">房间号</text>
+        <text class="info-val">{{order.roomNo || '待分配'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">支付金额</text>
+        <text class="info-val price">¥{{order.finalPrice}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.remark}}">
+        <text class="info-label">特殊要求</text>
+        <text class="info-val">{{order.remark}}</text>
+      </view>
+    </view>
+
+    <!-- 评价区 (已完成且未评价) -->
+    <view class="review-card card" wx:if="{{order.status==='completed' && !order.hasReview && !reviewSubmitted}}">
+      <view class="card-title">✍️ 写评价</view>
+      <view class="star-row">
+        <text class="star-label">评分</text>
+        <view class="stars-select">
+          <text
+            class="star-item {{reviewScore >= item ? 'active' : ''}}"
+            wx:for="{{[1,2,3,4,5]}}"
+            wx:key="*this"
+            bindtap="setScore"
+            data-score="{{item}}"
+          >★</text>
+        </view>
+      </view>
+      <textarea class="review-textarea" placeholder="分享您的入住体验..." bindinput="onReviewInput" value="{{reviewContent}}" maxlength="300"/>
+      <view class="btn btn-primary btn-block" bindtap="submitReview">提交评价</view>
+    </view>
+
+    <view class="review-done card" wx:if="{{reviewSubmitted}}">
+      <text>✅ 感谢您的评价！</text>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作 (非已完成/已取消状态) -->
+  <view class="bottom-bar" wx:if="{{showActions}}">
+    <view class="btn btn-gray action-btn" bindtap="cancelOrder" wx:if="{{canCancel}}">申请取消</view>
+    <view class="btn btn-primary action-btn" bindtap="contactFront">联系前台</view>
+  </view>
+</view>

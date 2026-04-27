@@ -1,0 +1,58 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/rooms/rooms",
+    "pages/orders/orders",
+    "pages/profile/profile",
+    "pages/room_detail/room_detail",
+    "pages/order_create/order_create",
+    "pages/order_confirm/order_confirm",
+    "pages/order_detail/order_detail",
+    "pages/member/member",
+    "pages/member_level/member_level",
+    "pages/profile_edit/profile_edit",
+    "pages/wallet/wallet",
+    "pages/points_mall/points_mall"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1a56db",
+    "navigationBarTitleText": "酒店预订",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f7f7"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#1a56db",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/tab-home.png",
+        "selectedIconPath": "images/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/rooms/rooms",
+        "text": "探索",
+        "iconPath": "images/tab-explore.png",
+        "selectedIconPath": "images/tab-explore-active.png"
+      },
+      {
+        "pagePath": "pages/orders/orders",
+        "text": "订单",
+        "iconPath": "images/tab-order.png",
+        "selectedIconPath": "images/tab-order-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tab-me.png",
+        "selectedIconPath": "images/tab-me-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

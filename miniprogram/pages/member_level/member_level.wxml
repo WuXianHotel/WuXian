@@ -1,0 +1,94 @@
+<!-- pages/member_level/member_level.wxml -->
+<view class="page">
+  <!-- 当前等级卡 -->
+  <view class="current-card" style="background:{{memberInfo.color || '#b8860b'}}">
+    <view class="current-icon">{{memberInfo.icon || '👤'}}</view>
+    <view class="current-name">{{memberInfo.level_name || '会员'}}</view>
+    <view class="current-info">
+      <text>累计入住 {{memberInfo.total_nights || 0}} 晚</text>
+      <text>·</text>
+      <text>累计积分 {{memberInfo.points_total || 0}}</text>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="content safe-bottom">
+    <!-- 等级进度条 -->
+    <view class="progress-section card">
+      <view class="progress-title">等级进度</view>
+      <view class="level-timeline">
+        <view class="timeline-item {{level.level <= currentLevel ? 'reached' : ''}}" wx:for="{{levels}}" wx:key="level" wx:for-item="level">
+          <view class="timeline-dot" style="{{level.level <= currentLevel ? 'background:' + (level.color || '#b8860b') : ''}}">
+            <text wx:if="{{level.level <= currentLevel}}">✓</text>
+            <text wx:else>{{level.level}}</text>
+          </view>
+          <view class="timeline-info">
+            <view class="timeline-name" style="{{level.level === currentLevel ? 'color:' + (level.color || '#b8860b') + ';font-weight:700' : ''}}">
+              {{level.icon}} {{level.name}}
+              <text wx:if="{{level.level === currentLevel}}" class="current-tag">当前</text>
+            </view>
+            <view class="timeline-cond" wx:if="{{level.min_nights > 0 || level.min_points > 0}}">
+              入住 ≥ {{level.min_nights}}晚 或 积分 ≥ {{level.min_points}}
+            </view>
+            <view class="timeline-cond" wx:else>默认等级</view>
+          </view>
+          <view class="timeline-line" wx:if="{{index < levels.length - 1}}" style="{{levels[index+1].level <= currentLevel ? 'background:#b8860b' : ''}}"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 等级权益对比 -->
+    <view class="benefits-section card">
+      <view class="progress-title">等级权益对比</view>
+      <!-- 表头 -->
+      <view class="benefit-table">
+        <view class="bt-header">
+          <view class="bt-cell bt-label">权益</view>
+          <view class="bt-cell" wx:for="{{levels}}" wx:key="level" wx:for-item="lv">
+            <text class="bt-lv-icon">{{lv.icon}}</text>
+          </view>
+        </view>
+        <!-- 房费折扣 -->
+        <view class="bt-row">
+          <view class="bt-cell bt-label">房费折扣</view>
+          <view class="bt-cell" wx:for="{{levels}}" wx:key="level" wx:for-item="lv">
+            <text wx:if="{{lv.discount < 1}}" class="bt-val highlight">{{}}折</text>
+            <text wx:else class="bt-val muted">—</text>
+          </view>
+        </view>
+        <!-- 积分倍率 -->
+        <view class="bt-row">
+          <view class="bt-cell bt-label">积分倍率</view>
+          <view class="bt-cell" wx:for="{{levels}}" wx:key="level" wx:for-item="lv">
+            <text class="bt-val">×{{lv.points_rate}}</text>
+          </view>
+        </view>
+        <!-- 抵扣倍率 -->
+        <view class="bt-row">
+          <view class="bt-cell bt-label">抵扣倍率</view>
+          <view class="bt-cell" wx:for="{{levels}}" wx:key="level" wx:for-item="lv">
+            <text class="bt-val {{lv.deduct_rate > 1 ? 'highlight' : ''}}">×{{lv.deduct_rate || 1}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 升级提示 -->
+    <view class="upgrade-card card" wx:if="{{memberInfo.next_level_name}}">
+      <view class="upgrade-title">如何升级到 {{memberInfo.next_level_name}}？</view>
+      <view class="upgrade-item">
+        <text class="upgrade-icon">🛏</text>
+        <text>累计入住达到 {{memberInfo.next_min_nights}} 晚（当前 {{memberInfo.total_nights || 0}} 晚，还差 {{(memberInfo.next_min_nights || 0) - (memberInfo.total_nights || 0)}} 晚）</text>
+      </view>
+      <view class="upgrade-item">
+        <text class="upgrade-icon">⭐</text>
+        <text>累计积分达到 {{memberInfo.next_min_points}}（当前 {{memberInfo.points_total || 0}}，还差 {{(memberInfo.next_min_points || 0) - (memberInfo.points_total || 0)}}）</text>
+      </view>
+      <view class="upgrade-hint">满足任一条件即可自动升级</view>
+    </view>
+
+    <view class="upgrade-card card" wx:else>
+      <view class="upgrade-title">🎉 恭喜您已达到最高等级！</view>
+      <view class="upgrade-hint">尊享全部会员权益</view>
+    </view>
+  </scroll-view>
+</view>

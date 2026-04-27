@@ -1,0 +1,128 @@
+<!-- pages/room_detail/room_detail.wxml -->
+<view class="page">
+  <!-- Hero 图片 -->
+  <view class="hero">
+    <image class="hero-img" src="{{room.imageUrl || '/images/room-placeholder.png'}}" mode="aspectFill"/>
+    <view class="hero-overlay">
+      <view class="hero-share" bindtap="shareRoom">⬆</view>
+      <view class="hero-counter" wx:if="{{room.imageCount}}">1 / {{room.imageCount}}</view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="content safe-bottom">
+    <!-- 基本信息 -->
+    <view class="info-card card">
+      <view class="room-name">{{room.name}}</view>
+      <view class="rating-row">
+        <text class="stars">⭐⭐⭐⭐⭐</text>
+        <text class="rating-score">{{room.rating}}</text>
+        <text class="review-count">{{room.reviewCount}}条评价</text>
+      </view>
+      <view class="attr-row">
+        <view class="attr-box">
+          <text class="attr-icon">📐</text>
+          <text class="attr-text">{{room.area}}㎡</text>
+        </view>
+        <view class="attr-box">
+          <text class="attr-icon">🛏</text>
+          <text class="attr-text">{{room.bedType}}</text>
+        </view>
+        <view class="attr-box">
+          <text class="attr-icon">👥</text>
+          <text class="attr-text">最多{{room.maxGuests}}人</text>
+        </view>
+        <view class="attr-box" wx:if="{{room.view}}">
+          <text class="attr-icon">🏙</text>
+          <text class="attr-text">{{room.view}}</text>
+        </view>
+        <view class="attr-box" wx:if="{{room.smokeFree}}">
+          <text class="attr-icon">🚭</text>
+          <text class="attr-text">禁烟</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 价格日历 -->
+    <view class="section card">
+      <view class="section-head">
+        <text class="section-title">价格日历</text>
+        <text class="see-more" bindtap="showMoreDates">查看更多日期 ›</text>
+      </view>
+      <view class="cal-grid">
+        <view class="cal-header" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
+        <view
+          class="cal-cell {{item.type}}"
+          wx:for="{{calendarDays}}"
+          wx:key="date"
+          bindtap="selectCalDate"
+          data-date="{{item.date}}"
+        >
+          <text class="cal-day">{{item.day}}</text>
+          <text class="cal-price" wx:if="{{item.price}}">¥{{item.price}}</text>
+        </view>
+      </view>
+      <view class="selected-range" wx:if="{{checkIn}}">
+        <text class="range-item">入住: {{checkInLabel}}</text>
+        <text class="range-sep">→</text>
+        <text class="range-item">退房: {{checkOutLabel}}</text>
+        <text class="range-nights">{{nights}}晚</text>
+      </view>
+    </view>
+
+    <!-- 房间设施 -->
+    <view class="section card">
+      <view class="section-head">
+        <text class="section-title">房间设施</text>
+      </view>
+      <view class="facility-grid">
+        <view class="facility-item" wx:for="{{room.facilities}}" wx:key="name">
+          <text class="fac-icon">{{item.icon}}</text>
+          <text class="fac-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 评价 -->
+    <view class="section card">
+      <view class="section-head">
+        <text class="section-title">住客评价</text>
+        <text class="see-more" bindtap="goAllReviews">全部{{room.reviewCount}}条 ›</text>
+      </view>
+      <!-- 评分汇总 -->
+      <view class="review-summary">
+        <view class="big-score">{{room.rating}}</view>
+        <view class="score-bars">
+          <view class="score-bar-row" wx:for="{{ratingDist}}" wx:key="star">
+            <text class="bar-label">{{item.star}}★</text>
+            <view class="bar-track">
+              <view class="bar-fill" style="width:{{item.pct}}%"></view>
+            </view>
+            <text class="bar-pct">{{item.pct}}%</text>
+          </view>
+        </view>
+      </view>
+      <!-- 评价列表 -->
+      <view class="review-item" wx:for="{{reviews}}" wx:key="id">
+        <view class="review-header">
+          <view class="reviewer-avatar">{{item.avatarEmoji}}</view>
+          <view class="reviewer-info">
+            <view class="reviewer-name">{{item.nickname}}</view>
+            <view class="reviewer-meta">{{item.date}} · 住了{{item.nights}}晚</view>
+          </view>
+          <view class="review-stars">⭐⭐⭐⭐⭐</view>
+        </view>
+        <view class="review-text">{{item.content}}</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部预订栏 -->
+  <view class="bottom-bar">
+    <view class="bottom-price">
+      <text class="price-label">每晚起</text>
+      <text class="price-val">¥{{room.price}}</text>
+      <text class="price-unit">/晚</text>
+    </view>
+    <view class="btn btn-primary book-btn" bindtap="goBook">立即预订</view>
+  </view>
+</view>

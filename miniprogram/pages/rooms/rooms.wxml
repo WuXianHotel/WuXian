@@ -1,0 +1,122 @@
+<!-- pages/rooms/rooms.wxml -->
+<view class="page">
+  <!-- 顶部搜索 -->
+  <view class="top-bar">
+    <view class="date-summary">
+      <view class="date-block" bindtap="showDatePicker">
+        <text class="date-label">入住</text>
+        <text class="date-val">{{checkInLabel}}</text>
+      </view>
+      <view class="nights-badge">{{nights}}晚</view>
+      <view class="date-block" bindtap="showDatePicker">
+        <text class="date-label">退房</text>
+        <text class="date-val">{{checkOutLabel}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <scroll-view scroll-x class="filter-scroll">
+      <view class="filter-tabs">
+        <view class="filter-tab {{sortBy==='default'?'active':''}}" bindtap="setSort" data-sort="default">综合 ⌄</view>
+        <view class="filter-tab {{sortBy==='price_asc'||sortBy==='price_desc'?'active':''}}" bindtap="togglePrice">价格 {{sortBy==='price_asc'?'↑':sortBy==='price_desc'?'↓':'⌄'}}</view>
+        <view class="filter-tab" bindtap="showFilterModal">🔧 筛选</view>
+      </view>
+    </scroll-view>
+    <scroll-view scroll-x class="tag-scroll">
+      <view class="tag-row">
+        <view class="filter-tag {{!activeTag?'active':''}}" bindtap="setTag" data-tag="">全部</view>
+        <view class="filter-tag {{activeTag==='breakfast'?'active':''}}" bindtap="setTag" data-tag="breakfast">有早餐</view>
+        <view class="filter-tag {{activeTag==='refundable'?'active':''}}" bindtap="setTag" data-tag="refundable">可取消</view>
+        <view class="filter-tag {{activeTag==='bigBed'?'active':''}}" bindtap="setTag" data-tag="bigBed">大床</view>
+        <view class="filter-tag {{activeTag==='suite'?'active':''}}" bindtap="setTag" data-tag="suite">套房</view>
+        <view class="filter-tag {{activeTag==='smokeFree'?'active':''}}" bindtap="setTag" data-tag="smokeFree">禁烟</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 结果数 -->
+  <view class="result-count" wx:if="{{!loading}}">共找到 {{total}} 种房型</view>
+
+  <!-- 列表 -->
+  <scroll-view scroll-y class="list-scroll safe-bottom" bindscrolltolower="loadMore">
+    <view wx:if="{{loading}}" class="loading-wrap">加载中...</view>
+
+    <view wx:elif="{{rooms.length === 0}}" class="empty">
+      <view class="empty-icon">🛏️</view>
+      <text class="empty-text">暂无符合条件的房型</text>
+    </view>
+
+    <block wx:else>
+      <view class="room-card card" wx:for="{{rooms}}" wx:key="id">
+        <!-- 图片 -->
+        <view class="img-wrap">
+          <image class="room-img" src="{{item.imageUrl || '/images/room-placeholder.png'}}" mode="aspectFill"/>
+          <view class="img-label">实景图 {{item.imageCount || 6}}张</view>
+          <view class="img-badge hot" wx:if="{{item.isHot}}">热销</view>
+          <view class="img-badge suite" wx:if="{{item.type==='suite'}}">套房</view>
+        </view>
+        <!-- 信息 -->
+        <view class="info-wrap">
+          <view class="room-name">{{item.name}}</view>
+          <view class="room-attrs">
+            <text>📐 {{item.area}}㎡</text>
+            <text>🛏 {{item.bedType}}</text>
+            <text wx:if="{{item.view}}">🏙 {{item.view}}</text>
+            <text wx:if="{{item.smokeFree}}">🚭 禁烟</text>
+          </view>
+          <view class="room-facilities">
+            <text wx:if="{{item.wifi}}" class="facility">✓ 免费WiFi</text>
+            <text wx:if="{{item.bathtub}}" class="facility">✓ 独立浴缸</text>
+            <text wx:if="{{item.hotWater}}" class="facility">✓ 24h热水</text>
+            <text wx:if="{{item.breakfast}}" class="facility">✓ 含早餐</text>
+          </view>
+          <view class="price-row">
+            <view>
+              <text class="price-orig" wx:if="{{item.originalPrice}}">¥{{item.originalPrice}}</text>
+              <text class="price-now">¥{{item.price}}</text>
+              <text class="price-unit">/晚</text>
+            </view>
+            <view wx:if="{{item.memberDiscount}}" class="member-discount">💎 会员享{{item.memberDiscount}}折</view>
+          </view>
+          <view class="card-actions">
+            <view class="btn btn-outline btn-sm" bindtap="goDetail" data-id="{{item.id}}">详情</view>
+            <view class="btn btn-primary btn-sm" bindtap="goBook" data-id="{{item.id}}">预订</view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{loadingMore}}" class="loading-wrap">加载更多...</view>
+      <view wx:if="{{noMore && rooms.length > 0}}" class="no-more">没有更多了</view>
+    </block>
+  </scroll-view>
+
+  <!-- 筛选弹窗 -->
+  <view class="modal-mask" wx:if="{{showFilter}}" bindtap="closeFilter">
+    <view class="filter-modal" catchtap="noop">
+      <view class="modal-title">筛选条件</view>
+      <view class="filter-section">
+        <view class="filter-label">价格区间</view>
+        <view class="price-options">
+          <view class="price-opt {{priceRange===''?'sel':''}}" bindtap="setPriceRange" data-range="">不限</view>
+          <view class="price-opt {{priceRange==='0-500'?'sel':''}}" bindtap="setPriceRange" data-range="0-500">¥500以下</view>
+          <view class="price-opt {{priceRange==='500-1000'?'sel':''}}" bindtap="setPriceRange" data-range="500-1000">¥500-1000</view>
+          <view class="price-opt {{priceRange==='1000-9999'?'sel':''}}" bindtap="setPriceRange" data-range="1000-9999">¥1000以上</view>
+        </view>
+      </view>
+      <view class="filter-section">
+        <view class="filter-label">床型</view>
+        <view class="price-options">
+          <view class="price-opt {{bedType===''?'sel':''}}" bindtap="setBedType" data-type="">不限</view>
+          <view class="price-opt {{bedType==='大床'?'sel':''}}" bindtap="setBedType" data-type="大床">大床</view>
+          <view class="price-opt {{bedType==='双床'?'sel':''}}" bindtap="setBedType" data-type="双床">双床</view>
+        </view>
+      </view>
+      <view class="filter-actions">
+        <view class="btn btn-gray btn-half" bindtap="resetFilter">重置</view>
+        <view class="btn btn-primary btn-half" bindtap="applyFilter">确定</view>
+      </view>
+    </view>
+  </view>
+</view>

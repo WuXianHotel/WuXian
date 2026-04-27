@@ -1,0 +1,141 @@
+<!-- pages/index/index.wxml -->
+<view class="page">
+  <!-- ─── 搜索头部 ─── -->
+  <view class="header">
+    <view class="header-slogan">寻找你的专属住所 🏨</view>
+    <view class="search-box" bindtap="goRooms">
+      <text class="search-icon">🔍</text>
+      <text class="search-placeholder">搜索房型、设施...</text>
+    </view>
+    <view class="date-chips">
+      <view class="date-chip" bindtap="showDatePicker">
+        <text class="chip-label">入住</text>
+        <text class="chip-date">{{checkInLabel}}</text>
+      </view>
+      <view class="date-arrow">→</view>
+      <view class="date-chip" bindtap="showDatePicker">
+        <text class="chip-label">退房</text>
+        <text class="chip-date">{{checkOutLabel}}</text>
+      </view>
+      <view class="nights-badge">{{nights}}晚</view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="content safe-bottom">
+    <!-- 欢迎提示 + 酒店位置 -->
+    <view class="welcome-bar">
+      <view class="welcome-top">
+        <text class="welcome-icon">📢</text>
+        <text class="welcome-text">欢迎入住{{hotelConfig.hotel_name || '酒店'}}，如需帮助请联系前台</text>
+      </view>
+      <view class="welcome-bottom" wx:if="{{hotelConfig.hotel_address}}">
+        <view class="welcome-address" bindtap="navigateToHotel">
+          <text class="address-icon">📍</text>
+          <text class="address-text">{{hotelConfig.hotel_address}}</text>
+        </view>
+        <view class="welcome-actions">
+          <view class="welcome-btn nav-btn" bindtap="navigateToHotel">
+            <text>🧭</text>
+            <text>导航</text>
+          </view>
+          <view class="welcome-btn call-btn" bindtap="callHotel">
+            <text>📞</text>
+            <text>电话</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 轮播 Banner -->
+    <swiper class="banner" autoplay interval="3000" circular indicator-dots indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#fff">
+      <swiper-item wx:for="{{banners}}" wx:key="id">
+        <view class="banner-item">
+          <view class="banner-tag">{{item.tag}}</view>
+          <view class="banner-title">{{item.title}}</view>
+          <view class="banner-desc">{{item.desc}}</view>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <!-- 快捷入口 -->
+    <view class="quick-grid">
+      <view class="quick-item" bindtap="goRooms">
+        <view class="quick-icon">🛏️</view>
+        <text class="quick-label">预订房间</text>
+      </view>
+      <view class="quick-item" bindtap="goOrders">
+        <view class="quick-icon">📋</view>
+        <text class="quick-label">我的订单</text>
+      </view>
+      <view class="quick-item" bindtap="goMember">
+        <view class="quick-icon">💎</view>
+        <text class="quick-label">会员中心</text>
+      </view>
+      <view class="quick-item" bindtap="goCoupons">
+        <view class="quick-icon">🎁</view>
+        <text class="quick-label">优惠券</text>
+      </view>
+    </view>
+
+    <!-- 热门房型 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">热门推荐</text>
+        <text class="section-more" bindtap="goRooms">查看全部 ›</text>
+      </view>
+
+      <view wx:if="{{loading}}" class="loading-wrap">
+        <view class="loading-text">加载中...</view>
+      </view>
+
+      <view wx:else>
+        <view class="room-card" wx:for="{{rooms}}" wx:key="id" bindtap="goRoomDetail" data-id="{{item.id}}">
+          <view class="room-img-wrap">
+            <image class="room-img" src="{{item.imageUrl || '/images/room-placeholder.png'}}" mode="aspectFill"/>
+            <view class="room-rating">⭐ {{item.rating}}</view>
+          </view>
+          <view class="room-info">
+            <view class="room-name">{{item.name}}</view>
+            <view class="room-tags">
+              <text class="tag tag-blue" wx:if="{{item.area}}">📐 {{item.area}}㎡</text>
+              <text class="tag tag-blue" wx:if="{{item.bedType}}">🛏 {{item.bedType}}</text>
+              <text class="tag tag-green" wx:if="{{item.breakfast}}">含早餐</text>
+              <text class="tag tag-gray" wx:if="{{item.smokeFree}}">禁烟</text>
+            </view>
+            <view class="room-footer">
+              <view>
+                <text class="room-price">¥{{item.price}}</text>
+                <text class="room-unit">/晚</text>
+              </view>
+              <view class="btn btn-primary room-btn" catchtap="goBook" data-id="{{item.id}}">立即预订</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 日期选择弹窗 -->
+  <view class="modal-mask" wx:if="{{showPicker}}" bindtap="closePicker">
+    <view class="date-picker-modal" catchtap="noop">
+      <view class="picker-title">选择入住/退房日期</view>
+      <view class="picker-hint">请选择入住日期</view>
+      <view class="date-grid">
+        <view class="day-header" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
+        <view
+          class="day-cell {{item.type}}"
+          wx:for="{{calendarDays}}"
+          wx:key="date"
+          bindtap="selectDate"
+          data-date="{{item.date}}"
+        >
+          <text class="day-num">{{item.day}}</text>
+          <text class="day-label" wx:if="{{item.label}}">{{item.label}}</text>
+        </view>
+      </view>
+      <view class="picker-footer">
+        <view class="btn btn-primary btn-block" bindtap="confirmDates">确定</view>
+      </view>
+    </view>
+  </view>
+</view>

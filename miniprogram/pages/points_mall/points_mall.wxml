@@ -1,0 +1,64 @@
+<!-- pages/points_mall/points_mall.wxml -->
+<view class="page">
+  <!-- 积分余额 -->
+  <view class="points-banner">
+    <text class="points-label">我的积分</text>
+    <text class="points-num">{{memberPoints}}</text>
+  </view>
+
+  <scroll-view scroll-y class="content safe-bottom">
+    <view wx:if="{{loading}}" class="loading-center" style="padding:60rpx"><view class="loading-text">加载中...</view></view>
+    <view wx:else class="product-grid">
+      <view class="product-card card" wx:for="{{products}}" wx:key="id" bindtap="openExchange" data-item="{{item}}">
+        <view class="product-img-wrap">
+          <image wx:if="{{item.image}}" class="product-img" src="{{item.image}}" mode="aspectFill"/>
+          <view wx:else class="product-img-placeholder">{{item.type === 0 ? '🎫' : '🎁'}}</view>
+          <view class="product-type-tag">{{item.type === 0 ? '优惠券' : '实物'}}</view>
+        </view>
+        <view class="product-info">
+          <view class="product-name">{{item.name}}</view>
+          <view class="product-desc" wx:if="{{item.description}}">{{item.description}}</view>
+          <view class="product-footer">
+            <text class="product-points">{{item.points_cost}} 积分</text>
+            <text class="product-stock" wx:if="{{item.stock < 50}}">剩{{item.stock}}件</text>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{!products.length}}" class="empty-tip">暂无商品</view>
+    </view>
+  </scroll-view>
+
+  <!-- 兑换弹窗 -->
+  <view class="modal-mask" wx:if="{{showExchange}}" bindtap="closeExchange">
+    <view class="exchange-modal" catchtap="">
+      <view class="modal-title">确认兑换</view>
+      <view class="exchange-info">
+        <text class="exchange-name">{{exchangeProduct.name}}</text>
+        <text class="exchange-cost">消耗 {{exchangeProduct.points_cost}} 积分</text>
+      </view>
+
+      <!-- 实物：收货信息 -->
+      <block wx:if="{{exchangeProduct.type === 1}}">
+        <view class="form-item">
+          <text class="form-label">收件人</text>
+          <input class="form-input" placeholder="请输入收件人" bindinput="onFormInput" data-field="receiver"/>
+        </view>
+        <view class="form-item">
+          <text class="form-label">手机号</text>
+          <input class="form-input" type="number" maxlength="11" placeholder="请输入手机号" bindinput="onFormInput" data-field="phone"/>
+        </view>
+        <view class="form-item">
+          <text class="form-label">收货地址</text>
+          <input class="form-input" placeholder="请输入详细地址" bindinput="onFormInput" data-field="address"/>
+        </view>
+      </block>
+
+      <view class="modal-footer">
+        <view class="btn btn-gray" bindtap="closeExchange">取消</view>
+        <view class="btn btn-primary {{exchanging?'disabled':''}}" bindtap="doExchange">
+          {{exchanging ? '兑换中...' : '确认兑换'}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
