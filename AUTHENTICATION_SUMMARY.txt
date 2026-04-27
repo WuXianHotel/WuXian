@@ -1,0 +1,345 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║   WeChat Mini-Program Authentication & User Info Flow - FULL ANALYSIS      ║
+║   Hotel Booking System                                                      ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+DOCUMENTS CREATED:
+==================
+1. AUTH_USER_INFO_FLOW_ANALYSIS.md - Complete detailed technical flow
+2. AUTH_FLOW_QUICK_REFERENCE.md - Quick reference with diagrams and tables
+3. AUTH_CODE_SNIPPETS.md - Complete code snippets from all files
+4. AUTHENTICATION_SUMMARY.txt - This file (you are here)
+
+───────────────────────────────────────────────────────────────────────────────
+
+QUICK ANSWER TO YOUR QUESTIONS:
+
+1. FRONTEND LOGIN LOGIC (app.js, utils/api.js)
+   ────────────────────────────────────────
+   ✓ How frontend calls /api/mp/auth/login:
+     - app.login() calls wx.login() to get a WeChat code
+     - Sends code to backend: POST /api/mp/auth/login { code }
+     - Backend exchanges code for openid via WeChat API
+   
+   ✓ What frontend does with response:
+     - Response: { token, userId, nickname, avatarUrl }
+     - Stores token in BOTH:
+       * app.globalData.token (memory - fast access)
+       * wx.setStorageSync('token') (persistent storage)
+     - Stores full userInfo in BOTH locations too
+     - Token lasts 7 days
+
+2. BACKEND LOGIN ENDPOINT (/api/mp/auth/login)
+   ────────────────────────────────────────────
+   ✓ Location: service/routes/mp/auth.js (lines 52-96)
+   
+   ✓ What it does:
+     1. Receives { code } from frontend
+     2. Exchanges code for openid via WeChat API (or mocks if MOCK_WX_LOGIN=true)
+     3. Checks if user exists in users table by openid
+     4. If NEW user:
+        - INSERTs into users table
+        - INSERTs into members table (loyalty program, level=1)
+     5. If EXISTING user:
+        - UPDATEs last_login timestamp
+     6. Generates JWT token: { userId, openid } valid for 7 days
+     7. Returns: { token, userId, nickname, avatarUrl }
+   
+   ✓ Returns to frontend:
+     YES - returns avatar_url and nickname from users table
+
+3. USERIINFO/AVATAR/NICKNAME STORAGE & USAGE
+   ──────────────────────────────────────────
+   ✓ Stored in THREE places:
+     
+     A. In-Memory (app.globalData):
+        - app.globalData.token = JWT token string
+        - app.globalData.userInfo = { token, userId, nickname, avatarUrl }
+        - Used for quick access within app session
+     
+     B. LocalStorage (persistent):
+        - wx.getStorageSync('token') = JWT token
+        - wx.getStorageSync('userInfo') = Full userInfo object
+        - Restored on app restart
+     
+     C. Database (users & members tables):
+        - users table: openid, unionid, nickname, avatar_url, phone, real_name, etc.
+        - members table: member_no, level, points, total_nights, etc.
+   
+   ✓ Used across app:
+     - pages/profile/profile.js: Displays from globalData
+     - pages/profile_edit/profile_edit.js: Fetches full profile via GET /api/mp/auth/profile
+     - Any page that needs user data calls api.getProfile()
+     - Member info (level, points) fetched via GET /api/mp/member/info
+
+4. GETUSERPROFILE / GETUSERINFO / WX.GETUSERPROFILE CALLS
+   ────────────────────────────────────────────────────────
+   ✓ SEARCHED: No wx.getUserProfile() or wx.getUserInfo() calls found
+   
+   ✓ Why NOT used:
+     - App doesn't request WeChat user permission dialogs
+     - All user data comes from backend database (users table)
+     - Only uses wx.login() to get authorization code
+     - Backend handles user info retrieval and storage
+
+5. SEPARATE USER PROFILE ENDPOINTS
+   ────────────────────────────────
+   ✓ YES - Three separate endpoints:
+     
+     a) POST /api/mp/auth/login [NO AUTH]
+        Returns: { token, userId, nickname, avatarUrl }
+        Purpose: Initial login, minimal user info
+     
+     b) GET /api/mp/auth/profile [REQUIRES AUTH]
+        Returns: Full profile with member info
+        Includes: nickname, avatar_url, phone, real_name, member_no, level, points, etc.
+        Purpose: Fetch complete profile when needed
+     
+     c) GET /api/mp/member/info [REQUIRES AUTH]
+        Returns: Member-specific info
+        Includes: level_name, points, discount, icon, next_level_name, etc.
+        Purpose: Display member level and loyalty info
+
+6. MIDDLEWARE EXTRACTING USER INFO FROM TOKEN
+   ───────────────────────────────────────────
+   ✓ YES - mpAuth middleware (service/middleware/auth.js)
+   
+   ✓ How it works:
+     1. All authenticated routes use @mpAuth decorator
+     2. mpAuth extracts token from Authorization header: "Bearer <token>"
+     3. jwt.verify() checks token signature and expiration
+     4. Sets req.userId = payload.userId (from token payload)
+     5. Sets req.openid = payload.openid (from token payload)
+     6. Passes control to route handler
+     7. Route handler uses req.userId to query database
+     
+   ✓ Applied to endpoints:
+     - GET /api/mp/auth/profile
+     - PUT /api/mp/auth/profile
+     - GET /api/mp/member/info
+     - GET /api/mp/orders
+     - And all other protected endpoints
+
+───────────────────────────────────────────────────────────────────────────────
+
+KEY FILES TO UNDERSTAND:
+
+FRONTEND:
+  • miniprogram/app.js                           - App setup, login()
+  • miniprogram/utils/api.js                     - API wrapper, token attachment
+  • miniprogram/pages/profile/profile.js         - Displays user info
+  • miniprogram/pages/profile_edit/profile_edit.js - Edits user profile
+
+BACKEND:
+  • service/routes/mp/auth.js                    - Login, profile endpoints
+  • service/middleware/auth.js                   - Token verification (mpAuth)
+  • service/routes/mp/member.js                  - Member info endpoints
+  • service/sql/schema.sql                       - Database schema
+
+───────────────────────────────────────────────────────────────────────────────
+
+THE FLOW IN ONE PICTURE:
+
+User Opens App
+    ↓
+app.onLaunch() checks storage for token
+    ├─ Token found? → Load to globalData, ready to use
+    └─ No token? → Silent login:
+        ↓
+        wx.login() → code
+        ↓
+        POST /api/mp/auth/login { code }
+        ↓
+        Backend: code → openid → check users table
+        ├─ New user? → INSERT into users & members
+        └─ Existing? → UPDATE last_login
+        ↓
+        Backend: jwt.sign({ userId, openid })
+        ↓
+        Return: { token, userId, nickname, avatarUrl }
+        ↓
+        Frontend: Store in globalData + localStorage
+        ↓
+        User can now make API calls
+
+Later: User Makes API Call
+    ↓
+api.getProfile() in any page
+    ↓
+request() function:
+  1. Get token from globalData or storage
+  2. Add Authorization header: Bearer <token>
+  3. Send GET /api/mp/auth/profile
+    ↓
+Backend: mpAuth middleware
+  1. Extract token from header
+  2. jwt.verify(token)
+  3. Set req.userId = 123
+  4. next()
+    ↓
+Route handler:
+  SELECT * FROM users WHERE id = 123
+  JOIN members, member_levels
+  Return full user profile
+    ↓
+Frontend: Page receives data, displays it
+
+───────────────────────────────────────────────────────────────────────────────
+
+IMPORTANT DESIGN DECISIONS:
+
+1. NO WeChat Permission Dialogs
+   - App never calls wx.getUserProfile() or wx.getUserInfo()
+   - No permissions requested from user
+   - All user data stored server-side in database
+
+2. JWT-Based Authentication
+   - Token contains: { userId, openid }
+   - Signed with MP_JWT_SECRET environment variable
+   - Expires in 7 days (configurable)
+   - Sent via Authorization header
+
+3. Dual Storage
+   - Memory (globalData) for fast access
+   - LocalStorage for persistence across sessions
+   - Both updated on every login
+
+4. Silent Login on Startup
+   - If no token found, automatically logs in
+   - Errors caught silently, won't block app startup
+   - User won't see login failures initially
+
+5. Lazy Loading
+   - Login returns minimal info: token, userId, nickname, avatarUrl
+   - Full profile fetched separately when needed
+   - Member info fetched separately from /member/info
+
+6. First-Time User Handling
+   - Automatically creates users table row
+   - Automatically creates members table row (level=1)
+   - Generates member number: M202504000001 format
+   - No manual user creation needed
+
+───────────────────────────────────────────────────────────────────────────────
+
+RESPONSE EXAMPLES:
+
+POST /api/mp/auth/login Success:
+{
+  "code": 0,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "userId": 123,
+    "nickname": "John Doe",
+    "avatarUrl": "https://..."
+  }
+}
+
+GET /api/mp/auth/profile Success:
+{
+  "code": 0,
+  "data": {
+    "id": 123,
+    "nickname": "John Doe",
+    "avatar_url": "https://...",
+    "phone": null,
+    "real_name": null,
+    "gender": 0,
+    "member_no": "M202504000001",
+    "level": 1,
+    "points": 0,
+    "level_name": "铜牌会员",
+    "discount": 1.00,
+    "icon": "🥉"
+  }
+}
+
+Unauthorized (401):
+{
+  "code": 401,
+  "msg": "Token 无效或已过期，请重新登录"
+}
+
+───────────────────────────────────────────────────────────────────────────────
+
+TESTING CHECKLIST:
+
+□ Test Silent Login:
+  1. Clear app storage
+  2. Restart app
+  3. Check app.globalData.token is set
+  4. No permission dialogs shown
+
+□ Test Token Persistence:
+  1. Login successfully
+  2. Close app completely
+  3. Reopen app
+  4. Token should still be available
+
+□ Test API Calls:
+  1. After login, call api.getProfile()
+  2. Token should be in Authorization header
+  3. Response should include full user profile
+
+□ Test Token Expiry:
+  1. Manually edit stored token to invalid value
+  2. Try any API call
+  3. Should get 401 response
+  4. Token should be cleared
+
+───────────────────────────────────────────────────────────────────────────────
+
+ENVIRONMENT VARIABLES NEEDED:
+
+Backend (.env file):
+  WX_APPID=your_wechat_appid
+  WX_SECRET=your_wechat_secret
+  MP_JWT_SECRET=your_jwt_secret_key
+  MP_JWT_EXPIRES_IN=7d
+  MOCK_WX_LOGIN=true              (for development)
+
+Frontend (app.js):
+  apiBase: 'http://localhost:3000'
+
+───────────────────────────────────────────────────────────────────────────────
+
+NEXT STEPS IF YOU NEED TO MODIFY:
+
+1. To change token expiration:
+   - Modify MP_JWT_EXPIRES_IN in .env
+
+2. To change login behavior:
+   - Modify app.login() in miniprogram/app.js
+
+3. To add more user fields:
+   - Add columns to users table
+   - Update POST /login response
+   - Update GET /profile query
+
+4. To customize user creation:
+   - Modify POST /login in service/routes/mp/auth.js
+
+5. To add new authenticated endpoints:
+   - Add @mpAuth middleware
+   - Use req.userId from middleware
+
+───────────────────────────────────────────────────────────────────────────────
+
+ALL THREE ANALYSIS DOCUMENTS CREATED IN:
+  /Users/exrishua/Desktop/Private/hotel/
+
+  1. AUTH_USER_INFO_FLOW_ANALYSIS.md (10,000+ words)
+     → Complete detailed analysis of every function and flow
+
+  2. AUTH_FLOW_QUICK_REFERENCE.md (detailed)
+     → Quick reference with tables and diagrams
+
+  3. AUTH_CODE_SNIPPETS.md (all code)
+     → Complete code snippets from all files mentioned
+
+  4. AUTHENTICATION_SUMMARY.txt (this file)
+     → This executive summary
+
+All documents are comprehensive and cross-referenced.
+
+═══════════════════════════════════════════════════════════════════════════════
