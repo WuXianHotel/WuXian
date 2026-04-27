@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>小程序设计稿 - 房型列表</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#f0f0f0; display:flex; justify-content:center; padding:40px 20px; font-family:"PingFang SC","Helvetica Neue",sans-serif; }
+  .label { font-size:13px; color:#999; text-align:center; margin-bottom:12px; letter-spacing:1px; }
+  .phone { width:375px; background:#fff; border-radius:40px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.18); border:8px solid #1a1a1a; }
+  .status-bar { height:44px; background:#1a56db; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+  .status-bar span { color:#fff; font-size:11px; font-weight:600; }
+
+  /* 顶部搜索 */
+  .top-bar { background:#1a56db; padding:0 14px 14px; }
+  .back-row { display:flex; align-items:center; gap:8px; height:44px; }
+  .back-row span { color:#fff; font-size:16px; }
+  .back-row .title { font-size:17px; font-weight:600; color:#fff; }
+  .date-summary { background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; }
+  .date-info { text-align:center; }
+  .date-info .d { font-size:16px; font-weight:700; color:#fff; }
+  .date-info .dd { font-size:11px; color:rgba(255,255,255,0.75); margin-top:2px; }
+  .date-divider { color:rgba(255,255,255,0.5); font-size:24px; }
+  .nights { background:rgba(255,255,255,0.2); border-radius:16px; padding:4px 12px; color:#fff; font-size:12px; }
+
+  /* 筛选栏 */
+  .filter-bar { display:flex; gap:0; border-bottom:1px solid #f0f0f0; background:#fff; overflow-x:auto; }
+  .filter-item { flex:1; min-width:70px; padding:12px 8px; text-align:center; font-size:13px; color:#666; white-space:nowrap; border-bottom:2px solid transparent; }
+  .filter-item.active { color:#1a56db; border-bottom-color:#1a56db; font-weight:600; }
+  .filter-item .arrow { font-size:10px; }
+
+  /* 排序标签 */
+  .sort-tags { padding:10px 14px; display:flex; gap:8px; overflow-x:auto; background:#fafafa; border-bottom:1px solid #f0f0f0; }
+  .sort-tag { padding:5px 12px; border-radius:14px; font-size:12px; background:#f0f0f0; color:#666; white-space:nowrap; }
+  .sort-tag.active { background:#e8f0fe; color:#1a56db; }
+
+  /* 结果数 */
+  .result-count { padding:10px 14px; font-size:12px; color:#999; }
+  .result-count strong { color:#1a1a1a; }
+
+  /* 房型卡片 */
+  .room-card { margin:0 12px 12px; border-radius:12px; overflow:hidden; box-shadow:0 1px 8px rgba(0,0,0,0.08); background:#fff; border:1px solid #f0f0f0; }
+  .room-photo { height:140px; background:linear-gradient(135deg,#a8edea,#fed6e3); display:flex; align-items:center; justify-content:center; font-size:48px; position:relative; }
+  .room-photo .photo-label { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.45); color:#fff; font-size:11px; padding:3px 8px; border-radius:10px; }
+  .room-photo .badge { position:absolute; top:10px; right:10px; background:#ff4d4f; color:#fff; font-size:11px; padding:3px 8px; border-radius:10px; font-weight:600; }
+  .room-body { padding:12px; }
+  .room-name { font-size:16px; font-weight:700; color:#1a1a1a; margin-bottom:6px; }
+  .room-attrs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .attr-chip { display:flex; align-items:center; gap:3px; font-size:11px; color:#666; background:#f7f7f7; padding:3px 8px; border-radius:6px; }
+  .facilities { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .fac { font-size:11px; color:#1a56db; }
+  .room-footer { display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid #f7f7f7; padding-top:10px; }
+  .price-area .member-price { font-size:10px; color:#999; text-decoration:line-through; }
+  .price-area .price { color:#ff4d4f; font-size:20px; font-weight:700; }
+  .price-area .price sub { font-size:12px; font-weight:400; color:#999; }
+  .price-area .member-badge { display:inline-block; background:#fff3e0; color:#e65100; font-size:10px; padding:2px 6px; border-radius:4px; margin-top:2px; }
+  .action-btns { display:flex; gap:8px; align-items:center; }
+  .btn-detail { border:1px solid #1a56db; color:#1a56db; background:#fff; border-radius:16px; padding:7px 14px; font-size:12px; }
+  .btn-book { background:#1a56db; color:#fff; border:none; border-radius:16px; padding:7px 16px; font-size:12px; font-weight:600; }
+
+  /* Tab Bar */
+  .tab-bar { height:56px; background:#fff; border-top:1px solid #f0f0f0; display:flex; align-items:center; }
+  .tab-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .tab-icon { font-size:22px; }
+  .tab-text { font-size:10px; color:#999; }
+</style>
+</head>
+<body>
+<div>
+  <div class="label">小程序 · 房型列表</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="display:flex;gap:6px"><span>📶</span><span>🔋</span></div>
+    </div>
+
+    <div class="top-bar">
+      <div class="back-row">
+        <span>‹</span>
+        <span class="title">选择房型</span>
+      </div>
+      <div class="date-summary">
+        <div class="date-info">
+          <div class="d">4月26日</div>
+          <div class="dd">周六 · 入住</div>
+        </div>
+        <div class="date-divider">→</div>
+        <div class="date-info">
+          <div class="d">4月27日</div>
+          <div class="dd">周日 · 退房</div>
+        </div>
+        <div class="nights">共1晚</div>
+      </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+      <div class="filter-item active">综合 <span class="arrow">⌄</span></div>
+      <div class="filter-item">价格 <span class="arrow">⌄</span></div>
+      <div class="filter-item">房型 <span class="arrow">⌄</span></div>
+      <div class="filter-item">床型 <span class="arrow">⌄</span></div>
+      <div class="filter-item">🔧 筛选</div>
+    </div>
+
+    <!-- 标签 -->
+    <div class="sort-tags">
+      <span class="sort-tag active">全部</span>
+      <span class="sort-tag">有早餐</span>
+      <span class="sort-tag">可取消</span>
+      <span class="sort-tag">大床</span>
+      <span class="sort-tag">套房</span>
+      <span class="sort-tag">禁烟</span>
+    </div>
+
+    <div class="result-count">共找到 <strong>8</strong> 种房型</div>
+
+    <!-- 房型1 -->
+    <div class="room-card">
+      <div class="room-photo" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+        🛏️
+        <span class="photo-label">实景图 6张</span>
+        <span class="badge">热销</span>
+      </div>
+      <div class="room-body">
+        <div class="room-name">豪华大床房</div>
+        <div class="room-attrs">
+          <span class="attr-chip">📐 40㎡</span>
+          <span class="attr-chip">🛏 1.8m大床</span>
+          <span class="attr-chip">🏙 城市景观</span>
+          <span class="attr-chip">🚭 禁烟</span>
+        </div>
+        <div class="facilities">
+          <span class="fac">✓ 免费WiFi</span>
+          <span class="fac">✓ 独立浴缸</span>
+          <span class="fac">✓ 24h热水</span>
+          <span class="fac">✓ 含早餐</span>
+        </div>
+        <div class="room-footer">
+          <div class="price-area">
+            <div class="member-price">¥788</div>
+            <div class="price">¥688<sub>/晚</sub></div>
+            <div class="member-badge">💎 会员享8.8折</div>
+          </div>
+          <div class="action-btns">
+            <button class="btn-detail">详情</button>
+            <button class="btn-book">预订</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 房型2 -->
+    <div class="room-card">
+      <div class="room-photo" style="background:linear-gradient(135deg,#fccb90,#d57eeb)">
+        🛁
+        <span class="photo-label">实景图 4张</span>
+      </div>
+      <div class="room-body">
+        <div class="room-name">精品双床房</div>
+        <div class="room-attrs">
+          <span class="attr-chip">📐 35㎡</span>
+          <span class="attr-chip">🛏 双床</span>
+          <span class="attr-chip">🌿 花园景</span>
+          <span class="attr-chip">🚭 禁烟</span>
+        </div>
+        <div class="facilities">
+          <span class="fac">✓ 免费WiFi</span>
+          <span class="fac">✓ 步入式衣橱</span>
+          <span class="fac">✓ 24h热水</span>
+        </div>
+        <div class="room-footer">
+          <div class="price-area">
+            <div class="price">¥528<sub>/晚</sub></div>
+            <div class="member-badge">💎 会员享9折</div>
+          </div>
+          <div class="action-btns">
+            <button class="btn-detail">详情</button>
+            <button class="btn-book">预订</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 房型3 -->
+    <div class="room-card">
+      <div class="room-photo" style="background:linear-gradient(135deg,#89f7fe,#66a6ff)">
+        🌊
+        <span class="photo-label">实景图 8张</span>
+        <span class="badge" style="background:#ff7800">套房</span>
+      </div>
+      <div class="room-body">
+        <div class="room-name">行政套房</div>
+        <div class="room-attrs">
+          <span class="attr-chip">📐 65㎡</span>
+          <span class="attr-chip">🛏 1.8m大床</span>
+          <span class="attr-chip">🌆 顶层景观</span>
+        </div>
+        <div class="facilities">
+          <span class="fac">✓ 含早餐</span>
+          <span class="fac">✓ 行政酒廊</span>
+          <span class="fac">✓ 免费迎宾</span>
+        </div>
+        <div class="room-footer">
+          <div class="price-area">
+            <div class="price">¥1,288<sub>/晚</sub></div>
+            <div class="member-badge">💎 会员享8.5折</div>
+          </div>
+          <div class="action-btns">
+            <button class="btn-detail">详情</button>
+            <button class="btn-book">预订</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:56px"></div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
+      <div class="tab-item"><span class="tab-icon">🔍</span><span class="tab-text" style="color:#1a56db">探索</span></div>
+      <div class="tab-item"><span class="tab-icon">📋</span><span class="tab-text">订单</span></div>
+      <div class="tab-item"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

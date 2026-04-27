@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>后台设计稿 - 会员管理 & 财务报表 & 系统设置</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"PingFang SC","Helvetica Neue",sans-serif; font-size:13px; color:#333; background:#f0f4f8; }
+  .page-wrapper { display:flex; min-height:100vh; }
+  .sidebar { width:220px; background:#0f172a; min-height:100vh; flex-shrink:0; position:fixed; top:0; left:0; height:100%; }
+  .sidebar-logo { padding:20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo .hotel-name { font-size:15px; font-weight:700; color:#fff; margin-top:6px; }
+  .sidebar-logo .logo-icon { font-size:26px; }
+  .nav-section { padding:8px 0; }
+  .nav-label { font-size:10px; color:rgba(255,255,255,0.3); padding:8px 20px 4px; letter-spacing:1px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:rgba(255,255,255,0.6); font-size:13px; }
+  .nav-item.active { background:rgba(26,86,219,0.5); color:#fff; border-right:3px solid #3b82f6; }
+  .nav-icon { font-size:16px; width:20px; text-align:center; }
+  .nav-badge { margin-left:auto; background:#ff4d4f; color:#fff; font-size:10px; padding:1px 6px; border-radius:8px; }
+  .main-area { margin-left:220px; flex:1; }
+  .top-bar { background:#fff; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e8edf5; }
+  .top-bar-left { font-size:13px; color:#999; display:flex; align-items:center; gap:8px; }
+  .top-bar-left .active { color:#1a1a1a; font-weight:600; }
+
+  /* 多页面容器 */
+  .pages-container { padding:24px; display:flex; flex-direction:column; gap:40px; }
+  .page-section { }
+  .page-divider { border:none; border-top:2px dashed #d0d7e3; margin:10px 0; }
+  .section-tag { display:inline-block; background:#1a56db; color:#fff; font-size:12px; padding:4px 12px; border-radius:6px; margin-bottom:16px; }
+
+  .page-title { font-size:20px; font-weight:700; color:#1a1a1a; }
+  .page-subtitle { font-size:13px; color:#888; margin-top:4px; margin-bottom:20px; }
+  .btn { padding:8px 14px; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:6px; }
+  .btn-primary { background:#1a56db; color:#fff; }
+  .btn-outline { background:#fff; color:#555; border:1px solid #ddd; }
+
+  /* ===== 会员管理 ===== */
+  .member-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .ms-card { background:#fff; border-radius:10px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,0.05); text-align:center; }
+  .ms-num { font-size:26px; font-weight:800; }
+  .ms-label { font-size:11px; color:#888; margin-top:4px; }
+  .filter-bar { background:#fff; border-radius:10px; padding:14px 20px; display:flex; gap:10px; align-items:center; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  .filter-input { padding:7px 12px; border:1px solid #e0e0e0; border-radius:6px; font-size:13px; }
+  .filter-select { padding:7px 12px; border:1px solid #e0e0e0; border-radius:6px; font-size:13px; background:#fff; }
+  .table-card { background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.05); overflow:hidden; }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:#fafafa; }
+  th { padding:11px 14px; text-align:left; font-size:12px; color:#888; font-weight:500; border-bottom:1px solid #f0f0f0; white-space:nowrap; }
+  td { padding:11px 14px; font-size:13px; border-bottom:1px solid #f7f7f7; vertical-align:middle; }
+  .level-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700; }
+  .lv-bronze { background:#fbe9e7; color:#bf360c; }
+  .lv-silver { background:#f5f5f5; color:#546e7a; }
+  .lv-gold { background:#fff8e1; color:#f57f17; }
+  .lv-platinum { background:#e8eaf6; color:#283593; }
+  .action-link { color:#1a56db; cursor:pointer; margin-right:10px; font-size:12px; }
+
+  /* ===== 财务报表 ===== */
+  .report-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .rs-card { background:#fff; border-radius:10px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  .rs-card .label { font-size:12px; color:#888; margin-bottom:6px; }
+  .rs-card .num { font-size:22px; font-weight:800; }
+  .rs-card .change { font-size:11px; margin-top:4px; }
+  .chart-area { background:#fff; border-radius:10px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:16px; }
+  .chart-placeholder { height:180px; background:linear-gradient(135deg,#f8faff,#e8f0fe); border-radius:8px; display:flex; align-items:flex-end; padding:0 20px 0; gap:10px; overflow:hidden; }
+  .bar-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .bar-fill { width:100%; border-radius:4px 4px 0 0; background:linear-gradient(to top,#1a56db,#3b82f6); }
+  .bar-label { font-size:10px; color:#888; }
+
+  /* ===== 系统设置 ===== */
+  .settings-layout { display:grid; grid-template-columns:200px 1fr; gap:16px; }
+  .settings-nav { background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); height:fit-content; }
+  .settings-nav-item { padding:10px 14px; border-radius:8px; font-size:13px; color:#555; cursor:pointer; display:flex; align-items:center; gap:8px; }
+  .settings-nav-item.active { background:#e8f0fe; color:#1a56db; font-weight:600; }
+  .settings-content { background:#fff; border-radius:10px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  .settings-section { margin-bottom:28px; }
+  .settings-section h3 { font-size:15px; font-weight:700; color:#1a1a1a; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #f5f5f5; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group label { font-size:12px; color:#555; margin-bottom:4px; display:block; font-weight:500; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:9px 12px; border:1px solid #e0e0e0; border-radius:7px; font-size:13px; }
+  .form-group textarea { height:70px; resize:none; }
+  .role-table { width:100%; border-collapse:collapse; margin-top:8px; }
+  .role-table th { padding:9px 12px; text-align:left; font-size:12px; color:#888; background:#fafafa; border-bottom:1px solid #f0f0f0; }
+  .role-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid #f7f7f7; }
+  .perm-tag { display:inline-block; background:#e8f0fe; color:#1a56db; font-size:11px; padding:2px 7px; border-radius:4px; margin:2px; }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🏨</div><div class="hotel-name">柳州无限电竞酒店管理系统</div></div>
+    <div class="nav-section">
+      <div class="nav-label">概览</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>仪表盘</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">核心业务</div>
+      <div class="nav-item"><span class="nav-icon">🛏</span>房型管理</div>
+      <div class="nav-item"><span class="nav-icon">📅</span>订单管理<span class="nav-badge">5</span></div>
+      <div class="nav-item"><span class="nav-icon">💳</span>支付管理</div>
+      <div class="nav-item"><span class="nav-icon">💰</span>退款审核<span class="nav-badge">2</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">用户运营</div>
+      <div class="nav-item"><span class="nav-icon">👥</span>用户管理</div>
+      <div class="nav-item active"><span class="nav-icon">💎</span>会员管理</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">系统</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>财务报表</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span>系统设置</div>
+      <div class="nav-item"><span class="nav-icon">📝</span>操作日志</div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="top-bar">
+      <div class="top-bar-left"><span>首页</span><span>›</span><span class="active">会员管理</span></div>
+      <div style="display:flex;gap:12px"><span>🔔</span><span>👨‍💼 管理员</span></div>
+    </div>
+
+    <div class="pages-container">
+
+      <!-- ===== 会员管理 ===== -->
+      <div class="page-section">
+        <span class="section-tag">💎 会员管理</span>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px">
+          <div>
+            <div class="page-title">会员管理</div>
+            <div style="font-size:13px;color:#888;margin-top:4px">管理所有会员信息、等级与积分</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-outline">📥 导出会员</button>
+            <button class="btn btn-outline">⚙️ 等级配置</button>
+            <button class="btn btn-primary">🎁 发放积分</button>
+          </div>
+        </div>
+
+        <div class="member-stats">
+          <div class="ms-card"><div class="ms-num" style="color:#1a1a1a">1,286</div><div class="ms-label">注册会员</div></div>
+          <div class="ms-card"><div class="ms-num" style="color:#f57f17">468</div><div class="ms-label">黄金会员</div></div>
+          <div class="ms-card"><div class="ms-num" style="color:#283593">126</div><div class="ms-label">铂金会员</div></div>
+          <div class="ms-card"><div class="ms-num" style="color:#52c41a">↑ 32</div><div class="ms-label">本月新增</div></div>
+        </div>
+
+        <div class="filter-bar">
+          <input class="filter-input" placeholder="🔍 姓名/手机号/会员ID" style="width:220px"/>
+          <select class="filter-select"><option>全部等级</option><option>普通会员</option><option>铜牌会员</option><option>银牌会员</option><option>黄金会员</option><option>铂金会员</option></select>
+          <select class="filter-select"><option>全部状态</option><option>正常</option><option>已禁用</option></select>
+          <button class="btn btn-primary" style="padding:7px 14px">查询</button>
+          <button class="btn btn-outline" style="padding:7px 14px">重置</button>
+        </div>
+
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox"/></th>
+                <th>会员ID</th><th>姓名</th><th>手机号</th><th>等级</th><th>积分余额</th>
+                <th>累计消费</th><th>入住次数</th><th>注册时间</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td style="font-family:monospace;color:#888">M10001</td>
+                <td>张三</td>
+                <td>138****8888</td>
+                <td><span class="level-badge lv-gold">💛 黄金</span></td>
+                <td>2,380</td>
+                <td style="font-weight:600">¥6,380</td>
+                <td>8次</td>
+                <td style="color:#888">2025-06-12</td>
+                <td><span style="color:#52c41a;font-size:12px">● 正常</span></td>
+                <td><span class="action-link">详情</span><span class="action-link">调整积分</span><span class="action-link red" style="color:#ff4d4f">禁用</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td style="font-family:monospace;color:#888">M10002</td>
+                <td>李四</td>
+                <td>139****6666</td>
+                <td><span class="level-badge lv-platinum">💠 铂金</span></td>
+                <td>8,620</td>
+                <td style="font-weight:600">¥28,500</td>
+                <td>42次</td>
+                <td style="color:#888">2024-03-20</td>
+                <td><span style="color:#52c41a;font-size:12px">● 正常</span></td>
+                <td><span class="action-link">详情</span><span class="action-link">调整积分</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td style="font-family:monospace;color:#888">M10003</td>
+                <td>王五</td>
+                <td>137****5555</td>
+                <td><span class="level-badge lv-silver">🥈 银牌</span></td>
+                <td>560</td>
+                <td style="font-weight:600">¥2,100</td>
+                <td>4次</td>
+                <td style="color:#888">2025-12-05</td>
+                <td><span style="color:#52c41a;font-size:12px">● 正常</span></td>
+                <td><span class="action-link">详情</span><span class="action-link">调整积分</span></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox"/></td>
+                <td style="font-family:monospace;color:#888">M10004</td>
+                <td>赵六</td>
+                <td>136****4444</td>
+                <td><span class="level-badge lv-bronze">🥉 铜牌</span></td>
+                <td>120</td>
+                <td style="font-weight:600">¥688</td>
+                <td>1次</td>
+                <td style="color:#888">2026-03-15</td>
+                <td><span style="color:#999;font-size:12px">● 禁用</span></td>
+                <td><span class="action-link">详情</span><span class="action-link" style="color:#52c41a">启用</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <hr class="page-divider"/>
+
+      <!-- ===== 财务报表 ===== -->
+      <div class="page-section">
+        <span class="section-tag">📈 财务报表</span>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px">
+          <div>
+            <div class="page-title">财务报表</div>
+            <div style="font-size:13px;color:#888;margin-top:4px">查看日/月/季度收入统计与分析</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div style="display:flex;gap:0;border:1px solid #ddd;border-radius:7px;overflow:hidden">
+              <button class="btn btn-outline" style="border:none;border-radius:0;border-right:1px solid #ddd">日报</button>
+              <button class="btn btn-primary" style="border:none;border-radius:0;border-right:1px solid #ddd">月报</button>
+              <button class="btn btn-outline" style="border:none;border-radius:0">季报</button>
+            </div>
+            <button class="btn btn-outline">📥 导出Excel</button>
+          </div>
+        </div>
+
+        <div class="report-stats">
+          <div class="rs-card">
+            <div class="label">本月总收入</div>
+            <div class="num" style="color:#1a56db">¥286,400</div>
+            <div class="change" style="color:#52c41a">↑ 较上月 +18.3%</div>
+          </div>
+          <div class="rs-card">
+            <div class="label">本月订单数</div>
+            <div class="num" style="color:#ff9800">412</div>
+            <div class="change" style="color:#52c41a">↑ 较上月 +24单</div>
+          </div>
+          <div class="rs-card">
+            <div class="label">平均入住率</div>
+            <div class="num" style="color:#e91e63">73.6%</div>
+            <div class="change" style="color:#52c41a">↑ 较上月 +5.2%</div>
+          </div>
+          <div class="rs-card">
+            <div class="label">退款金额</div>
+            <div class="num" style="color:#ff4d4f">¥6,820</div>
+            <div class="change" style="color:#ff4d4f">↑ 较上月 +2单</div>
+          </div>
+        </div>
+
+        <div class="chart-area">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <span style="font-size:15px;font-weight:700">2026年4月 · 每日收入趋势</span>
+            <div style="display:flex;gap:8px;font-size:12px">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#1a56db;border-radius:2px;display:inline-block"></span>客房收入</span>
+            </div>
+          </div>
+          <div class="chart-placeholder">
+            <div class="bar-item"><div class="bar-fill" style="height:55%"></div><div class="bar-label">1</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:60%"></div><div class="bar-label">2</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:45%"></div><div class="bar-label">3</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:70%"></div><div class="bar-label">4</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:85%"></div><div class="bar-label">5</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:90%"></div><div class="bar-label">6</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:65%"></div><div class="bar-label">7</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:50%"></div><div class="bar-label">8</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:60%"></div><div class="bar-label">9</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:55%"></div><div class="bar-label">10</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:72%"></div><div class="bar-label">11</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:80%"></div><div class="bar-label">12</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:68%"></div><div class="bar-label">13</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:75%"></div><div class="bar-label">14</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:62%"></div><div class="bar-label">15</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:58%"></div><div class="bar-label">16</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:70%"></div><div class="bar-label">17</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:85%"></div><div class="bar-label">18</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:95%"></div><div class="bar-label">19</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:100%"></div><div class="bar-label">20</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:78%"></div><div class="bar-label">21</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:65%"></div><div class="bar-label">22</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:72%"></div><div class="bar-label">23</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:80%"></div><div class="bar-label">24</div></div>
+            <div class="bar-item"><div class="bar-fill" style="height:88%;background:linear-gradient(to top,#ff9800,#ffb74d)"></div><div class="bar-label" style="color:#ff9800;font-weight:700">25</div></div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="page-divider"/>
+
+      <!-- ===== 系统设置 ===== -->
+      <div class="page-section">
+        <span class="section-tag">⚙️ 系统设置</span>
+        <div style="margin-bottom:16px">
+          <div class="page-title">系统设置</div>
+          <div style="font-size:13px;color:#888;margin-top:4px">酒店基本信息、角色权限与系统参数配置</div>
+        </div>
+
+        <div class="settings-layout">
+          <div class="settings-nav">
+            <div class="settings-nav-item active">🏨 酒店信息</div>
+            <div class="settings-nav-item">👥 角色权限</div>
+            <div class="settings-nav-item">📋 系统参数</div>
+            <div class="settings-nav-item">📢 公告管理</div>
+            <div class="settings-nav-item">📝 操作日志</div>
+          </div>
+          <div class="settings-content">
+            <div class="settings-section">
+              <h3>基本信息</h3>
+              <div class="form-grid">
+                <div class="form-group"><label>酒店名称 *</label><input value="云悦精品酒店"/></div>
+                <div class="form-group"><label>联系电话 *</label><input value="0755-88886666"/></div>
+                <div class="form-group"><label>地址 *</label><input value="广东省深圳市南山区云悦路88号"/></div>
+                <div class="form-group"><label>邮箱</label><input value="contact@yunyue-hotel.com"/></div>
+                <div class="form-group"><label>入住时间</label><input value="14:00"/></div>
+                <div class="form-group"><label>退房时间</label><input value="12:00"/></div>
+                <div class="form-group" style="grid-column:1/-1"><label>酒店简介</label><textarea>位于深圳南山核心商业区，毗邻地铁2号线，交通便利。酒店共设50间客房，提供豪华大床房、精品双床房、行政套房等多种房型选择。</textarea></div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>角色权限管理</h3>
+              <table class="role-table">
+                <thead>
+                  <tr>
+                    <th>角色名称</th><th>账号数</th><th>权限范围</th><th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>超级管理员</strong></td>
+                    <td>1</td>
+                    <td>
+                      <span class="perm-tag">全部权限</span>
+                    </td>
+                    <td><span style="color:#1a56db;cursor:pointer;font-size:12px">编辑</span></td>
+                  </tr>
+                  <tr>
+                    <td>前台</td>
+                    <td>3</td>
+                    <td>
+                      <span class="perm-tag">订单管理</span>
+                      <span class="perm-tag">入住退房</span>
+                      <span class="perm-tag">房态查看</span>
+                    </td>
+                    <td><span style="color:#1a56db;cursor:pointer;font-size:12px">编辑</span></td>
+                  </tr>
+                  <tr>
+                    <td>财务</td>
+                    <td>2</td>
+                    <td>
+                      <span class="perm-tag">支付管理</span>
+                      <span class="perm-tag">退款审核</span>
+                      <span class="perm-tag">财务报表</span>
+                    </td>
+                    <td><span style="color:#1a56db;cursor:pointer;font-size:12px">编辑</span></td>
+                  </tr>
+                  <tr>
+                    <td>运营</td>
+                    <td>2</td>
+                    <td>
+                      <span class="perm-tag">会员管理</span>
+                      <span class="perm-tag">评价管理</span>
+                      <span class="perm-tag">公告管理</span>
+                    </td>
+                    <td><span style="color:#1a56db;cursor:pointer;font-size:12px">编辑</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+              <button class="btn btn-outline">取消</button>
+              <button class="btn btn-primary">💾 保存设置</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

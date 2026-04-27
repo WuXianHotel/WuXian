@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>小程序设计稿 - 会员中心 & 个人中心</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#f0f0f0; display:flex; justify-content:center; gap:40px; flex-wrap:wrap; padding:40px 20px; font-family:"PingFang SC","Helvetica Neue",sans-serif; }
+  .label { font-size:13px; color:#999; text-align:center; margin-bottom:12px; }
+  .phone { width:375px; background:#f7f7f7; border-radius:40px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.18); border:8px solid #1a1a1a; }
+  .status-bar { height:44px; background:transparent; display:flex; align-items:center; justify-content:space-between; padding:0 20px; position:absolute; width:359px; z-index:10; }
+  .status-bar span { color:#fff; font-size:11px; font-weight:600; }
+  .tab-bar { height:56px; background:#fff; border-top:1px solid #f0f0f0; display:flex; align-items:center; }
+  .tab-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .tab-icon { font-size:22px; }
+  .tab-text { font-size:10px; color:#999; }
+
+  /* ===== 会员中心 ===== */
+  .member-hero { height:220px; background:linear-gradient(135deg,#b8860b,#ffd700,#b8860b); position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:20px; }
+  .member-hero::before { content:''; position:absolute; inset:0; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 375 220'%3E%3Ccircle cx='320' cy='30' r='100' fill='rgba(255,255,255,0.07)'/%3E%3Ccircle cx='30' cy='180' r='80' fill='rgba(255,255,255,0.07)'/%3E%3C/svg%3E"); }
+  .member-back { position:absolute; top:50px; left:16px; color:#fff; font-size:22px; z-index:1; }
+  .member-avatar { width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:32px; border:3px solid rgba(255,255,255,0.5); margin-bottom:8px; z-index:1; }
+  .member-name { font-size:18px; font-weight:700; color:#fff; z-index:1; }
+  .member-level { background:rgba(0,0,0,0.2); color:#fff; font-size:11px; padding:3px 10px; border-radius:10px; margin-top:4px; z-index:1; }
+
+  .stats-row { display:flex; background:linear-gradient(to right,#fdf6e3,#fffbf0); padding:14px; gap:4px; }
+  .stat-item { flex:1; text-align:center; border-right:1px solid #e8d5a3; }
+  .stat-item:last-child { border-right:none; }
+  .stat-num { font-size:20px; font-weight:700; color:#b8860b; }
+  .stat-label { font-size:11px; color:#999; margin-top:2px; }
+
+  .progress-section { background:#fff; padding:14px 16px; margin-top:8px; }
+  .progress-title { font-size:13px; color:#555; margin-bottom:8px; display:flex; justify-content:space-between; }
+  .progress-title span { color:#b8860b; font-weight:600; }
+  .progress-bar-bg { height:8px; background:#f0f0f0; border-radius:4px; }
+  .progress-bar-fill { height:8px; background:linear-gradient(to right,#ffd700,#b8860b); border-radius:4px; width:62%; }
+  .progress-hint { font-size:11px; color:#999; margin-top:6px; }
+
+  .benefits { background:#fff; margin-top:8px; padding:14px 16px; }
+  .benefits-title { font-size:15px; font-weight:700; color:#1a1a1a; margin-bottom:12px; }
+  .benefit-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .benefit-item { background:#fffbf0; border:1px solid #ffe082; border-radius:10px; padding:12px 8px; text-align:center; }
+  .benefit-icon { font-size:24px; margin-bottom:4px; }
+  .benefit-name { font-size:11px; color:#7a5f00; font-weight:600; }
+  .benefit-desc { font-size:10px; color:#999; margin-top:2px; }
+
+  .points-section { background:#fff; margin-top:8px; padding:14px 16px; }
+  .points-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .points-header h3 { font-size:15px; font-weight:700; }
+  .points-header a { font-size:12px; color:#1a56db; }
+  .points-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f5f5f5; }
+  .points-item:last-child { border-bottom:none; }
+  .points-item-left .p-title { font-size:13px; color:#1a1a1a; }
+  .points-item-left .p-date { font-size:11px; color:#999; margin-top:2px; }
+  .points-item-right { font-size:15px; font-weight:700; }
+  .points-add { color:#52c41a; }
+  .points-use { color:#ff4d4f; }
+
+  /* ===== 个人中心 ===== */
+  .profile-hero { background:linear-gradient(135deg,#1a56db,#3b82f6); padding:50px 16px 24px; position:relative; }
+  .profile-info { display:flex; align-items:center; gap:14px; }
+  .profile-avatar { width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:32px; border:2px solid rgba(255,255,255,0.4); }
+  .profile-text .name { font-size:20px; font-weight:700; color:#fff; }
+  .profile-text .phone { font-size:13px; color:rgba(255,255,255,0.8); margin-top:4px; }
+  .profile-text .member-tag { display:inline-block; background:rgba(255,215,0,0.3); color:#ffd700; font-size:11px; padding:2px 8px; border-radius:10px; margin-top:6px; }
+  .menu-group { background:#fff; margin:8px 0 0; }
+  .menu-item { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #f5f5f5; }
+  .menu-item:last-child { border-bottom:none; }
+  .menu-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .menu-text { flex:1; font-size:14px; color:#1a1a1a; }
+  .menu-badge { background:#ff4d4f; color:#fff; font-size:10px; padding:1px 6px; border-radius:8px; margin-right:6px; }
+  .menu-arrow { color:#ccc; font-size:18px; }
+</style>
+</head>
+<body>
+
+<!-- 会员中心 -->
+<div>
+  <div class="label">小程序 · 会员中心</div>
+  <div class="phone" style="position:relative">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="display:flex;gap:6px"><span>📶</span><span>🔋</span></div>
+    </div>
+
+    <div class="member-hero">
+      <div class="member-back">‹</div>
+      <div class="member-avatar">👤</div>
+      <div class="member-name">张三</div>
+      <div class="member-level">💎 黄金会员</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-num">2,380</div>
+        <div class="stat-label">积分余额</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">8</div>
+        <div class="stat-label">累计入住</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">3</div>
+        <div class="stat-label">优惠券</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">9折</div>
+        <div class="stat-label">专属折扣</div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-title">
+        <span>黄金会员</span>
+        <span>距铂金会员还需消费 ¥3,620</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <div class="progress-hint">本年累计消费 ¥6,380 / 目标 ¥10,000</div>
+    </div>
+
+    <div class="benefits">
+      <div class="benefits-title">🎁 会员权益</div>
+      <div class="benefit-grid">
+        <div class="benefit-item">
+          <div class="benefit-icon">🏷️</div>
+          <div class="benefit-name">9折优惠</div>
+          <div class="benefit-desc">全场房型</div>
+        </div>
+        <div class="benefit-item">
+          <div class="benefit-icon">⭐</div>
+          <div class="benefit-name">双倍积分</div>
+          <div class="benefit-desc">消费得积分</div>
+        </div>
+        <div class="benefit-item">
+          <div class="benefit-icon">🚀</div>
+          <div class="benefit-name">提前入住</div>
+          <div class="benefit-desc">最早12:00</div>
+        </div>
+        <div class="benefit-item">
+          <div class="benefit-icon">🎂</div>
+          <div class="benefit-name">生日特权</div>
+          <div class="benefit-desc">双倍礼遇</div>
+        </div>
+        <div class="benefit-item">
+          <div class="benefit-icon">📞</div>
+          <div class="benefit-name">专属客服</div>
+          <div class="benefit-desc">优先接待</div>
+        </div>
+        <div class="benefit-item">
+          <div class="benefit-icon">🎫</div>
+          <div class="benefit-name">每月赠券</div>
+          <div class="benefit-desc">满200减20</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="points-section">
+      <div class="points-header">
+        <h3>积分明细</h3>
+        <a>查看全部 ›</a>
+      </div>
+      <div class="points-item">
+        <div class="points-item-left">
+          <div class="p-title">入住消费积分</div>
+          <div class="p-date">2026-04-15</div>
+        </div>
+        <div class="points-item-right points-add">+475</div>
+      </div>
+      <div class="points-item">
+        <div class="points-item-left">
+          <div class="p-title">积分兑换优惠券</div>
+          <div class="p-date">2026-04-10</div>
+        </div>
+        <div class="points-item-right points-use">-500</div>
+      </div>
+      <div class="points-item">
+        <div class="points-item-left">
+          <div class="p-title">入住消费积分</div>
+          <div class="p-date">2026-03-28</div>
+        </div>
+        <div class="points-item-right points-add">+688</div>
+      </div>
+    </div>
+
+    <div style="height:56px"></div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
+      <div class="tab-item"><span class="tab-icon">🔍</span><span class="tab-text">探索</span></div>
+      <div class="tab-item"><span class="tab-icon">📋</span><span class="tab-text">订单</span></div>
+      <div class="tab-item"><span class="tab-icon">👤</span><span class="tab-text" style="color:#1a56db">我的</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 个人中心 -->
+<div>
+  <div class="label">小程序 · 个人中心</div>
+  <div class="phone" style="position:relative">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="display:flex;gap:6px"><span>📶</span><span>🔋</span></div>
+    </div>
+
+    <div class="profile-hero">
+      <div class="profile-info">
+        <div class="profile-avatar">😊</div>
+        <div class="profile-text">
+          <div class="name">张三</div>
+          <div class="phone">138****8888</div>
+          <div class="member-tag">💎 黄金会员 · 积分 2,380</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-group">
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#e8f0fe">📋</div>
+        <span class="menu-text">我的订单</span>
+        <span class="menu-badge">2</span>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fff3e0">💎</div>
+        <span class="menu-text">会员中心</span>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#e8f5e9">🎫</div>
+        <span class="menu-text">我的优惠券</span>
+        <span class="menu-badge">3</span>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fce4ec">🧾</div>
+        <span class="menu-text">发票管理</span>
+        <span class="menu-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="menu-group" style="margin-top:8px">
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#f3e5f5">👤</div>
+        <span class="menu-text">个人资料</span>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#e0f7fa">🔒</div>
+        <span class="menu-text">账号安全</span>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#f9fbe7">🆔</div>
+        <span class="menu-text">实名认证</span>
+        <span style="font-size:11px;color:#52c41a;margin-right:6px">已认证</span>
+        <span class="menu-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="menu-group" style="margin-top:8px">
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fff8e1">📢</div>
+        <span class="menu-text">消息通知</span>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#e8eaf6">❓</div>
+        <span class="menu-text">帮助与反馈</span>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fce4ec">📞</div>
+        <span class="menu-text">联系客服</span>
+        <span class="menu-arrow">›</span>
+      </div>
+    </div>
+
+    <div style="margin:16px;text-align:center">
+      <button style="width:100%;border:1px solid #ff4d4f;background:#fff;color:#ff4d4f;border-radius:24px;padding:12px;font-size:14px">退出登录</button>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
+      <div class="tab-item"><span class="tab-icon">🔍</span><span class="tab-text">探索</span></div>
+      <div class="tab-item"><span class="tab-icon">📋</span><span class="tab-text">订单</span></div>
+      <div class="tab-item"><span class="tab-icon">👤</span><span class="tab-text" style="color:#1a56db">我的</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

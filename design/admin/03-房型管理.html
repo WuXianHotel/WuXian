@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>后台设计稿 - 房型管理</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { display:flex; font-family:"PingFang SC","Helvetica Neue",sans-serif; font-size:13px; color:#333; background:#f0f4f8; min-height:100vh; }
+  .sidebar { width:220px; background:#0f172a; min-height:100vh; flex-shrink:0; }
+  .sidebar-logo { padding:20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo .hotel-name { font-size:15px; font-weight:700; color:#fff; margin-top:6px; }
+  .sidebar-logo .logo-icon { font-size:26px; }
+  .nav-section { padding:8px 0; }
+  .nav-label { font-size:10px; color:rgba(255,255,255,0.3); padding:8px 20px 4px; letter-spacing:1px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:rgba(255,255,255,0.6); font-size:13px; }
+  .nav-item.active { background:rgba(26,86,219,0.5); color:#fff; border-right:3px solid #3b82f6; }
+  .nav-item .nav-icon { font-size:16px; width:20px; text-align:center; }
+  .nav-badge { margin-left:auto; background:#ff4d4f; color:#fff; font-size:10px; padding:1px 6px; border-radius:8px; }
+  .sidebar-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px; margin-top:20px; }
+  .sidebar-avatar { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .sidebar-user .name { font-size:12px; color:#fff; }
+  .sidebar-user .role { font-size:10px; color:rgba(255,255,255,0.4); }
+
+  .main { flex:1; display:flex; flex-direction:column; }
+  .top-bar { background:#fff; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e8edf5; }
+  .top-bar-left { font-size:13px; color:#999; display:flex; align-items:center; gap:8px; }
+  .top-bar-left .active { color:#1a1a1a; font-weight:600; }
+  .top-bar-right { display:flex; align-items:center; gap:12px; }
+  .content { padding:20px 24px; }
+  .page-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; }
+  .page-title { font-size:20px; font-weight:700; color:#1a1a1a; }
+  .page-subtitle { font-size:13px; color:#888; margin-top:4px; }
+  .btn { padding:9px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; display:flex; align-items:center; gap:6px; }
+  .btn-primary { background:#1a56db; color:#fff; }
+  .btn-outline { background:#fff; color:#555; border:1px solid #ddd; }
+  .btn-sm { padding:5px 12px; font-size:12px; border-radius:6px; font-weight:500; cursor:pointer; border:none; }
+
+  /* 搜索栏 */
+  .filter-bar { background:#fff; border-radius:10px; padding:16px 20px; display:flex; gap:12px; align-items:center; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  .filter-input { padding:8px 12px; border:1px solid #e0e0e0; border-radius:6px; font-size:13px; flex:1; }
+  .filter-select { padding:8px 12px; border:1px solid #e0e0e0; border-radius:6px; font-size:13px; background:#fff; }
+
+  /* 房型卡片网格 */
+  .room-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .room-card { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.06); }
+  .room-card-img { height:160px; display:flex; align-items:center; justify-content:center; font-size:48px; position:relative; }
+  .status-dot { position:absolute; top:12px; left:12px; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+  .sd-active { background:#e8f5e9; color:#2e7d32; }
+  .sd-inactive { background:#fff3e0; color:#e65100; }
+  .room-card-body { padding:14px; }
+  .room-card-name { font-size:15px; font-weight:700; color:#1a1a1a; margin-bottom:8px; }
+  .room-attrs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .attr-tag { font-size:11px; color:#555; background:#f5f5f5; padding:2px 8px; border-radius:4px; }
+  .price-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid #f5f5f5; margin-top:8px; }
+  .price-info .base-price { font-size:18px; font-weight:700; color:#ff4d4f; }
+  .price-info .price-note { font-size:11px; color:#888; margin-top:2px; }
+  .card-actions { display:flex; gap:6px; }
+  .btn-edit { background:#e8f0fe; color:#1a56db; }
+  .btn-del { background:#fce4ec; color:#e91e63; }
+  .room-stats { display:flex; gap:12px; margin-bottom:10px; font-size:12px; color:#666; }
+  .room-stat { display:flex; align-items:center; gap:4px; }
+
+  /* 房态日历 - 缩略 */
+  .calendar-mini { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-top:8px; }
+  .cal-cell { height:20px; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:9px; }
+  .cal-available { background:#e8f5e9; color:#2e7d32; }
+  .cal-booked { background:#e8f0fe; color:#1a56db; }
+  .cal-full { background:#ffebee; color:#c62828; }
+
+  /* 分页 */
+  .pagination { display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:20px; font-size:13px; }
+  .page-btn { padding:6px 12px; border:1px solid #e0e0e0; border-radius:6px; background:#fff; color:#555; cursor:pointer; }
+  .page-btn.active { background:#1a56db; color:#fff; border-color:#1a56db; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏨</div>
+      <div class="hotel-name">柳州无限电竞酒店管理系统</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">概览</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>仪表盘</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">核心业务</div>
+      <div class="nav-item active"><span class="nav-icon">🛏</span>房型管理</div>
+      <div class="nav-item"><span class="nav-icon">📅</span>订单管理<span class="nav-badge">5</span></div>
+      <div class="nav-item"><span class="nav-icon">💳</span>支付管理</div>
+      <div class="nav-item"><span class="nav-icon">💰</span>退款审核<span class="nav-badge">2</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">用户运营</div>
+      <div class="nav-item"><span class="nav-icon">👥</span>用户管理</div>
+      <div class="nav-item"><span class="nav-icon">💎</span>会员管理</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">系统</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>财务报表</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span>系统设置</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar">👨‍💼</div>
+      <div class="sidebar-user"><div class="name">管理员</div><div class="role">超级管理员</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <span>首页</span><span>›</span><span class="active">房型管理</span>
+      </div>
+      <div class="top-bar-right">
+        <span>🔔</span><span>👨‍💼 管理员</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">房型管理</div>
+          <div class="page-subtitle">管理所有房型信息、价格与库存</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline">🗓 价格日历</button>
+          <button class="btn btn-primary">➕ 新增房型</button>
+        </div>
+      </div>
+
+      <!-- 筛选 -->
+      <div class="filter-bar">
+        <input class="filter-input" placeholder="🔍 搜索房型名称..." style="max-width:200px"/>
+        <select class="filter-select"><option>全部状态</option><option>上架中</option><option>已下架</option></select>
+        <select class="filter-select"><option>全部床型</option><option>大床</option><option>双床</option><option>套房</option></select>
+        <select class="filter-select"><option>全部楼层</option><option>1-5层</option><option>6-10层</option><option>11层以上</option></select>
+        <button class="btn btn-outline" style="padding:8px 14px">重置</button>
+        <div style="margin-left:auto;font-size:12px;color:#888">共 8 种房型</div>
+      </div>
+
+      <!-- 房型网格 -->
+      <div class="room-grid">
+        <!-- 房型1 -->
+        <div class="room-card">
+          <div class="room-card-img" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+            🛏️
+            <span class="status-dot sd-active">上架中</span>
+          </div>
+          <div class="room-card-body">
+            <div class="room-card-name">豪华大床房</div>
+            <div class="room-attrs">
+              <span class="attr-tag">40㎡</span>
+              <span class="attr-tag">1.8m大床</span>
+              <span class="attr-tag">城市景观</span>
+              <span class="attr-tag">禁烟</span>
+            </div>
+            <div class="room-stats">
+              <span class="room-stat">🏠 共12间</span>
+              <span class="room-stat">📊 今日空余4间</span>
+              <span class="room-stat">⭐ 4.9分</span>
+            </div>
+            <div style="margin-bottom:8px">
+              <div style="font-size:11px;color:#888;margin-bottom:4px">本周可订情况</div>
+              <div class="calendar-mini">
+                <div class="cal-cell cal-booked">周一</div>
+                <div class="cal-cell cal-full">周二</div>
+                <div class="cal-cell cal-full">周三</div>
+                <div class="cal-cell cal-available">周四</div>
+                <div class="cal-cell cal-available">周五</div>
+                <div class="cal-cell cal-full">周六</div>
+                <div class="cal-cell cal-full">周日</div>
+              </div>
+            </div>
+            <div class="price-row">
+              <div class="price-info">
+                <div class="base-price">¥688<span style="font-size:12px;color:#888;font-weight:400">/晚</span></div>
+                <div class="price-note">节假日 ¥1,088</div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-sm btn-edit">编辑</button>
+                <button class="btn-sm btn-del">下架</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 房型2 -->
+        <div class="room-card">
+          <div class="room-card-img" style="background:linear-gradient(135deg,#fccb90,#d57eeb)">
+            🛁
+            <span class="status-dot sd-active">上架中</span>
+          </div>
+          <div class="room-card-body">
+            <div class="room-card-name">精品双床房</div>
+            <div class="room-attrs">
+              <span class="attr-tag">35㎡</span>
+              <span class="attr-tag">双床</span>
+              <span class="attr-tag">花园景</span>
+              <span class="attr-tag">禁烟</span>
+            </div>
+            <div class="room-stats">
+              <span class="room-stat">🏠 共10间</span>
+              <span class="room-stat">📊 今日空余6间</span>
+              <span class="room-stat">⭐ 4.8分</span>
+            </div>
+            <div style="margin-bottom:8px">
+              <div style="font-size:11px;color:#888;margin-bottom:4px">本周可订情况</div>
+              <div class="calendar-mini">
+                <div class="cal-cell cal-available">周一</div>
+                <div class="cal-cell cal-available">周二</div>
+                <div class="cal-cell cal-booked">周三</div>
+                <div class="cal-cell cal-available">周四</div>
+                <div class="cal-cell cal-booked">周五</div>
+                <div class="cal-cell cal-booked">周六</div>
+                <div class="cal-cell cal-full">周日</div>
+              </div>
+            </div>
+            <div class="price-row">
+              <div class="price-info">
+                <div class="base-price">¥528<span style="font-size:12px;color:#888;font-weight:400">/晚</span></div>
+                <div class="price-note">节假日 ¥828</div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-sm btn-edit">编辑</button>
+                <button class="btn-sm btn-del">下架</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 房型3 -->
+        <div class="room-card">
+          <div class="room-card-img" style="background:linear-gradient(135deg,#89f7fe,#66a6ff)">
+            🌊
+            <span class="status-dot sd-active">上架中</span>
+          </div>
+          <div class="room-card-body">
+            <div class="room-card-name">行政套房</div>
+            <div class="room-attrs">
+              <span class="attr-tag">65㎡</span>
+              <span class="attr-tag">大床</span>
+              <span class="attr-tag">顶层景观</span>
+              <span class="attr-tag">含早餐</span>
+            </div>
+            <div class="room-stats">
+              <span class="room-stat">🏠 共5间</span>
+              <span class="room-stat">📊 今日空余1间</span>
+              <span class="room-stat">⭐ 5.0分</span>
+            </div>
+            <div style="margin-bottom:8px">
+              <div style="font-size:11px;color:#888;margin-bottom:4px">本周可订情况</div>
+              <div class="calendar-mini">
+                <div class="cal-cell cal-full">周一</div>
+                <div class="cal-cell cal-full">周二</div>
+                <div class="cal-cell cal-full">周三</div>
+                <div class="cal-cell cal-full">周四</div>
+                <div class="cal-cell cal-available">周五</div>
+                <div class="cal-cell cal-full">周六</div>
+                <div class="cal-cell cal-full">周日</div>
+              </div>
+            </div>
+            <div class="price-row">
+              <div class="price-info">
+                <div class="base-price">¥1,288<span style="font-size:12px;color:#888;font-weight:400">/晚</span></div>
+                <div class="price-note">节假日 ¥1,888</div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-sm btn-edit">编辑</button>
+                <button class="btn-sm btn-del">下架</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 房型4（下架状态） -->
+        <div class="room-card" style="opacity:0.7">
+          <div class="room-card-img" style="background:linear-gradient(135deg,#cfd8dc,#90a4ae)">
+            🛏
+            <span class="status-dot sd-inactive">已下架</span>
+          </div>
+          <div class="room-card-body">
+            <div class="room-card-name">标准大床房</div>
+            <div class="room-attrs">
+              <span class="attr-tag">28㎡</span>
+              <span class="attr-tag">1.5m大床</span>
+              <span class="attr-tag">标准配置</span>
+            </div>
+            <div class="room-stats">
+              <span class="room-stat">🏠 共15间</span>
+              <span class="room-stat">⭐ 4.6分</span>
+            </div>
+            <div class="price-row">
+              <div class="price-info">
+                <div class="base-price" style="color:#999">¥388<span style="font-size:12px;font-weight:400">/晚</span></div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-sm btn-edit">编辑</button>
+                <button class="btn-sm" style="background:#e8f5e9;color:#2e7d32">上架</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pagination">
+        <span style="font-size:12px;color:#888;margin-right:8px">共8条，每页4条</span>
+        <button class="page-btn">‹</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">›</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

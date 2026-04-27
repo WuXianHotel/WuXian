@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>后台设计稿 - 登录页</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:linear-gradient(135deg,#0f172a,#1e3a8a,#1e40af); min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:"PingFang SC","Helvetica Neue",sans-serif; }
+  .login-container { display:flex; gap:80px; align-items:center; max-width:1000px; width:100%; padding:40px; }
+  .left-side { flex:1; color:#fff; }
+  .left-side .logo { font-size:40px; margin-bottom:16px; }
+  .left-side h1 { font-size:36px; font-weight:800; line-height:1.2; margin-bottom:16px; }
+  .left-side p { font-size:16px; color:rgba(255,255,255,0.7); line-height:1.8; margin-bottom:32px; }
+  .features { display:flex; flex-direction:column; gap:12px; }
+  .feature { display:flex; align-items:center; gap:10px; }
+  .feature-icon { width:36px; height:36px; background:rgba(255,255,255,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .feature-text { font-size:14px; color:rgba(255,255,255,0.8); }
+
+  .login-card { width:420px; background:#fff; border-radius:20px; padding:40px; box-shadow:0 24px 64px rgba(0,0,0,0.3); flex-shrink:0; }
+  .login-card h2 { font-size:24px; font-weight:700; color:#1a1a1a; margin-bottom:6px; }
+  .login-card .subtitle { font-size:14px; color:#888; margin-bottom:32px; }
+
+  .form-group { margin-bottom:20px; }
+  .form-label { font-size:13px; color:#555; margin-bottom:6px; display:block; }
+  .form-input { width:100%; padding:12px 14px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:14px; color:#1a1a1a; outline:none; transition:border-color 0.2s; }
+  .form-input:focus { border-color:#1a56db; }
+  .form-input.with-icon { padding-left:40px; position:relative; }
+  .input-wrapper { position:relative; }
+  .input-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:16px; color:#999; }
+
+  .role-select { width:100%; padding:12px 14px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:14px; background:#fff; }
+  .remember-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; font-size:13px; }
+  .remember-row label { display:flex; align-items:center; gap:6px; color:#555; cursor:pointer; }
+  .remember-row a { color:#1a56db; text-decoration:none; }
+
+  .login-btn { width:100%; padding:14px; background:linear-gradient(135deg,#1a56db,#3b82f6); color:#fff; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 4px 14px rgba(26,86,219,0.4); }
+
+  .divider { display:flex; align-items:center; gap:12px; margin:24px 0; }
+  .divider-line { flex:1; height:1px; background:#f0f0f0; }
+  .divider-text { font-size:12px; color:#ccc; }
+
+  .security-tip { background:#fffbe6; border-radius:8px; padding:12px 14px; font-size:12px; color:#7a5f00; display:flex; align-items:center; gap:8px; margin-top:16px; }
+</style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="left-side">
+      <div class="logo">🏨</div>
+      <h1>酒店管理<br/>后台系统</h1>
+      <p>智能、高效的一站式酒店运营管理平台，助力提升入住体验与运营效率。</p>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">📊</div>
+          <span class="feature-text">实时数据看板，经营状况一目了然</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🛏</div>
+          <span class="feature-text">房态管理，入住退房高效流转</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💰</div>
+          <span class="feature-text">财务报表，多维度收入统计分析</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💎</div>
+          <span class="feature-text">会员体系，精细化用户运营</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <h2>欢迎回来 👋</h2>
+      <p class="subtitle">登录酒店后台管理系统</p>
+
+      <div class="form-group">
+        <label class="form-label">账号</label>
+        <div class="input-wrapper">
+          <span class="input-icon">👤</span>
+          <input class="form-input with-icon" type="text" value="admin" placeholder="请输入账号"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">密码</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input class="form-input with-icon" type="password" value="••••••••" placeholder="请输入密码"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">登录角色</label>
+        <select class="role-select">
+          <option>超级管理员</option>
+          <option>前台</option>
+          <option>财务</option>
+          <option>运营</option>
+        </select>
+      </div>
+
+      <div class="remember-row">
+        <label><input type="checkbox" checked/> 记住登录状态</label>
+        <a href="#">忘记密码？</a>
+      </div>
+
+      <button class="login-btn">🔐 登录系统</button>
+
+      <div class="security-tip">
+        🛡️ 系统已启用安全加密，请在安全网络环境下使用
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>后台设计稿 - 仪表盘</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { display:flex; font-family:"PingFang SC","Helvetica Neue",sans-serif; font-size:13px; color:#333; background:#f0f4f8; min-height:100vh; }
+
+  /* 侧边栏 */
+  .sidebar { width:220px; background:#0f172a; min-height:100vh; flex-shrink:0; display:flex; flex-direction:column; }
+  .sidebar-logo { padding:20px 20px 16px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo .hotel-name { font-size:16px; font-weight:700; color:#fff; margin-top:8px; }
+  .sidebar-logo .hotel-sub { font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px; }
+  .sidebar-logo .logo-icon { font-size:28px; }
+  .nav-section { padding:12px 0; }
+  .nav-label { font-size:10px; color:rgba(255,255,255,0.3); padding:8px 20px 4px; letter-spacing:1px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:rgba(255,255,255,0.6); cursor:pointer; transition:all 0.2s; font-size:13px; }
+  .nav-item:hover { background:rgba(255,255,255,0.05); color:#fff; }
+  .nav-item.active { background:rgba(26,86,219,0.5); color:#fff; border-right:3px solid #3b82f6; }
+  .nav-item .nav-icon { font-size:16px; width:20px; text-align:center; }
+  .nav-badge { margin-left:auto; background:#ff4d4f; color:#fff; font-size:10px; padding:1px 6px; border-radius:8px; }
+  .sidebar-footer { margin-top:auto; padding:16px 20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px; }
+  .sidebar-avatar { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .sidebar-user .name { font-size:13px; color:#fff; font-weight:600; }
+  .sidebar-user .role { font-size:11px; color:rgba(255,255,255,0.4); }
+
+  /* 主体 */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .top-bar { background:#fff; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e8edf5; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+  .top-bar-left { display:flex; align-items:center; gap:8px; font-size:13px; color:#999; }
+  .top-bar-left .crumb-active { color:#1a1a1a; font-weight:600; }
+  .top-bar-right { display:flex; align-items:center; gap:16px; }
+  .top-btn { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:6px; font-size:13px; cursor:pointer; }
+  .top-btn .icon { font-size:16px; }
+  .notif-btn { position:relative; }
+  .notif-dot { position:absolute; top:0; right:0; width:8px; height:8px; background:#ff4d4f; border-radius:50%; border:2px solid #fff; }
+
+  .content { padding:20px 24px; overflow-y:auto; }
+  .page-title { font-size:20px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+  .page-subtitle { font-size:13px; color:#888; margin-bottom:20px; }
+
+  /* 统计卡片 */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+  .stat-card { background:#fff; border-radius:12px; padding:20px; display:flex; justify-content:space-between; align-items:flex-start; box-shadow:0 1px 6px rgba(0,0,0,0.06); }
+  .stat-info .stat-label { font-size:12px; color:#888; margin-bottom:6px; }
+  .stat-info .stat-num { font-size:28px; font-weight:700; line-height:1; }
+  .stat-info .stat-change { font-size:11px; margin-top:6px; }
+  .stat-change.up { color:#52c41a; }
+  .stat-change.down { color:#ff4d4f; }
+  .stat-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .c1 .stat-icon { background:#e8f0fe; }
+  .c2 .stat-icon { background:#e8f5e9; }
+  .c3 .stat-icon { background:#fff3e0; }
+  .c4 .stat-icon { background:#fce4ec; }
+  .c1 .stat-num { color:#1a56db; }
+  .c2 .stat-num { color:#52c41a; }
+  .c3 .stat-num { color:#ff9800; }
+  .c4 .stat-num { color:#e91e63; }
+
+  /* 内容区 */
+  .content-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+  .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 1px 6px rgba(0,0,0,0.06); }
+  .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .card-title { font-size:15px; font-weight:700; color:#1a1a1a; }
+  .card-action { font-size:12px; color:#1a56db; cursor:pointer; }
+
+  /* 图表占位 */
+  .chart-placeholder { height:200px; background:linear-gradient(135deg,#f8faff,#e8f0fe); border-radius:8px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+  .chart-bars { display:flex; align-items:flex-end; gap:8px; height:140px; padding:0 20px; position:absolute; bottom:20px; width:100%; }
+  .bar { background:linear-gradient(to top,#1a56db,#3b82f6); border-radius:4px 4px 0 0; flex:1; opacity:0.8; }
+  .bar:hover { opacity:1; }
+
+  /* 房态概览 */
+  .room-status-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .rs-item { display:flex; align-items:center; gap:10px; padding:12px; background:#f7f9ff; border-radius:8px; }
+  .rs-color { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+  .rs-label { font-size:12px; color:#555; flex:1; }
+  .rs-num { font-size:16px; font-weight:700; }
+  .rs-pct { font-size:10px; color:#999; margin-left:2px; }
+
+  /* 今日订单表格 */
+  .order-table { width:100%; border-collapse:collapse; }
+  .order-table th { text-align:left; padding:8px 12px; font-size:12px; color:#888; font-weight:500; border-bottom:1px solid #f0f0f0; }
+  .order-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid #f7f7f7; }
+  .order-table tr:last-child td { border-bottom:none; }
+  .status-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+  .sb-pending { background:#fff3e0; color:#e65100; }
+  .sb-checkin { background:#e8f0fe; color:#1a56db; }
+  .sb-checkout { background:#e8f5e9; color:#2e7d32; }
+  .sb-cancel { background:#f5f5f5; color:#999; }
+
+  /* 快捷操作 */
+  .quick-actions { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .qa-btn { display:flex; align-items:center; gap:10px; padding:12px 14px; background:#f7f9ff; border-radius:8px; cursor:pointer; border:1px solid #e8edf5; }
+  .qa-btn:hover { background:#e8f0fe; border-color:#1a56db; }
+  .qa-icon { font-size:20px; }
+  .qa-text { font-size:13px; color:#333; font-weight:500; }
+</style>
+</head>
+<body>
+  <!-- 侧边栏 -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏨</div>
+      <div class="hotel-name">柳州无限电竞酒店</div>
+      <div class="hotel-sub">后台管理系统 v1.1</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">概览</div>
+      <div class="nav-item active"><span class="nav-icon">📊</span>仪表盘</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">核心业务</div>
+      <div class="nav-item"><span class="nav-icon">🛏</span>房型管理</div>
+      <div class="nav-item"><span class="nav-icon">📅</span>订单管理<span class="nav-badge">5</span></div>
+      <div class="nav-item"><span class="nav-icon">💳</span>支付管理</div>
+      <div class="nav-item"><span class="nav-icon">💰</span>退款审核<span class="nav-badge">2</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">用户运营</div>
+      <div class="nav-item"><span class="nav-icon">👥</span>用户管理</div>
+      <div class="nav-item"><span class="nav-icon">💎</span>会员管理</div>
+      <div class="nav-item"><span class="nav-icon">⭐</span>评价管理</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">系统</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>财务报表</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span>系统设置</div>
+      <div class="nav-item"><span class="nav-icon">📝</span>操作日志</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar">👨‍💼</div>
+      <div class="sidebar-user">
+        <div class="name">管理员</div>
+        <div class="role">超级管理员</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主体 -->
+  <div class="main">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <span>首页</span><span>›</span><span class="crumb-active">仪表盘</span>
+      </div>
+      <div class="top-bar-right">
+        <div class="top-btn">📅 2026-04-25</div>
+        <div class="top-btn notif-btn">🔔 <div class="notif-dot"></div></div>
+        <div class="top-btn">👨‍💼 管理员</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-title">仪表盘</div>
+      <div class="page-subtitle">2026年04月25日 · 今日运营概览</div>
+
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card c1">
+          <div class="stat-info">
+            <div class="stat-label">今日订单</div>
+            <div class="stat-num">24</div>
+            <div class="stat-change up">↑ 较昨日 +3</div>
+          </div>
+          <div class="stat-icon">📋</div>
+        </div>
+        <div class="stat-card c2">
+          <div class="stat-info">
+            <div class="stat-label">当前入住</div>
+            <div class="stat-num">38</div>
+            <div class="stat-change up">入住率 76%</div>
+          </div>
+          <div class="stat-icon">🛏</div>
+        </div>
+        <div class="stat-card c3">
+          <div class="stat-info">
+            <div class="stat-label">今日收入</div>
+            <div class="stat-num">¥18,640</div>
+            <div class="stat-change up">↑ 较昨日 +12%</div>
+          </div>
+          <div class="stat-icon">💰</div>
+        </div>
+        <div class="stat-card c4">
+          <div class="stat-info">
+            <div class="stat-label">待处理事项</div>
+            <div class="stat-num">7</div>
+            <div class="stat-change down">退款2 · 审核5</div>
+          </div>
+          <div class="stat-icon">⚠️</div>
+        </div>
+      </div>
+
+      <!-- 图表 + 房态 -->
+      <div class="content-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">近7日收入趋势</span>
+            <span class="card-action">本月 ▾</span>
+          </div>
+          <div class="chart-placeholder">
+            <div class="chart-bars">
+              <div class="bar" style="height:60%"></div>
+              <div class="bar" style="height:45%"></div>
+              <div class="bar" style="height:75%"></div>
+              <div class="bar" style="height:55%"></div>
+              <div class="bar" style="height:90%"></div>
+              <div class="bar" style="height:70%"></div>
+              <div class="bar" style="height:100%;background:linear-gradient(to top,#ff9800,#ffb74d)"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-around;margin-top:8px;font-size:11px;color:#999">
+            <span>4/19</span><span>4/20</span><span>4/21</span><span>4/22</span><span>4/23</span><span>4/24</span><span style="color:#1a56db;font-weight:600">今日</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">房态概览</span>
+            <span class="card-action">共50间</span>
+          </div>
+          <div style="text-align:center;margin-bottom:16px">
+            <div style="font-size:48px;font-weight:800;color:#1a56db">76<span style="font-size:20px;font-weight:400;color:#888">%</span></div>
+            <div style="font-size:12px;color:#888">今日入住率</div>
+          </div>
+          <div class="room-status-grid">
+            <div class="rs-item">
+              <div class="rs-color" style="background:#1a56db"></div>
+              <span class="rs-label">已入住</span>
+              <span class="rs-num" style="color:#1a56db">38</span><span class="rs-pct">间</span>
+            </div>
+            <div class="rs-item">
+              <div class="rs-color" style="background:#52c41a"></div>
+              <span class="rs-label">空闲</span>
+              <span class="rs-num" style="color:#52c41a">7</span><span class="rs-pct">间</span>
+            </div>
+            <div class="rs-item">
+              <div class="rs-color" style="background:#ff9800"></div>
+              <span class="rs-label">已预订</span>
+              <span class="rs-num" style="color:#ff9800">3</span><span class="rs-pct">间</span>
+            </div>
+            <div class="rs-item">
+              <div class="rs-color" style="background:#ff4d4f"></div>
+              <span class="rs-label">维修/清洁</span>
+              <span class="rs-num" style="color:#ff4d4f">2</span><span class="rs-pct">间</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 今日订单 + 快捷操作 -->
+      <div class="content-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">今日订单</span>
+            <span class="card-action">查看全部 ›</span>
+          </div>
+          <table class="order-table">
+            <thead>
+              <tr>
+                <th>订单号</th><th>房型</th><th>入住人</th><th>状态</th><th>金额</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>HT042500123</td><td>豪华大床房</td><td>张三</td><td><span class="status-badge sb-checkin">入住中</span></td><td>¥688</td></tr>
+              <tr><td>HT042500122</td><td>行政套房</td><td>李四</td><td><span class="status-badge sb-checkin">入住中</span></td><td>¥2,576</td></tr>
+              <tr><td>HT042500121</td><td>精品双床房</td><td>王五</td><td><span class="status-badge sb-pending">待支付</span></td><td>¥528</td></tr>
+              <tr><td>HT042500120</td><td>豪华大床房</td><td>赵六</td><td><span class="status-badge sb-checkout">已退房</span></td><td>¥688</td></tr>
+              <tr><td>HT042500119</td><td>标准大床房</td><td>钱七</td><td><span class="status-badge sb-cancel">已取消</span></td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">快捷操作</span>
+          </div>
+          <div class="quick-actions">
+            <div class="qa-btn"><span class="qa-icon">✅</span><span class="qa-text">办理入住</span></div>
+            <div class="qa-btn"><span class="qa-icon">🚪</span><span class="qa-text">办理退房</span></div>
+            <div class="qa-btn"><span class="qa-icon">➕</span><span class="qa-text">新增预订</span></div>
+            <div class="qa-btn"><span class="qa-icon">💰</span><span class="qa-text">退款审核</span></div>
+            <div class="qa-btn"><span class="qa-icon">🔧</span><span class="qa-text">房间维修</span></div>
+            <div class="qa-btn"><span class="qa-icon">📊</span><span class="qa-text">导出报表</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

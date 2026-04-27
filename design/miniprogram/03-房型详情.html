@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>小程序设计稿 - 房型详情</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#f0f0f0; display:flex; justify-content:center; padding:40px 20px; font-family:"PingFang SC","Helvetica Neue",sans-serif; }
+  .label { font-size:13px; color:#999; text-align:center; margin-bottom:12px; }
+  .phone { width:375px; background:#f7f7f7; border-radius:40px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.18); border:8px solid #1a1a1a; }
+  .status-bar { height:44px; background:rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:space-between; padding:0 20px; position:absolute; width:359px; top:0; z-index:10; }
+  .status-bar span { color:#fff; font-size:11px; font-weight:600; }
+  .hero { height:240px; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:72px; position:relative; }
+  .hero-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(0,0,0,0.4)); }
+  .hero-back { position:absolute; top:50px; left:14px; width:32px; height:32px; background:rgba(255,255,255,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; z-index:5; }
+  .hero-share { position:absolute; top:50px; right:14px; width:32px; height:32px; background:rgba(255,255,255,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; z-index:5; }
+  .hero-counter { position:absolute; bottom:14px; right:14px; background:rgba(0,0,0,0.4); color:#fff; font-size:11px; padding:3px 10px; border-radius:10px; z-index:5; }
+
+  .content { background:#fff; }
+  /* 基本信息 */
+  .basic-info { padding:16px; background:#fff; }
+  .room-name { font-size:20px; font-weight:700; color:#1a1a1a; margin-bottom:8px; }
+  .rating-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .rating { color:#faad14; font-size:13px; }
+  .review-count { font-size:12px; color:#999; }
+  .attrs { display:flex; gap:8px; flex-wrap:wrap; }
+  .attr { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 14px; background:#f7f9ff; border-radius:8px; }
+  .attr .icon { font-size:20px; }
+  .attr .text { font-size:11px; color:#666; }
+
+  /* 房价日历 */
+  .section { padding:14px 16px; background:#fff; margin-top:8px; }
+  .section-title { font-size:15px; font-weight:700; color:#1a1a1a; margin-bottom:12px; display:flex; justify-content:space-between; }
+  .section-title a { font-size:12px; color:#1a56db; font-weight:400; }
+  .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-header span { text-align:center; font-size:11px; color:#999; padding:4px 0; display:block; }
+  .cal-day { text-align:center; padding:6px 2px; font-size:12px; border-radius:6px; }
+  .cal-day.today { background:#1a56db; color:#fff; border-radius:6px; }
+  .cal-day.selected { background:#e8f0fe; color:#1a56db; }
+  .cal-day.holiday { color:#ff4d4f; }
+  .cal-day.past { color:#ccc; }
+  .cal-price { font-size:9px; color:#ff4d4f; margin-top:1px; }
+  .cal-price.normal { color:#999; }
+
+  /* 设施 */
+  .facilities-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .fac-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .fac-icon { font-size:24px; }
+  .fac-name { font-size:11px; color:#555; text-align:center; }
+
+  /* 用户评价 */
+  .review-summary { display:flex; gap:16px; align-items:center; margin-bottom:14px; }
+  .big-score { font-size:40px; font-weight:700; color:#1a56db; line-height:1; }
+  .score-detail { flex:1; }
+  .score-bar { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+  .score-bar span { font-size:11px; color:#999; width:20px; }
+  .bar-bg { flex:1; height:4px; background:#f0f0f0; border-radius:2px; }
+  .bar-fill { height:4px; background:#faad14; border-radius:2px; }
+  .review-card { background:#f7f7f7; border-radius:10px; padding:12px; margin-bottom:8px; }
+  .reviewer { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#a8edea,#fed6e3); display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .reviewer-name { font-size:13px; font-weight:600; }
+  .reviewer-date { font-size:11px; color:#999; }
+  .review-stars { color:#faad14; font-size:12px; margin-bottom:6px; }
+  .review-text { font-size:12px; color:#555; line-height:1.6; }
+
+  /* 底部 */
+  .bottom-bar { padding:12px 16px; background:#fff; border-top:1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; }
+  .bottom-price { }
+  .bottom-price .label { font-size:11px; color:#999; }
+  .bottom-price .price { font-size:22px; font-weight:700; color:#ff4d4f; }
+  .bottom-price .price sub { font-size:12px; font-weight:400; }
+  .book-btn { background:#1a56db; color:#fff; border:none; border-radius:24px; padding:12px 32px; font-size:15px; font-weight:600; }
+</style>
+</head>
+<body>
+<div>
+  <div class="label">小程序 · 房型详情</div>
+  <div class="phone" style="position:relative">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="display:flex;gap:6px"><span>📶</span><span>🔋</span></div>
+    </div>
+    <div class="hero">
+      <span style="position:relative;z-index:1">🛏️</span>
+      <div class="hero-overlay"></div>
+      <div class="hero-back">‹</div>
+      <div class="hero-share">⬆</div>
+      <div class="hero-counter">1 / 6</div>
+    </div>
+
+    <div class="content">
+      <!-- 基本信息 -->
+      <div class="basic-info">
+        <div class="room-name">豪华大床房</div>
+        <div class="rating-row">
+          <span class="rating">⭐⭐⭐⭐⭐</span>
+          <span style="font-size:13px;font-weight:700;color:#1a1a1a">4.9</span>
+          <span class="review-count">326条评价</span>
+        </div>
+        <div class="attrs">
+          <div class="attr"><span class="icon">📐</span><span class="text">40㎡</span></div>
+          <div class="attr"><span class="icon">🛏</span><span class="text">1.8m大床</span></div>
+          <div class="attr"><span class="icon">3️⃣</span><span class="text">最多3人</span></div>
+          <div class="attr"><span class="icon">🏙</span><span class="text">城市景</span></div>
+          <div class="attr"><span class="icon">🚭</span><span class="text">禁烟</span></div>
+        </div>
+      </div>
+
+      <!-- 房价日历 -->
+      <div class="section">
+        <div class="section-title">房价日历 <a>查看更多日期 ›</a></div>
+        <div class="calendar">
+          <div class="cal-header"><span>日</span></div>
+          <div class="cal-header"><span>一</span></div>
+          <div class="cal-header"><span>二</span></div>
+          <div class="cal-header"><span>三</span></div>
+          <div class="cal-header"><span>四</span></div>
+          <div class="cal-header"><span>五</span></div>
+          <div class="cal-header"><span>六</span></div>
+          <div class="cal-day past">20<div class="cal-price normal">688</div></div>
+          <div class="cal-day past">21<div class="cal-price normal">688</div></div>
+          <div class="cal-day past">22<div class="cal-price normal">688</div></div>
+          <div class="cal-day past">23<div class="cal-price normal">688</div></div>
+          <div class="cal-day past">24<div class="cal-price normal">688</div></div>
+          <div class="cal-day past">25<div class="cal-price normal">688</div></div>
+          <div class="cal-day today">26<div class="cal-price" style="color:#fff">688</div></div>
+          <div class="cal-day selected">27<div class="cal-price">688</div></div>
+          <div class="cal-day">28<div class="cal-price normal">688</div></div>
+          <div class="cal-day holiday">29<div class="cal-price">888</div></div>
+          <div class="cal-day holiday">30<div class="cal-price">888</div></div>
+          <div class="cal-day holiday">1<div class="cal-price">1088</div></div>
+          <div class="cal-day holiday">2<div class="cal-price">1088</div></div>
+          <div class="cal-day holiday">3<div class="cal-price">1088</div></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:14px;font-size:11px;color:#999">
+          <span><span style="color:#ff4d4f">■</span> 节假日价</span>
+          <span><span style="color:#1a56db">■</span> 已选日期</span>
+          <span><span style="color:#ccc">■</span> 不可选</span>
+        </div>
+      </div>
+
+      <!-- 房间设施 -->
+      <div class="section">
+        <div class="section-title">房间设施</div>
+        <div class="facilities-grid">
+          <div class="fac-item"><span class="fac-icon">📺</span><span class="fac-name">智能电视</span></div>
+          <div class="fac-item"><span class="fac-icon">🌬</span><span class="fac-name">空调</span></div>
+          <div class="fac-item"><span class="fac-icon">📶</span><span class="fac-name">免费WiFi</span></div>
+          <div class="fac-item"><span class="fac-icon">🛁</span><span class="fac-name">独立浴缸</span></div>
+          <div class="fac-item"><span class="fac-icon">☕</span><span class="fac-name">咖啡机</span></div>
+          <div class="fac-item"><span class="fac-icon">🧴</span><span class="fac-name">洗漱用品</span></div>
+          <div class="fac-item"><span class="fac-icon">🧺</span><span class="fac-name">洗衣机</span></div>
+          <div class="fac-item"><span class="fac-icon">🚗</span><span class="fac-name">免费停车</span></div>
+        </div>
+      </div>
+
+      <!-- 用户评价 -->
+      <div class="section">
+        <div class="section-title">用户评价 <a>全部326条 ›</a></div>
+        <div class="review-summary">
+          <div class="big-score">4.9</div>
+          <div class="score-detail">
+            <div class="score-bar"><span>5★</span><div class="bar-bg"><div class="bar-fill" style="width:85%"></div></div></div>
+            <div class="score-bar"><span>4★</span><div class="bar-bg"><div class="bar-fill" style="width:12%"></div></div></div>
+            <div class="score-bar"><span>3★</span><div class="bar-bg"><div class="bar-fill" style="width:3%"></div></div></div>
+            <div class="score-bar"><span>2★</span><div class="bar-bg"><div class="bar-fill" style="width:0%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="review-card">
+          <div class="reviewer">
+            <div class="avatar">😊</div>
+            <div>
+              <div class="reviewer-name">王**</div>
+              <div class="reviewer-date">2026-04-20 · 入住1晚</div>
+            </div>
+          </div>
+          <div class="review-stars">⭐⭐⭐⭐⭐</div>
+          <div class="review-text">房间超大，设施非常齐全，浴缸是我见过最舒适的！前台服务态度很好，下次来还会选这个房型。</div>
+        </div>
+
+        <div class="review-card">
+          <div class="reviewer">
+            <div class="avatar" style="background:linear-gradient(135deg,#fccb90,#d57eeb)">😄</div>
+            <div>
+              <div class="reviewer-name">李**</div>
+              <div class="reviewer-date">2026-04-15 · 入住2晚</div>
+            </div>
+          </div>
+          <div class="review-stars">⭐⭐⭐⭐⭐</div>
+          <div class="review-text">城市景观很棒，早上起来看日出太美了。早餐品种丰富，性价比高，强烈推荐！</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部预订栏 -->
+    <div class="bottom-bar">
+      <div class="bottom-price">
+        <div class="label">每晚起</div>
+        <div class="price">¥688<sub>/晚</sub></div>
+      </div>
+      <button class="book-btn">立即预订</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>后台设计稿 - 订单管理（含入住/退房办理）</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { display:flex; font-family:"PingFang SC","Helvetica Neue",sans-serif; font-size:13px; color:#333; background:#f0f4f8; min-height:100vh; }
+  .sidebar { width:220px; background:#0f172a; min-height:100vh; flex-shrink:0; }
+  .sidebar-logo { padding:20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo .hotel-name { font-size:15px; font-weight:700; color:#fff; margin-top:6px; }
+  .sidebar-logo .logo-icon { font-size:26px; }
+  .nav-section { padding:8px 0; }
+  .nav-label { font-size:10px; color:rgba(255,255,255,0.3); padding:8px 20px 4px; letter-spacing:1px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:rgba(255,255,255,0.6); font-size:13px; }
+  .nav-item.active { background:rgba(26,86,219,0.5); color:#fff; border-right:3px solid #3b82f6; }
+  .nav-item .nav-icon { font-size:16px; width:20px; text-align:center; }
+  .nav-badge { margin-left:auto; background:#ff4d4f; color:#fff; font-size:10px; padding:1px 6px; border-radius:8px; }
+  .sidebar-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px; margin-top:20px; }
+  .sidebar-avatar { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .sidebar-user .name { font-size:12px; color:#fff; }
+  .sidebar-user .role { font-size:10px; color:rgba(255,255,255,0.4); }
+  .main { flex:1; display:flex; flex-direction:column; }
+  .top-bar { background:#fff; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e8edf5; }
+  .top-bar-left { font-size:13px; color:#999; display:flex; align-items:center; gap:8px; }
+  .top-bar-left .active { color:#1a1a1a; font-weight:600; }
+  .content { padding:20px 24px; }
+  .page-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; }
+  .page-title { font-size:20px; font-weight:700; color:#1a1a1a; }
+  .page-subtitle { font-size:13px; color:#888; margin-top:4px; }
+  .btn { padding:8px 14px; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:6px; }
+  .btn-primary { background:#1a56db; color:#fff; }
+  .btn-outline { background:#fff; color:#555; border:1px solid #ddd; }
+
+  /* 统计条 */
+  .order-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+  .os-card { background:#fff; border-radius:10px; padding:14px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.05); cursor:pointer; border:2px solid transparent; }
+  .os-card.active { border-color:#1a56db; }
+  .os-num { font-size:24px; font-weight:800; }
+  .os-label { font-size:11px; color:#888; margin-top:4px; }
+
+  /* 筛选 */
+  .filter-bar { background:#fff; border-radius:10px; padding:14px 20px; display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  .filter-input { padding:7px 12px; border:1px solid #e0e0e0; border-radius:6px; font-size:13px; }
+  .filter-select { padding:7px 12px; border:1px solid #e0e0e0; border-radius:6px; font-size:13px; background:#fff; }
+
+  /* 订单表格 */
+  .table-card { background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.05); overflow:hidden; }
+  .table-toolbar { padding:14px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f0f0f0; }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:#fafafa; }
+  th { padding:11px 14px; text-align:left; font-size:12px; color:#888; font-weight:500; border-bottom:1px solid #f0f0f0; white-space:nowrap; }
+  td { padding:12px 14px; font-size:13px; border-bottom:1px solid #f7f7f7; }
+  tr:hover td { background:#fafffe; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+  .b-pending { background:#fff3e0; color:#e65100; }
+  .b-checkin { background:#e8f0fe; color:#1a56db; }
+  .b-checkout { background:#e8f5e9; color:#2e7d32; }
+  .b-cancel { background:#f5f5f5; color:#999; }
+  .b-refund { background:#fce4ec; color:#c62828; }
+  .action-link { color:#1a56db; cursor:pointer; margin-right:10px; }
+  .action-link.red { color:#ff4d4f; }
+
+  /* 入住办理弹窗 */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:100; }
+  .modal { background:#fff; border-radius:16px; width:520px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+  .modal-header { padding:20px 24px 16px; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center; }
+  .modal-title { font-size:17px; font-weight:700; }
+  .modal-close { font-size:20px; color:#999; cursor:pointer; }
+  .modal-body { padding:20px 24px; }
+  .modal-footer { padding:16px 24px; border-top:1px solid #f0f0f0; display:flex; justify-content:flex-end; gap:10px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .form-group label { font-size:12px; color:#555; margin-bottom:4px; display:block; }
+  .form-group input, .form-group select { width:100%; padding:9px 12px; border:1px solid #e0e0e0; border-radius:7px; font-size:13px; }
+  .checkin-summary { background:#f7f9ff; border-radius:8px; padding:14px; margin-bottom:14px; }
+  .checkin-summary .cs-title { font-size:12px; color:#888; margin-bottom:8px; }
+  .cs-item { display:flex; justify-content:space-between; font-size:13px; padding:3px 0; }
+  .cs-item span:last-child { font-weight:600; color:#1a1a1a; }
+
+  /* 分页 */
+  .pagination { display:flex; justify-content:flex-end; align-items:center; gap:6px; padding:14px 20px; border-top:1px solid #f0f0f0; font-size:13px; }
+  .page-btn { padding:5px 10px; border:1px solid #e0e0e0; border-radius:5px; background:#fff; color:#555; cursor:pointer; }
+  .page-btn.active { background:#1a56db; color:#fff; border-color:#1a56db; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🏨</div><div class="hotel-name">柳州无限电竞酒店管理系统</div></div>
+    <div class="nav-section">
+      <div class="nav-label">概览</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>仪表盘</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">核心业务</div>
+      <div class="nav-item"><span class="nav-icon">🛏</span>房型管理</div>
+      <div class="nav-item active"><span class="nav-icon">📅</span>订单管理<span class="nav-badge">5</span></div>
+      <div class="nav-item"><span class="nav-icon">💳</span>支付管理</div>
+      <div class="nav-item"><span class="nav-icon">💰</span>退款审核<span class="nav-badge">2</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">用户运营</div>
+      <div class="nav-item"><span class="nav-icon">👥</span>用户管理</div>
+      <div class="nav-item"><span class="nav-icon">💎</span>会员管理</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">系统</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>财务报表</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span>系统设置</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar">👨‍💼</div>
+      <div class="sidebar-user"><div class="name">管理员</div><div class="role">超级管理员</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div class="top-bar-left"><span>首页</span><span>›</span><span class="active">订单管理</span></div>
+      <div style="display:flex;gap:12px;font-size:13px;color:#555"><span>🔔</span><span>👨‍💼 管理员</span></div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">订单管理</div>
+          <div class="page-subtitle">管理所有预订订单，办理入住与退房</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline">📥 导出订单</button>
+          <button class="btn btn-primary">➕ 手动创建订单</button>
+        </div>
+      </div>
+
+      <!-- 统计 -->
+      <div class="order-stats">
+        <div class="os-card"><div class="os-num" style="color:#1a1a1a">247</div><div class="os-label">全部订单</div></div>
+        <div class="os-card active"><div class="os-num" style="color:#ff9800">5</div><div class="os-label">待支付</div></div>
+        <div class="os-card"><div class="os-num" style="color:#1a56db">38</div><div class="os-label">入住中</div></div>
+        <div class="os-card"><div class="os-num" style="color:#52c41a">186</div><div class="os-label">已完成</div></div>
+        <div class="os-card"><div class="os-num" style="color:#ff4d4f">2</div><div class="os-label">退款中</div></div>
+      </div>
+
+      <!-- 筛选 -->
+      <div class="filter-bar">
+        <input class="filter-input" placeholder="🔍 订单号/入住人姓名/手机号" style="width:240px"/>
+        <select class="filter-select"><option>全部状态</option><option>待支付</option><option>待入住</option><option>入住中</option><option>已退房</option><option>退款中</option></select>
+        <select class="filter-select"><option>全部房型</option><option>豪华大床房</option><option>精品双床房</option><option>行政套房</option></select>
+        <input class="filter-input" type="date" value="2026-04-25"/>
+        <span style="color:#888;font-size:13px">至</span>
+        <input class="filter-input" type="date" value="2026-04-25"/>
+        <button class="btn btn-primary" style="padding:7px 14px">查询</button>
+        <button class="btn btn-outline" style="padding:7px 14px">重置</button>
+      </div>
+
+      <!-- 订单表格 -->
+      <div class="table-card">
+        <div class="table-toolbar">
+          <span style="font-size:13px;color:#888">今日订单 · 共 <strong style="color:#1a1a1a">24</strong> 条</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="padding:5px 12px;font-size:12px">批量导出</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox"/></th>
+              <th>订单号</th>
+              <th>入住人</th>
+              <th>房型</th>
+              <th>入住日期</th>
+              <th>退房日期</th>
+              <th>房间号</th>
+              <th>金额</th>
+              <th>状态</th>
+              <th>下单时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox"/></td>
+              <td style="font-family:monospace;color:#1a56db">HT042500123</td>
+              <td>张三 · 138****8888</td>
+              <td>豪华大床房</td>
+              <td>04/26</td>
+              <td>04/27</td>
+              <td>—</td>
+              <td style="font-weight:600;color:#ff4d4f">¥555</td>
+              <td><span class="badge b-pending">待支付</span></td>
+              <td style="color:#888">09:30</td>
+              <td><span class="action-link">详情</span><span class="action-link">催支付</span><span class="action-link red">取消</span></td>
+            </tr>
+            <tr style="background:#f0fff4">
+              <td><input type="checkbox"/></td>
+              <td style="font-family:monospace;color:#1a56db">HT042500122</td>
+              <td>李四 · 139****6666</td>
+              <td>行政套房</td>
+              <td>04/25</td>
+              <td>04/27</td>
+              <td>—</td>
+              <td style="font-weight:600;color:#ff4d4f">¥2,198</td>
+              <td><span class="badge b-checkin" style="background:#e8f5e9;color:#2e7d32">待入住</span></td>
+              <td style="color:#888">昨日</td>
+              <td><span class="action-link">详情</span><span class="action-link" style="color:#52c41a;font-weight:700">✅ 办理入住</span></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"/></td>
+              <td style="font-family:monospace;color:#1a56db">HT042500121</td>
+              <td>王五 · 137****5555</td>
+              <td>精品双床房</td>
+              <td>04/23</td>
+              <td>04/25</td>
+              <td>308</td>
+              <td style="font-weight:600;color:#ff4d4f">¥950</td>
+              <td><span class="badge b-checkin">入住中</span></td>
+              <td style="color:#888">04/23</td>
+              <td><span class="action-link">详情</span><span class="action-link" style="color:#ff9800;font-weight:700">🚪 办理退房</span></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"/></td>
+              <td style="font-family:monospace;color:#1a56db">HT042500120</td>
+              <td>赵六 · 136****4444</td>
+              <td>豪华大床房</td>
+              <td>04/24</td>
+              <td>04/25</td>
+              <td>512</td>
+              <td style="font-weight:600;color:#ff4d4f">¥688</td>
+              <td><span class="badge b-checkout">已退房</span></td>
+              <td style="color:#888">04/24</td>
+              <td><span class="action-link">详情</span><span class="action-link">查看发票</span></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"/></td>
+              <td style="font-family:monospace;color:#1a56db">HT042500119</td>
+              <td>钱七 · 135****3333</td>
+              <td>标准大床房</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td style="color:#999">—</td>
+              <td><span class="badge b-cancel">已取消</span></td>
+              <td style="color:#888">04/25</td>
+              <td><span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"/></td>
+              <td style="font-family:monospace;color:#1a56db">HT042500118</td>
+              <td>孙八 · 134****2222</td>
+              <td>精品双床房</td>
+              <td>04/22</td>
+              <td>04/24</td>
+              <td>—</td>
+              <td style="font-weight:600;color:#ff4d4f">¥1,056</td>
+              <td><span class="badge b-refund">退款中</span></td>
+              <td style="color:#888">04/22</td>
+              <td><span class="action-link">详情</span><span class="action-link" style="color:#e91e63;font-weight:700">💰 审核退款</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span style="color:#888;margin-right:8px">共247条</span>
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <span>...</span>
+          <button class="page-btn">25</button>
+          <button class="page-btn">›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 入住办理弹窗 -->
+  <div class="modal-overlay" style="position:relative;display:block;background:none;margin-top:30px">
+    <div style="padding:0 20px 20px;max-width:560px;margin:0 auto">
+      <div style="font-size:13px;color:#888;margin-bottom:8px;text-align:center">↓ 入住办理弹窗示例</div>
+      <div class="modal" style="position:relative;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+        <div class="modal-header">
+          <span class="modal-title">✅ 办理入住</span>
+          <span class="modal-close">✕</span>
+        </div>
+        <div class="modal-body">
+          <div class="checkin-summary">
+            <div class="cs-title">订单信息确认</div>
+            <div class="cs-item"><span>订单号</span><span>HT042500122</span></div>
+            <div class="cs-item"><span>房型</span><span>行政套房 × 1</span></div>
+            <div class="cs-item"><span>入住人</span><span>李四</span></div>
+            <div class="cs-item"><span>入住日期</span><span>2026-04-25 → 2026-04-27</span></div>
+            <div class="cs-item"><span>应付金额</span><span style="color:#ff4d4f">¥2,198（已支付）</span></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>分配房间号 *</label>
+              <select><option>请选择房间</option><option>601（行政套房）</option><option>602（行政套房）</option></select>
+            </div>
+            <div class="form-group">
+              <label>押金金额（元）</label>
+              <input type="number" value="500" placeholder="输入押金金额"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>实际入住人数</label>
+              <input type="number" value="2" min="1"/>
+            </div>
+            <div class="form-group">
+              <label>备注</label>
+              <input type="text" placeholder="可选备注信息"/>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline">取消</button>
+          <button class="btn btn-primary">确认入住 ✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>小程序设计稿 - 我的订单</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#f0f0f0; display:flex; justify-content:center; gap:40px; flex-wrap:wrap; padding:40px 20px; font-family:"PingFang SC","Helvetica Neue",sans-serif; }
+  .label { font-size:13px; color:#999; text-align:center; margin-bottom:12px; }
+  .phone { width:375px; background:#f7f7f7; border-radius:40px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.18); border:8px solid #1a1a1a; }
+  .status-bar { height:44px; background:#1a56db; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+  .status-bar span { color:#fff; font-size:11px; font-weight:600; }
+  .nav-bar { height:48px; background:#1a56db; display:flex; align-items:center; padding:0 16px; }
+  .nav-bar .title { font-size:17px; font-weight:600; color:#fff; }
+
+  /* Tab */
+  .order-tabs { background:#fff; display:flex; border-bottom:1px solid #f0f0f0; overflow-x:auto; }
+  .order-tab { padding:12px 10px; font-size:12px; color:#666; white-space:nowrap; flex-shrink:0; border-bottom:2px solid transparent; }
+  .order-tab.active { color:#1a56db; border-bottom-color:#1a56db; font-weight:600; }
+
+  /* 订单卡片 */
+  .order-card { background:#fff; margin:8px 12px; border-radius:12px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.06); }
+  .order-header { padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f5f5f5; }
+  .order-no { font-size:12px; color:#999; }
+  .order-status { font-size:12px; font-weight:600; }
+  .status-pending { color:#ff9800; }
+  .status-confirmed { color:#1a56db; }
+  .status-completed { color:#52c41a; }
+  .status-cancelled { color:#999; }
+  .order-body { padding:12px 14px; display:flex; gap:12px; }
+  .order-img { width:80px; height:64px; border-radius:8px; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0; }
+  .order-info h4 { font-size:14px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+  .order-meta { font-size:12px; color:#888; line-height:1.7; }
+  .order-footer { padding:10px 14px; display:flex; justify-content:space-between; align-items:center; background:#fafafa; }
+  .order-price { font-size:13px; color:#999; }
+  .order-price strong { font-size:16px; color:#ff4d4f; font-weight:700; }
+  .order-actions { display:flex; gap:8px; }
+  .btn-outline { border:1px solid #ddd; background:#fff; color:#555; border-radius:16px; padding:6px 14px; font-size:12px; }
+  .btn-primary { border:none; background:#1a56db; color:#fff; border-radius:16px; padding:6px 14px; font-size:12px; font-weight:600; }
+  .btn-danger { border:1px solid #ff4d4f; background:#fff; color:#ff4d4f; border-radius:16px; padding:6px 14px; font-size:12px; }
+
+  /* 支付倒计时 */
+  .countdown { background:#fff3e0; padding:8px 14px; font-size:12px; color:#e65100; display:flex; align-items:center; gap:6px; }
+  .countdown strong { color:#ff4d4f; }
+
+  /* 评价提示 */
+  .review-prompt { background:#e8f5e9; padding:8px 14px; font-size:12px; color:#2e7d32; display:flex; align-items:center; justify-content:space-between; }
+
+  /* Tab Bar */
+  .tab-bar { height:56px; background:#fff; border-top:1px solid #f0f0f0; display:flex; align-items:center; }
+  .tab-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .tab-icon { font-size:22px; }
+  .tab-text { font-size:10px; color:#999; }
+</style>
+</head>
+<body>
+
+<!-- 我的订单 -->
+<div>
+  <div class="label">小程序 · 我的订单</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="display:flex;gap:6px"><span>📶</span><span>🔋</span></div>
+    </div>
+    <div class="nav-bar"><span class="title">我的订单</span></div>
+
+    <div class="order-tabs">
+      <div class="order-tab active">全部</div>
+      <div class="order-tab">待支付</div>
+      <div class="order-tab">待入住</div>
+      <div class="order-tab">已完成</div>
+      <div class="order-tab">已取消</div>
+      <div class="order-tab">退款中</div>
+    </div>
+
+    <!-- 待支付订单 -->
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-no">订单号：HT2026042500123</span>
+        <span class="order-status status-pending">待支付</span>
+      </div>
+      <div class="countdown">⏰ 支付剩余：<strong>25:43</strong>，超时自动取消</div>
+      <div class="order-body">
+        <div class="order-img">🛏️</div>
+        <div class="order-info">
+          <h4>豪华大床房</h4>
+          <div class="order-meta">
+            📅 入住：4月26日（周六）<br/>
+            📅 退房：4月27日（周日）· 共1晚<br/>
+            👤 张三 · 1间
+          </div>
+        </div>
+      </div>
+      <div class="order-footer">
+        <div class="order-price">合计 <strong>¥555</strong></div>
+        <div class="order-actions">
+          <button class="btn-outline">取消订单</button>
+          <button class="btn-primary">去支付</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 待入住订单 -->
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-no">订单号：HT2026042400098</span>
+        <span class="order-status status-confirmed">待入住</span>
+      </div>
+      <div class="order-body">
+        <div class="order-img" style="background:linear-gradient(135deg,#89f7fe,#66a6ff)">🌊</div>
+        <div class="order-info">
+          <h4>行政套房</h4>
+          <div class="order-meta">
+            📅 入住：4月28日（周一）<br/>
+            📅 退房：4月30日（周三）· 共2晚<br/>
+            👤 张三 · 1间
+          </div>
+        </div>
+      </div>
+      <div class="order-footer">
+        <div class="order-price">合计 <strong>¥2,198</strong></div>
+        <div class="order-actions">
+          <button class="btn-outline">查看详情</button>
+          <button class="btn-danger">申请取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 已完成订单 -->
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-no">订单号：HT2026041500067</span>
+        <span class="order-status status-completed">已完成</span>
+      </div>
+      <div class="review-prompt">
+        ✍️ 入住体验如何？欢迎留下评价
+        <span style="color:#1a56db">去评价 ›</span>
+      </div>
+      <div class="order-body">
+        <div class="order-img" style="background:linear-gradient(135deg,#fccb90,#d57eeb)">🛁</div>
+        <div class="order-info">
+          <h4>精品双床房</h4>
+          <div class="order-meta">
+            📅 入住：4月15日 → 4月16日<br/>
+            👤 张三 · 1间
+          </div>
+        </div>
+      </div>
+      <div class="order-footer">
+        <div class="order-price">合计 <strong>¥475</strong></div>
+        <div class="order-actions">
+          <button class="btn-outline">查看发票</button>
+          <button class="btn-primary">写评价</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:56px"></div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
+      <div class="tab-item"><span class="tab-icon">🔍</span><span class="tab-text">探索</span></div>
+      <div class="tab-item"><span class="tab-icon" style="filter:none">📋</span><span class="tab-text" style="color:#1a56db">订单</span></div>
+      <div class="tab-item"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 订单详情（含入住凭证） -->
+<div>
+  <div class="label">小程序 · 订单详情</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="display:flex;gap:6px"><span>📶</span><span>🔋</span></div>
+    </div>
+    <div class="nav-bar" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px"><span style="color:#fff">‹</span><span class="title">订单详情</span></div>
+    </div>
+
+    <!-- 状态横幅 -->
+    <div style="background:linear-gradient(135deg,#1a56db,#3b82f6);padding:20px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">🏨</div>
+      <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">待入住</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.8)">请于 4月28日 14:00 后办理入住</div>
+    </div>
+
+    <!-- 入住凭证二维码 -->
+    <div style="background:#fff;margin:8px 12px;border-radius:12px;padding:16px;text-align:center">
+      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:12px">入住凭证 · 扫码核验</div>
+      <div style="width:120px;height:120px;margin:0 auto;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:60px">▦</div>
+      <div style="font-size:11px;color:#999;margin-top:10px">凭此二维码至前台办理入住</div>
+      <div style="font-size:12px;color:#1a56db;margin-top:6px;font-weight:600">HT2026042400098</div>
+    </div>
+
+    <!-- 订单信息 -->
+    <div style="background:#fff;margin:0 12px 8px;border-radius:12px;overflow:hidden">
+      <div style="padding:12px 16px;font-size:15px;font-weight:700;border-bottom:1px solid #f5f5f5">📋 订单信息</div>
+      <div style="padding:12px 16px;font-size:13px;color:#555">
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f9f9f9"><span>房型</span><span style="color:#1a1a1a;font-weight:600">行政套房 × 1</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f9f9f9"><span>入住</span><span>4月28日（周一）</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f9f9f9"><span>退房</span><span>4月30日（周三）</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f9f9f9"><span>入住人</span><span>张三</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f9f9f9"><span>房间号</span><span style="color:#999">待分配</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0"><span>支付金额</span><span style="color:#ff4d4f;font-weight:700">¥2,198</span></div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div style="padding:12px;display:flex;gap:10px">
+      <button style="flex:1;border:1px solid #ddd;background:#fff;color:#555;border-radius:24px;padding:12px;font-size:13px">申请取消</button>
+      <button style="flex:1;border:none;background:#1a56db;color:#fff;border-radius:24px;padding:12px;font-size:13px;font-weight:600">联系前台</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
