@@ -67,10 +67,10 @@ async function getTempCredential(prefix = 'uploads/', durationSeconds = 1800) {
 /**
  * 为单个 COS 对象生成带签名的临时访问 URL
  * @param {string} key - 对象 key，如 'room-images/xxx.jpg'
- * @param {number} expiresSec - 有效期秒数，默认 3600（1小时）
+ * @param {number} expiresSec - 有效期秒数，默认 7 天（主账号密钥签名无 2h 上限）
  * @returns {string} 带签名的完整 URL
  */
-function getSignedUrl(key, expiresSec = 3600) {
+function getSignedUrl(key, expiresSec = 7 * 24 * 3600) {
   const now = Math.floor(Date.now() / 1000);
   const exp = now + expiresSec;
   const keyTime = `${now};${exp}`;
@@ -84,6 +84,33 @@ function getSignedUrl(key, expiresSec = 3600) {
   const auth = `q-sign-algorithm=sha1&q-ak=${cosConfig.secretId}&q-sign-time=${keyTime}&q-key-time=${keyTime}&q-header-list=host&q-url-param-list=&q-signature=${signature}`;
 
   return `https://${cosConfig.host}/${key}?${auth}`;
+}
+
+/**
+ * 为上传（PUT Object）生成预签名 URL
+ * 小程序端直接用 wx.uploadFile 走这个 URL，免去前端签名
+ * @param {string} key - 对象 key
+ * @param {number} expiresSec - 有效期秒数，默认 900（15分钟）
+ * @returns {{ uploadUrl: string, publicUrl: string, key: string }}
+ */
+function getPutSignedUrl(key, expiresSec = 900) {
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + expiresSec;
+  const keyTime = `${now};${exp}`;
+
+  const signKey = crypto.createHmac('sha1', cosConfig.secretKey).update(keyTime).digest('hex');
+  const httpString = `put\n/${key}\n\nhost=${cosConfig.host}\n`;
+  const sha1Http = crypto.createHash('sha1').update(httpString).digest('hex');
+  const stringToSign = `sha1\n${keyTime}\n${sha1Http}\n`;
+  const signature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
+
+  const auth = `q-sign-algorithm=sha1&q-ak=${cosConfig.secretId}&q-sign-time=${keyTime}&q-key-time=${keyTime}&q-header-list=host&q-url-param-list=&q-signature=${signature}`;
+
+  return {
+    uploadUrl: `https://${cosConfig.host}/${key}?${auth}`,
+    publicUrl: `${cosConfig.cdnDomain}/${key}`,
+    key,
+  };
 }
 
 /**
@@ -103,17 +130,20 @@ function extractKeyFromUrl(url) {
 
 /**
  * 批量签名：传入 URL 或 key 列表，返回签名后的 URL 列表
+ * 对已带签名的 URL 也会重新签名（防御过期数据），只跳过本地上传路径
  */
-function signUrls(urls, expiresSec = 3600) {
+function signUrls(urls, expiresSec = 7 * 24 * 3600) {
   return (urls || []).map(url => {
     if (!url) return url;
-    // 已经带签名或者是本地路径，不处理
-    if (url.includes('q-signature=') || url.startsWith('/uploads/') || url.startsWith('http://localhost')) {
+    // 本地路径不处理
+    if (url.startsWith('/uploads/') || url.startsWith('http://localhost')) {
       return url;
     }
-    const key = extractKeyFromUrl(url);
+    // 剥离旧签名，用 key 重新签
+    const clean = url.split('?')[0];
+    const key = extractKeyFromUrl(clean);
     return key ? getSignedUrl(key, expiresSec) : url;
   });
 }
 
-module.exports = { cosConfig, getTempCredential, getSignedUrl, extractKeyFromUrl, signUrls };
+module.exports = { cosConfig, getTempCredential, getSignedUrl, getPutSignedUrl, extractKeyFromUrl, signUrls };

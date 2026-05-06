@@ -122,6 +122,60 @@ router.post('/calendar', canEdit,
   },
 );
 
+// ── GET /all-rooms  全量房间列表（跨房型）─支持按楼层、状态、房型筛选 ─────────
+// 注意：必须在 /:id 和 /:id/rooms 之前注册，否则会被 :id 路由匹配走
+router.get('/all-rooms', adminAuth(), async (req, res, next) => {
+  try {
+    const { floor, status, roomTypeId } = req.query;
+
+    // 1) list 条件：应用全部筛选（楼层 + 状态 + 房型）
+    const listConds = [];
+    const listParams = [];
+    if (floor)       { listConds.push('r.floor = ?');         listParams.push(Number(floor)); }
+    if (status !== undefined && status !== '') { listConds.push('r.status = ?'); listParams.push(Number(status)); }
+    if (roomTypeId)  { listConds.push('r.room_type_id = ?');  listParams.push(Number(roomTypeId)); }
+    const listWhere = listConds.length ? 'WHERE ' + listConds.join(' AND ') : '';
+
+    // 2) floorStats 条件：忽略 floor，保留 status/roomTypeId（使所有楼层 chip 始终可见）
+    const statsConds = [];
+    const statsParams = [];
+    if (status !== undefined && status !== '') { statsConds.push('r.status = ?'); statsParams.push(Number(status)); }
+    if (roomTypeId) { statsConds.push('r.room_type_id = ?'); statsParams.push(Number(roomTypeId)); }
+    const statsWhere = statsConds.length ? 'WHERE ' + statsConds.join(' AND ') : '';
+
+    const [rooms, statsRows] = await Promise.all([
+      query(
+        `SELECT r.id, r.room_no, r.floor, r.status, r.remark,
+                r.room_type_id, rt.name AS room_type_name
+           FROM rooms r
+           LEFT JOIN room_types rt ON rt.id = r.room_type_id
+           ${listWhere}
+           ORDER BY r.floor ASC, r.room_no ASC`,
+        listParams,
+      ),
+      query(
+        `SELECT r.floor, r.status FROM rooms r ${statsWhere}`,
+        statsParams,
+      ),
+    ]);
+
+    // 按楼层分组统计（全部楼层都展示）
+    const byFloor = {};
+    for (const r of statsRows) {
+      if (!byFloor[r.floor]) byFloor[r.floor] = { floor: r.floor, total: 0, free: 0, checkin: 0, cleaning: 0, repair: 0, reserved: 0 };
+      byFloor[r.floor].total++;
+      if (r.status === 0) byFloor[r.floor].free++;
+      else if (r.status === 1) byFloor[r.floor].checkin++;
+      else if (r.status === 2) byFloor[r.floor].reserved++;
+      else if (r.status === 3) byFloor[r.floor].repair++;
+      else if (r.status === 4) byFloor[r.floor].cleaning++;
+    }
+    const floorStats = Object.values(byFloor).sort((a, b) => a.floor - b.floor);
+
+    return ok(res, { list: rooms, floorStats, total: rooms.length });
+  } catch (err) { next(err); }
+});
+
 // ── GET /:id  房型详情 ────────────────────────────────────────────────────────
 router.get('/:id', adminAuth(), async (req, res, next) => {
   try {

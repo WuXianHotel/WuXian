@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `avatar_url`    VARCHAR(500)  DEFAULT NULL,
   `phone`         VARCHAR(20)   DEFAULT NULL COMMENT '绑定手机号',
   `real_name`     VARCHAR(50)   DEFAULT NULL COMMENT '实名',
-  `id_type`       TINYINT       DEFAULT 1    COMMENT '1=身份证 2=护照',
+  `id_type`       TINYINT       DEFAULT 1    COMMENT '1=身份证 2=护照 3=港澳通行证 4=台湾通行证',
   `id_number`     VARCHAR(30)   DEFAULT NULL COMMENT '证件号',
   `gender`        TINYINT       DEFAULT 0    COMMENT '0未知 1男 2女',
   `wallet_balance` DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '钱包余额',

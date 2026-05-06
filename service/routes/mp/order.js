@@ -175,13 +175,15 @@ router.post('/',
 );
 
 // ── 状态名 → 数字映射（前端 tab key → 数据库 status） ─────────────────────────
+// 数据库 schema：0待支付 1待入住 2入住中 3已退房 4已取消 5退款中 6已退款
 const STATUS_MAP = {
   pending_payment: 0,
-  pending_checkin:  1,
+  pending_checkin: 1,
   checked_in:      2,
   completed:       3,
   cancelled:       4,
   refund_pending:  5,
+  refunded:        6,
 };
 
 // ── GET /  我的订单列表 ───────────────────────────────────────────────────────
@@ -253,7 +255,7 @@ router.post('/:orderNo/cancel',
   async (req, res, next) => {
     try {
       const [order] = await query(
-        'SELECT id, status, pay_status FROM orders WHERE order_no = ? AND user_id = ? LIMIT 1',
+        'SELECT id, status, pay_status, pay_amount FROM orders WHERE order_no = ? AND user_id = ? LIMIT 1',
         [req.params.orderNo, req.userId],
       );
       if (!order) return res.status(404).json({ code: 404, msg: '订单不存在' });
@@ -261,10 +263,27 @@ router.post('/:orderNo/cancel',
         return res.status(400).json({ code: 400, msg: '当前订单状态不支持取消' });
       }
       const newStatus = order.pay_status === 1 ? 5 : 4; // 已付款→退款中，未付款→已取消
-      await query(
-        'UPDATE orders SET status = ?, cancel_reason = ?, cancel_at = NOW() WHERE order_no = ?',
-        [newStatus, req.body.reason || null, req.params.orderNo],
-      );
+      const reason = req.body.reason || (newStatus === 5 ? '用户取消订单' : null);
+
+      if (newStatus === 5) {
+        // 已付款订单：取消 = 申请退款，需同步写入 refunds 表供后台审核
+        const refundNo = 'RF' + dayjs().format('YYYYMMDDHHmmss') + String(Math.floor(Math.random() * 1e4)).padStart(4, '0');
+        await transaction(async conn => {
+          await conn.execute(
+            'INSERT INTO refunds (order_no, refund_no, user_id, amount, reason, status) VALUES (?,?,?,?,?,0)',
+            [req.params.orderNo, refundNo, req.userId, order.pay_amount, reason],
+          );
+          await conn.execute(
+            'UPDATE orders SET status = ?, cancel_reason = ?, cancel_at = NOW() WHERE order_no = ?',
+            [newStatus, reason, req.params.orderNo],
+          );
+        });
+      } else {
+        await query(
+          'UPDATE orders SET status = ?, cancel_reason = ?, cancel_at = NOW() WHERE order_no = ?',
+          [newStatus, reason, req.params.orderNo],
+        );
+      }
       return ok(res, null, newStatus === 5 ? '已申请退款，请等待审核' : '订单已取消');
     } catch (err) { next(err); }
   },

@@ -19,15 +19,18 @@ const { validate, parsePager, ok, page } = require('../../middleware/helper');
 // ── GET /stats ────────────────────────────────────────────────────────────────
 router.get('/stats', adminAuth(), async (req, res, next) => {
   try {
+    // 各状态订单总数（全量，不限今日）
     const rows = await query(
-      `SELECT status, COUNT(*) AS cnt FROM orders
-       WHERE DATE(created_at) = CURDATE()
-       GROUP BY status`,
+      `SELECT status, COUNT(*) AS cnt FROM orders GROUP BY status`,
     );
     const map = Object.fromEntries(rows.map(r => [r.status, r.cnt]));
     const total = rows.reduce((s, r) => s + r.cnt, 0);
 
-    // 当前入住中的房间数（不限今日）
+    // 今日新建订单数
+    const [{ today }] = await query(
+      "SELECT COUNT(*) AS today FROM orders WHERE DATE(created_at) = CURDATE()"
+    );
+    // 当前入住中的房间数
     const [{ checkin }] = await query(
       "SELECT COUNT(*) AS checkin FROM orders WHERE status = 2"
     );
@@ -38,7 +41,7 @@ router.get('/stats', adminAuth(), async (req, res, next) => {
 
     return ok(res, {
       total,
-      today: total,
+      today,
       checkin,
       revenue,
       pending_pay:    map[0] || 0,
@@ -237,8 +240,9 @@ router.patch('/:orderNo/refund',
   async (req, res, next) => {
     try {
       const { action, remark } = req.body;
+      // 只要退款单未走到终态（3已退款 / 4已拒绝）都允许处理
       const [refund] = await query(
-        'SELECT * FROM refunds WHERE order_no = ? AND status = 0 ORDER BY created_at DESC LIMIT 1',
+        'SELECT * FROM refunds WHERE order_no = ? AND status IN (0, 1, 2) ORDER BY created_at DESC LIMIT 1',
         [req.params.orderNo],
       );
       if (!refund) return res.status(404).json({ code: 404, msg: '退款申请不存在或已处理' });
@@ -249,21 +253,79 @@ router.patch('/:orderNo/refund',
             'UPDATE refunds SET status = 4, auditor_id = ?, audit_remark = ?, audit_at = NOW() WHERE id = ?',
             [req.adminId, remark || null, refund.id],
           );
-          await conn.execute('UPDATE orders SET status = 3 WHERE order_no = ?', [req.params.orderNo]);
+          // 拒绝退款 → 订单回到"待入住"状态（原已付款待入住）
+          await conn.execute('UPDATE orders SET status = 1 WHERE order_no = ?', [req.params.orderNo]);
         });
         return ok(res, null, '退款申请已拒绝');
       }
 
-      // 审核通过 → 状态置为退款中（后续调用微信退款接口）
+      // 审核通过 → 完成退款：refunds.status=3（已退款），orders.status=6（已退款）
+      // 业务逻辑：
+      //   1) 退款金额原路退回到用户余额 → 写 wallet_logs
+      //   2) 扣除本单之前奖励的积分（earn 类型的 points_logs 反向冲销）
+      //   3) 退还本单之前抵扣的积分（use 类型的 points_logs 反向冲销）
       await transaction(async conn => {
+        // (1) 更新退款单、订单状态
         await conn.execute(
-          'UPDATE refunds SET status = 1, auditor_id = ?, audit_remark = ?, audit_at = NOW() WHERE id = ?',
+          'UPDATE refunds SET status = 3, auditor_id = ?, audit_remark = ?, audit_at = NOW(), refund_at = NOW() WHERE id = ?',
           [req.adminId, remark || null, refund.id],
         );
-        await conn.execute('UPDATE orders SET status = 5 WHERE order_no = ?', [req.params.orderNo]);
-        // TODO: 调用微信退款 API，成功后将 refunds.status 改为 3，orders.status 改为 6
+        await conn.execute('UPDATE orders SET status = 6 WHERE order_no = ?', [req.params.orderNo]);
+
+        // (2) 退款金额回冲到用户钱包
+        await conn.execute(
+          'UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?',
+          [refund.amount, refund.user_id],
+        );
+        const [[user]] = await conn.execute(
+          'SELECT wallet_balance FROM users WHERE id = ? LIMIT 1',
+          [refund.user_id],
+        );
+        await conn.execute(
+          'INSERT INTO wallet_logs (user_id, type, amount, balance, remark, ref_order_no) VALUES (?, ?, ?, ?, ?, ?)',
+          [refund.user_id, 'refund', refund.amount, user.wallet_balance, '订单退款', req.params.orderNo],
+        );
+
+        // (3) 计算本单积分变动：earn 正数累加（奖励）、use 负数累加（抵扣）
+        const [pointsRows] = await conn.execute(
+          "SELECT type, SUM(points) AS sum FROM points_logs WHERE ref_id = ? AND type IN ('earn','use') GROUP BY type",
+          [req.params.orderNo],
+        );
+        let earnedPoints = 0; // 本单奖励过多少积分
+        let usedPoints = 0;   // 本单抵扣过多少积分（会是负数）
+        for (const r of pointsRows) {
+          if (r.type === 'earn') earnedPoints = Number(r.sum) || 0;
+          if (r.type === 'use')  usedPoints = Number(r.sum) || 0; // 负数
+        }
+
+        // 扣除本单奖励的积分
+        if (earnedPoints > 0) {
+          await conn.execute(
+            'UPDATE members SET points = GREATEST(points - ?, 0), points_total = GREATEST(points_total - ?, 0) WHERE user_id = ?',
+            [earnedPoints, earnedPoints, refund.user_id],
+          );
+          const [[m1]] = await conn.execute('SELECT points AS bal FROM members WHERE user_id = ? LIMIT 1', [refund.user_id]);
+          await conn.execute(
+            "INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?, 'adjust', ?, ?, ?, ?)",
+            [refund.user_id, -earnedPoints, m1 ? m1.bal : 0, `订单退款扣回奖励积分`, req.params.orderNo],
+          );
+        }
+
+        // 退还本单抵扣的积分（usedPoints 是负数，退还为正数）
+        if (usedPoints < 0) {
+          const refundPoints = -usedPoints;
+          await conn.execute(
+            'UPDATE members SET points = points + ? WHERE user_id = ?',
+            [refundPoints, refund.user_id],
+          );
+          const [[m2]] = await conn.execute('SELECT points AS bal FROM members WHERE user_id = ? LIMIT 1', [refund.user_id]);
+          await conn.execute(
+            "INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?, 'adjust', ?, ?, ?, ?)",
+            [refund.user_id, refundPoints, m2 ? m2.bal : 0, `订单退款返还抵扣积分`, req.params.orderNo],
+          );
+        }
       });
-      return ok(res, null, '审核通过，退款处理中');
+      return ok(res, null, '退款审核通过，金额已退回会员余额');
     } catch (err) { next(err); }
   },
 );
