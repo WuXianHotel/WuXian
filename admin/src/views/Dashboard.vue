@@ -53,8 +53,8 @@
           <template #header><span style="font-weight:600">快捷操作</span></template>
           <div class="quick-grid">
             <router-link v-for="q in quickItems" :key="q.to" :to="q.to" class="quick-item">
-              <el-icon :size="22"><component :is="q.icon" /></el-icon>
-              <span>{{ q.label }}</span>
+              <el-icon :size="35"><component :is="q.icon" /></el-icon>
+              <span style="font-size:14px">{{ q.label }}</span>
             </router-link>
           </div>
         </el-card>
@@ -69,7 +69,7 @@ import { getOrderStats, getOrders } from '@/api/order'
 import { getMemberStats } from '@/api/member'
 import {
   Document, House, Money, User,
-  TrendCharts, Setting, Ticket, ShoppingCart
+  TrendCharts, Setting, Ticket, ShoppingCart,
 } from '@element-plus/icons-vue'
 
 const stats = ref({})
@@ -102,9 +102,10 @@ const quickItems = [
   { to: '/rooms',   icon: markRaw(House),         label: '新增房型' },
   { to: '/orders',  icon: markRaw(Document),      label: '订单管理' },
   { to: '/members', icon: markRaw(User),          label: '会员管理' },
+  { to: '/mall',    icon: markRaw(ShoppingCart),  label: '积分商城' },
   { to: '/reports', icon: markRaw(TrendCharts),   label: '财务报表' },
   { to: '/system',  icon: markRaw(Setting),       label: '系统设置' },
-  { to: '/members', icon: markRaw(Ticket),        label: '发放优惠券' },
+  // { to: '/members', icon: markRaw(Ticket),        label: '发放优惠券' },
 ]
 
 const statusMap = {
@@ -141,6 +142,7 @@ const fmtDate = (d) => {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 16px 10px; border-radius: 8px; background: #f8fafc;
   font-size: 13px; color: var(--text); transition: .15s; text-decoration: none;
+  padding: 26px 0;
 }
 .quick-item:hover { background: var(--primary-bg); color: var(--primary); }
 </style>

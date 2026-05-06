@@ -1,5 +1,8 @@
 <template>
   <div>
+    <el-tabs v-model="activeTab" class="room-tabs">
+      <!-- ─── Tab 1: 房型管理 ─── -->
+      <el-tab-pane label="房型管理" name="types">
     <!-- Filter bar -->
     <el-card shadow="hover" style="margin-bottom:16px">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -19,9 +22,21 @@
     <!-- Card grid -->
     <div v-loading="loading" class="room-grid">
       <el-card v-for="r in rooms" :key="r.id" shadow="hover" body-style="padding:0" class="room-card">
-        <div class="room-img" :style="{ background: imgBg(r.id) }">
-          <img v-if="firstImage(r)" :src="firstImage(r)" class="room-img-img" />
-          <div v-else class="room-img-placeholder">{{ r.name[0] }}</div>
+        <div class="room-img">
+          <!-- 占位骨架：始终渲染，图片加载成功后盖在上面 -->
+          <div class="room-img-placeholder">
+            <el-icon :size="42"><Picture /></el-icon>
+            <span>{{ firstImage(r) ? '加载中…' : '暂无图片' }}</span>
+          </div>
+          <img
+            v-if="firstImage(r)"
+            :src="firstImage(r)"
+            class="room-img-img"
+            :class="{ loaded: loadedImages[r.id] }"
+            loading="lazy"
+            @load="loadedImages[r.id] = true"
+            @error="loadedImages[r.id] = false"
+          />
           <el-tag :type="r.status===1?'success':'danger'" size="small" class="status-tag">{{ r.status===1?'上架':'下架' }}</el-tag>
         </div>
         <div class="room-body">
@@ -52,6 +67,82 @@
     <div style="display:flex;justify-content:flex-end;margin-top:16px" v-if="total > pageSize">
       <el-pagination background layout="prev, pager, next" :total="total" :page-size="pageSize" v-model:current-page="page" @current-change="load" />
     </div>
+      </el-tab-pane>
+
+      <!-- ─── Tab 2: 房间管理（全量） ─── -->
+      <el-tab-pane label="房间管理" name="rooms">
+        <!-- 楼层统计 -->
+        <el-card shadow="hover" style="margin-bottom:16px" v-if="allRoomsFloorStats.length">
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div
+              v-for="f in allRoomsFloorStats"
+              :key="f.floor"
+              :class="['floor-chip', { active: allRoomsFilter.floor === String(f.floor) }]"
+              @click="toggleFloorFilter(f.floor)"
+            >
+              <div class="floor-chip-num">{{ f.floor }}F</div>
+              <div class="floor-chip-stat">
+                <span>共{{ f.total }}</span>
+                <span class="free">空{{ f.free }}</span>
+                <span class="checkin" v-if="f.checkin">住{{ f.checkin }}</span>
+                <span class="cleaning" v-if="f.cleaning">清{{ f.cleaning }}</span>
+                <span class="repair" v-if="f.repair">修{{ f.repair }}</span>
+              </div>
+            </div>
+            <div class="floor-chip" :class="{ active: !allRoomsFilter.floor }" @click="toggleFloorFilter('')">
+              <div class="floor-chip-num">全部</div>
+              <div class="floor-chip-stat"><span>共{{ allRoomsGrandTotal }}间</span></div>
+            </div>
+          </div>
+        </el-card>
+
+        <!-- Filter -->
+        <el-card shadow="hover" style="margin-bottom:16px">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <el-select v-model="allRoomsFilter.status" placeholder="全部状态" clearable style="width:140px" @change="loadAllRooms">
+              <el-option label="空闲" value="0" />
+              <el-option label="入住中" value="1" />
+              <el-option label="已预订" value="2" />
+              <el-option label="维修中" value="3" />
+              <el-option label="清洁中" value="4" />
+            </el-select>
+            <el-select v-model="allRoomsFilter.roomTypeId" placeholder="全部房型" clearable style="width:180px" @change="loadAllRooms" filterable>
+              <el-option v-for="r in rooms" :key="r.id" :label="r.name" :value="r.id" />
+            </el-select>
+            <el-button @click="resetAllRoomsFilter">重置</el-button>
+            <el-button type="primary" @click="loadAllRooms">刷新</el-button>
+          </div>
+        </el-card>
+
+        <!-- Table -->
+        <el-card shadow="hover">
+          <el-table :data="allRoomsList" v-loading="allRoomsLoading" stripe style="width:100%">
+            <el-table-column prop="floor" label="楼层" width="80">
+              <template #default="{ row }">{{ row.floor }}F</template>
+            </el-table-column>
+            <el-table-column prop="room_no" label="房间号" width="120">
+              <template #default="{ row }"><span class="mono" style="font-weight:600">{{ row.room_no }}</span></template>
+            </el-table-column>
+            <el-table-column prop="room_type_name" label="所属房型" min-width="180" />
+            <el-table-column label="状态" width="140">
+              <template #default="{ row }">
+                <el-select :model-value="row.status" size="small" @change="(v) => changeRoomStatusFromAll(row, v)">
+                  <el-option :value="0" label="空闲" />
+                  <el-option :value="1" label="入住中" />
+                  <el-option :value="2" label="已预订" />
+                  <el-option :value="3" label="维修中" />
+                  <el-option :value="4" label="清洁中" />
+                </el-select>
+              </template>
+            </el-table-column>
+            <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.remark || '-' }}</template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="!allRoomsLoading && !allRoomsList.length" description="暂无房间数据" />
+        </el-card>
+      </el-tab-pane>
+    </el-tabs>
 
     <!-- Create / Edit Dialog -->
     <el-dialog v-model="showModal" :title="editing ? '编辑房型' : '新增房型'" width="640px" destroy-on-close>
@@ -174,10 +265,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { getRooms, createRoom, updateRoom, setStatus, deleteRoom, getRoomList, addRoom, setRoomStatus, deleteRoomItem } from '@/api/room'
+import { Plus, Picture } from '@element-plus/icons-vue'
+import { getRooms, createRoom, updateRoom, setStatus, deleteRoom, getRoomList, addRoom, setRoomStatus, deleteRoomItem, getAllRooms } from '@/api/room'
 import { uploadToCos } from '@/api/upload'
 
 const toast   = inject('toast')
@@ -186,16 +277,28 @@ const saving  = ref(false)
 const rooms   = ref([])
 const total   = ref(0)
 const page    = ref(1)
+const loadedImages = ref({}) // 记录每张图片是否加载完成：{ [roomId]: true }
 const pageSize = 12
 const filter  = ref({ keyword: '', status: '', bedType: '' })
 const showModal = ref(false)
 const editing   = ref(null)
+
+// ─── Tab 切换 & 房间管理（全量） ───
+const activeTab = ref('types')
+const allRoomsList = ref([])
+const allRoomsFloorStats = ref([])
+const allRoomsTotal = ref(0)
+const allRoomsLoading = ref(false)
+const allRoomsFilter = ref({ floor: '', status: '', roomTypeId: '' })
+
+// "全部"chip 显示的总数：所有楼层统计的和（不受 floor 筛选影响，status/roomTypeId 同步）
+const allRoomsGrandTotal = computed(() =>
+  allRoomsFloorStats.value.reduce((sum, f) => sum + (f.total || 0), 0)
+)
 const formErr   = ref('')
 const form      = ref({})
 const bedTypes  = ['大床', '双床', '单床', '亲子床', '圆床']
 
-const colors = ['#dbeafe','#dcfce7','#fef3c7','#fce7f3','#f3e8ff','#ffedd5']
-const imgBg = (id) => colors[id % colors.length]
 const firstImage = (r) => {
   try { const imgs = typeof r.images === 'string' ? JSON.parse(r.images) : r.images; return imgs?.[0] || null }
   catch { return null }
@@ -212,6 +315,49 @@ async function load() {
 }
 
 onMounted(load)
+
+// 切换到「房间管理」tab 时加载
+watch(activeTab, (tab) => {
+  if (tab === 'rooms') {
+    loadAllRooms()
+    // 确保房型下拉有数据
+    if (!rooms.value.length) load()
+  }
+})
+
+async function loadAllRooms() {
+  allRoomsLoading.value = true
+  try {
+    const params = {}
+    const f = allRoomsFilter.value
+    if (f.floor) params.floor = f.floor
+    if (f.status !== '' && f.status !== null) params.status = f.status
+    if (f.roomTypeId) params.roomTypeId = f.roomTypeId
+    const res = await getAllRooms(params)
+    allRoomsList.value = res.data?.list || []
+    allRoomsFloorStats.value = res.data?.floorStats || []
+    allRoomsTotal.value = res.data?.total || 0
+  } catch (e) { toast?.error('加载房间列表失败') }
+  allRoomsLoading.value = false
+}
+
+function toggleFloorFilter(floor) {
+  allRoomsFilter.value.floor = (floor === '' || String(floor) === allRoomsFilter.value.floor) ? '' : String(floor)
+  loadAllRooms()
+}
+
+function resetAllRoomsFilter() {
+  allRoomsFilter.value = { floor: '', status: '', roomTypeId: '' }
+  loadAllRooms()
+}
+
+async function changeRoomStatusFromAll(row, newStatus) {
+  try {
+    await setRoomStatus(row.room_type_id, row.id, newStatus)
+    toast?.success('已更新')
+    loadAllRooms()
+  } catch (e) { toast?.error(e?.msg || '操作失败') }
+}
 
 function openCreate() {
   editing.value = null
@@ -366,13 +512,72 @@ async function doDeleteRoom(rm) {
 </script>
 
 <style scoped>
+.room-tabs :deep(.el-tabs__nav-wrap) { padding: 0 4px; }
+.room-tabs :deep(.el-tabs__item) { font-size: 15px; }
+
+/* 楼层统计 chip */
+.floor-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 110px;
+  padding: 10px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: .15s;
+}
+.floor-chip:hover { background: #eff6ff; border-color: #bfdbfe; }
+.floor-chip.active { background: #1a56db; border-color: #1a56db; color: #fff; }
+.floor-chip-num { font-size: 16px; font-weight: 700; }
+.floor-chip-stat { display: flex; gap: 8px; font-size: 12px; color: #64748b; flex-wrap: wrap; }
+.floor-chip.active .floor-chip-stat { color: rgba(255,255,255,0.85); }
+.floor-chip-stat .free { color: #16a34a; }
+.floor-chip-stat .checkin { color: #2563eb; }
+.floor-chip-stat .cleaning { color: #ca8a04; }
+.floor-chip-stat .repair { color: #dc2626; }
+.floor-chip.active .floor-chip-stat span { color: rgba(255,255,255,0.9); }
+
 .room-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
 }
 .room-card { overflow: hidden; }
-.room-img { position: relative; height: 160px; display: flex; align-items: center; justify-content: center; }
-.room-img-img { width: 100%; height: 100%; object-fit: cover; }
-.room-img-placeholder { font-size: 48px; opacity: .4; }
+.room-img {
+  position: relative;
+  height: 160px;
+  background: #f1f5f9;
+  /* 占位底纹：淡灰色棋盘图案 */
+  background-image: linear-gradient(135deg, #e2e8f0 25%, transparent 25%), linear-gradient(225deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(315deg, #e2e8f0 25%, #f1f5f9 25%);
+  background-position: 10px 0, 10px 0, 0 0, 0 0;
+  background-size: 20px 20px;
+  overflow: hidden;
+}
+.room-img-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .3s ease;
+  z-index: 1;
+}
+.room-img-img.loaded {
+  opacity: 1;
+}
+.room-img-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 12px;
+  z-index: 0;
+}
 .status-tag { position: absolute; top: 10px; right: 10px; }
 .room-body { padding: 14px 16px; }
 .room-name { font-size: 15px; font-weight: 600; margin-bottom: 8px; }

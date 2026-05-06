@@ -13,3 +13,5 @@ export const getRoomList     = (id) => http.get(`/rooms/${id}/rooms`)
 export const addRoom         = (id, data) => http.post(`/rooms/${id}/rooms`, data)
 export const setRoomStatus   = (typeId, roomId, status) => http.patch(`/rooms/${typeId}/rooms/${roomId}/status`, { status })
 export const deleteRoomItem  = (typeId, roomId) => http.delete(`/rooms/${typeId}/rooms/${roomId}`)
+// 全量房间（跨房型）
+export const getAllRooms     = (params) => http.get('/rooms/all-rooms', { params })
