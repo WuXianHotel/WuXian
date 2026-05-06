@@ -89,6 +89,7 @@ const api = {
 
   // ─── COS 上传 ───
   getCosSign: (prefix) => request({ url: '/api/mp/upload/cos-sign', method: 'POST', data: { prefix: prefix || 'avatars/' } }),
+  getPutSign: (data) => request({ url: '/api/mp/upload/put-sign', method: 'POST', data }),
 }
 
 module.exports = api

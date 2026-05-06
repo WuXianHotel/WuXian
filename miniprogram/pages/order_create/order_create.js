@@ -116,5 +116,8 @@ Page({
     wx.navigateTo({
       url: `/pages/order_confirm/order_confirm?data=${encodeURIComponent(JSON.stringify(orderData))}`
     })
-  }
+  },
+
+  onThumbLoad() { this.setData({ thumbLoaded: true }) },
+  onThumbError() { this.setData({ thumbLoaded: false, 'room.imageUrl': '' }) }
 })

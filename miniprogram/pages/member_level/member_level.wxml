@@ -2,7 +2,7 @@
 <view class="page">
   <!-- 当前等级卡 -->
   <view class="current-card" style="background:{{memberInfo.color || '#b8860b'}}">
-    <view class="current-icon">{{memberInfo.icon || '👤'}}</view>
+    <view class="current-icon"><text class="iconfont {{memberInfo.icon ? '' : 'icon-user'}}">{{memberInfo.icon || ''}}</text></view>
     <view class="current-name">{{memberInfo.level_name || '会员'}}</view>
     <view class="current-info">
       <text>累计入住 {{memberInfo.total_nights || 0}} 晚</text>
@@ -76,18 +76,18 @@
     <view class="upgrade-card card" wx:if="{{memberInfo.next_level_name}}">
       <view class="upgrade-title">如何升级到 {{memberInfo.next_level_name}}？</view>
       <view class="upgrade-item">
-        <text class="upgrade-icon">🛏</text>
+        <text class="upgrade-icon iconfont icon-home"></text>
         <text>累计入住达到 {{memberInfo.next_min_nights}} 晚（当前 {{memberInfo.total_nights || 0}} 晚，还差 {{(memberInfo.next_min_nights || 0) - (memberInfo.total_nights || 0)}} 晚）</text>
       </view>
       <view class="upgrade-item">
-        <text class="upgrade-icon">⭐</text>
+        <text class="upgrade-icon iconfont icon-star-fill"></text>
         <text>累计积分达到 {{memberInfo.next_min_points}}（当前 {{memberInfo.points_total || 0}}，还差 {{(memberInfo.next_min_points || 0) - (memberInfo.points_total || 0)}}）</text>
       </view>
       <view class="upgrade-hint">满足任一条件即可自动升级</view>
     </view>
 
     <view class="upgrade-card card" wx:else>
-      <view class="upgrade-title">🎉 恭喜您已达到最高等级！</view>
+      <view class="upgrade-title"><text class="iconfont icon-trophy"></text> 恭喜您已达到最高等级！</view>
       <view class="upgrade-hint">尊享全部会员权益</view>
     </view>
   </scroll-view>

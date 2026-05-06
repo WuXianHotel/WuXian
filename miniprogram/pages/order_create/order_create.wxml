@@ -21,7 +21,19 @@
   <scroll-view scroll-y class="content safe-bottom">
     <!-- 房型信息 -->
     <view class="room-summary card">
-      <image class="room-thumb" src="{{room.imageUrl || '/images/room-placeholder.png'}}" mode="aspectFill"/>
+      <view class="room-thumb-wrap">
+        <view class="img-placeholder">
+          <text class="iconfont icon-image"></text>
+        </view>
+        <image
+          wx:if="{{room.imageUrl}}"
+          class="room-thumb {{thumbLoaded ? 'loaded' : ''}}"
+          src="{{room.imageUrl}}"
+          mode="aspectFill"
+          binderror="onThumbError"
+          bindload="onThumbLoad"
+        />
+      </view>
       <view class="room-info">
         <view class="room-name">{{room.name}}</view>
         <view class="room-desc">{{room.area}}㎡ · {{room.bedType}} · {{room.view || '城市景观'}} {{room.smokeFree?'禁烟':''}} · {{room.breakfast?'含早餐':'不含早餐'}}</view>
@@ -97,7 +109,7 @@
 
     <!-- 取消政策 -->
     <view class="policy-card card">
-      <view class="policy-icon">📋</view>
+      <view class="policy-icon"><text class="iconfont icon-file-text"></text></view>
       <view class="policy-content">
         <view class="policy-title">取消政策</view>
         <view class="policy-text">入住当日18:00前可免费取消；18:00后取消收取首晚费用的50%。</view>

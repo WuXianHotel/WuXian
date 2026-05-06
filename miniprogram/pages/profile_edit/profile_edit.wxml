@@ -16,7 +16,7 @@
             src="{{avatarUrl}}"
             mode="aspectFill"
           />
-          <view wx:else class="avatar-placeholder">😊</view>
+          <view wx:else class="avatar-placeholder"><text class="iconfont icon-user"></text></view>
           <text class="avatar-hint">点击更换</text>
         </button>
       </view>
@@ -51,8 +51,8 @@
       <view class="divider"></view>
       <view class="form-item">
         <text class="form-label">证件类型</text>
-        <picker range="{{idTypes}}" bindchange="onIdTypeChange">
-          <view class="picker-value">{{form.idType}} <text class="picker-arrow">&#8250;</text></view>
+        <picker range="{{idTypes}}" value="{{form.idType - 1}}" bindchange="onIdTypeChange">
+          <view class="picker-value">{{idTypes[form.idType - 1] || '身份证'}} <text class="iconfont icon-right picker-arrow"></text></view>
         </picker>
       </view>
       <view class="divider"></view>

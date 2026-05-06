@@ -3,13 +3,15 @@ const api = require('../../utils/api')
 const util = require('../../utils/util')
 
 // 后端数字状态 → 前端字符串 key
+// 对应数据库 schema：0待支付 1待入住 2入住中 3已退房 4已取消 5退款中 6已退款
 const STATUS_NUM_TO_KEY = {
   0: 'pending_payment',
   1: 'pending_checkin',
   2: 'checked_in',
   3: 'completed',
   4: 'cancelled',
-  5: 'refund_pending'
+  5: 'refund_pending',
+  6: 'refunded'
 }
 
 Page({
@@ -134,20 +136,21 @@ Page({
   },
 
   async submitReview() {
-    const { reviewScore, reviewContent, order } = this.data
+    const { reviewScore, reviewContent } = this.data
     if (!reviewContent.trim()) {
       wx.showToast({ title: '请填写评价内容', icon: 'none' }); return
     }
     try {
       await api.createReview({
-        orderId: this.orderNo,
-        roomId: order.roomId,
+        orderNo: this.orderNo,
         score: reviewScore,
         content: reviewContent
       })
       wx.showToast({ title: '评价成功', icon: 'success' })
       this.setData({ reviewSubmitted: true })
-    } catch (e) {}
+    } catch (e) {
+      wx.showToast({ title: e?.msg || '评价失败', icon: 'none' })
+    }
   },
 
   async cancelOrder() {

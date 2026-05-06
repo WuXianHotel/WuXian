@@ -17,7 +17,7 @@
     <view wx:if="{{loading}}" class="loading-wrap">加载中...</view>
 
     <view wx:elif="{{orders.length === 0}}" class="empty">
-      <view class="empty-icon">📋</view>
+      <text class="iconfont icon-file-text empty-icon"></text>
       <text class="empty-text">暂无订单</text>
     </view>
 
@@ -31,17 +31,30 @@
 
         <!-- 倒计时 -->
         <view class="countdown-bar" wx:if="{{item.status==='pending_payment' && item.countdown}}">
-          ⏰ 支付剩余：{{item.countdown}}，超时自动取消
+          <text class="iconfont icon-time-circle"></text> 支付剩余：{{item.countdown}}，超时自动取消
         </view>
 
         <!-- 评价提示 -->
         <view class="review-prompt" wx:if="{{item.status==='completed' && !item.hasReview}}">
-          ✍️ 感谢您的入住，<text class="review-link" bindtap="goReview" data-id="{{item.id}}">去评价 ›</text>
+          <text class="iconfont icon-edit"></text> 感谢您的入住，<text class="review-link" bindtap="goReview" data-id="{{item.id}}">去评价 ›</text>
         </view>
 
         <!-- 订单内容 -->
         <view class="card-body" bindtap="goDetail" data-id="{{item.id}}">
-          <image class="order-img" src="{{item.imageUrl || '/images/room-placeholder.png'}}" mode="aspectFill"/>
+          <view class="order-img-wrap">
+            <view class="img-placeholder">
+              <text class="iconfont icon-image"></text>
+            </view>
+            <image
+              wx:if="{{item.imageUrl}}"
+              class="order-img {{item.imgLoaded ? 'loaded' : ''}}"
+              src="{{item.imageUrl}}"
+              mode="aspectFill"
+              binderror="onImgError"
+              bindload="onImgLoad"
+              data-id="{{item.id}}"
+            />
+          </view>
           <view class="order-info">
             <view class="order-room-name">{{item.roomName}}</view>
             <view class="order-dates">{{item.checkInLabel}} ~ {{item.checkOutLabel}}</view>

@@ -2,7 +2,7 @@
 <view class="page">
   <!-- 状态 Banner -->
   <view class="status-banner" style="background:{{statusGradient}}">
-    <view class="status-icon">🏨</view>
+    <view class="status-icon"><text class="iconfont icon-bank"></text></view>
     <view class="status-text">{{order.statusText}}</view>
     <view class="status-hint" wx:if="{{statusHint}}">{{statusHint}}</view>
   </view>
@@ -23,7 +23,7 @@
 
     <!-- 订单信息 -->
     <view class="info-card card">
-      <view class="card-title">📋 订单信息</view>
+      <view class="card-title"><text class="iconfont icon-file-text"></text> 订单信息</view>
       <view class="info-row">
         <text class="info-label">房型</text>
         <text class="info-val">{{order.roomName}} × {{order.qty}}</text>
@@ -60,7 +60,7 @@
 
     <!-- 评价区 (已完成且未评价) -->
     <view class="review-card card" wx:if="{{order.status==='completed' && !order.hasReview && !reviewSubmitted}}">
-      <view class="card-title">✍️ 写评价</view>
+      <view class="card-title"><text class="iconfont icon-edit"></text> 写评价</view>
       <view class="star-row">
         <text class="star-label">评分</text>
         <view class="stars-select">
@@ -78,7 +78,7 @@
     </view>
 
     <view class="review-done card" wx:if="{{reviewSubmitted}}">
-      <text>✅ 感谢您的评价！</text>
+      <view><text class="iconfont icon-check-circle-fill"></text> 感谢您的评价！</view>
     </view>
   </scroll-view>
 

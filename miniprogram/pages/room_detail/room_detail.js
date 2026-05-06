@@ -37,14 +37,14 @@ Page({
       const room = res.data
       // 构造设施列表
       const facilityMap = [
-        { key: 'tv', icon: '📺', name: '智能电视' },
-        { key: 'ac', icon: '🌬', name: '空调' },
-        { key: 'wifi', icon: '📶', name: '免费WiFi' },
-        { key: 'bathtub', icon: '🛁', name: '独立浴缸' },
-        { key: 'coffee', icon: '☕', name: '咖啡机' },
-        { key: 'toiletries', icon: '🧴', name: '洗漱用品' },
-        { key: 'washer', icon: '🧺', name: '洗衣机' },
-        { key: 'parking', icon: '🚗', name: '免费停车' }
+        { key: 'tv', icon: 'icon-desktop', name: '智能电视' },
+        { key: 'ac', icon: 'icon-cloud', name: '空调' },
+        { key: 'wifi', icon: 'icon-wifi', name: '免费WiFi' },
+        { key: 'bathtub', icon: 'icon-experiment', name: '独立浴缸' },
+        { key: 'coffee', icon: 'icon-rest', name: '咖啡机' },
+        { key: 'toiletries', icon: 'icon-skin', name: '洗漱用品' },
+        { key: 'washer', icon: 'icon-sync', name: '洗衣机' },
+        { key: 'parking', icon: 'icon-car', name: '免费停车' }
       ]
       room.facilities = facilityMap.filter(f => room[f.key])
       if (!room.facilities.length) {
@@ -63,8 +63,8 @@ Page({
       // mock reviews
       this.setData({
         reviews: [
-          { id: 1, avatarEmoji: '😊', nickname: '王**', date: '2026-04-15', nights: 2, content: '房间很大，设施齐全，服务很好，下次还会来！' },
-          { id: 2, avatarEmoji: '🌟', nickname: '李**', date: '2026-04-10', nights: 1, content: '位置绝佳，风景很好，早餐很丰盛，强烈推荐。' }
+          { id: 1, avatarEmoji: '', nickname: '王**', date: '2026-04-15', nights: 2, content: '房间很大，设施齐全，服务很好，下次还会来！' },
+          { id: 2, avatarEmoji: '', nickname: '李**', date: '2026-04-10', nights: 1, content: '位置绝佳，风景很好，早餐很丰盛，强烈推荐。' }
         ]
       })
     } catch (e) {}
@@ -136,5 +136,8 @@ Page({
   },
   onShareAppMessage() {
     return { title: this.data.room.name || '好房推荐', path: `/pages/room_detail/room_detail?id=${this.roomId}` }
-  }
+  },
+
+  onHeroImgLoad() { this.setData({ heroImgLoaded: true }) },
+  onHeroImgError() { this.setData({ heroImgLoaded: false, 'room.imageUrl': '' }) }
 })

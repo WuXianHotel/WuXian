@@ -20,7 +20,7 @@ Page({
     ],
     showPicker: false,
     pickingStep: 'checkIn', // 'checkIn' | 'checkOut'
-    calendarDays: [],
+    calendarMonths: [],
     weekDays: ['日', '一', '二', '三', '四', '五', '六'],
     tempCheckIn: '',
     tempCheckOut: ''
@@ -110,31 +110,49 @@ Page({
   buildCalendar() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const year = today.getFullYear()
-    const month = today.getMonth()
-    const firstDay = new Date(year, month, 1).getDay()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const { tempCheckIn, tempCheckOut } = this.data
 
-    const days = []
-    for (let i = 0; i < firstDay; i++) {
-      days.push({ date: '', day: '', type: 'empty', label: '' })
+    // 构建最近 3 个月的日历（当前月 + 后续 2 个月）
+    const MONTHS_TO_SHOW = 3
+    const baseYear = today.getFullYear()
+    const baseMonth = today.getMonth()
+    const months = []
+
+    for (let offset = 0; offset < MONTHS_TO_SHOW; offset++) {
+      const year = baseYear + Math.floor((baseMonth + offset) / 12)
+      const month = (baseMonth + offset) % 12
+      const firstDay = new Date(year, month, 1).getDay()
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+      const days = []
+      // 补齐月初空位
+      for (let i = 0; i < firstDay; i++) {
+        days.push({ date: '', day: '', type: 'empty', label: '' })
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d)
+        date.setHours(0, 0, 0, 0)
+        const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+        let type = 'normal'
+        if (date < today) type = 'past'
+        else if (dateStr === tempCheckIn) type = 'selected'
+        else if (dateStr === tempCheckOut) type = 'selected'
+        else if (tempCheckIn && tempCheckOut && dateStr > tempCheckIn && dateStr < tempCheckOut) type = 'in-range'
+        else if (date.getTime() === today.getTime()) type = 'today'
+        let label = ''
+        if (dateStr === tempCheckIn) label = '入住'
+        if (dateStr === tempCheckOut) label = '退房'
+        days.push({ date: dateStr, day: d, type, label })
+      }
+      months.push({
+        key: `${year}-${month}`,
+        year,
+        month: month + 1,
+        title: `${year}年${month + 1}月`,
+        days
+      })
     }
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month, d)
-      date.setHours(0, 0, 0, 0)
-      const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-      let type = 'normal'
-      if (date < today) type = 'past'
-      else if (dateStr === this.data.tempCheckIn) type = 'selected'
-      else if (dateStr === this.data.tempCheckOut) type = 'selected'
-      else if (this.data.tempCheckIn && this.data.tempCheckOut && dateStr > this.data.tempCheckIn && dateStr < this.data.tempCheckOut) type = 'in-range'
-      else if (date.getTime() === today.getTime()) type = 'today'
-      let label = ''
-      if (dateStr === this.data.tempCheckIn) label = '入住'
-      if (dateStr === this.data.tempCheckOut) label = '退房'
-      days.push({ date: dateStr, day: d, type, label })
-    }
-    this.setData({ calendarDays: days })
+    this.setData({ calendarMonths: months })
   },
 
   selectDate(e) {
@@ -143,10 +161,25 @@ Page({
     const today = util.today()
     if (date < today) return
 
+    const { tempCheckIn, tempCheckOut } = this.data
+
+    // 再次点击已选中的入住日期：清空入住和退房，重新选择入住
+    if (date === tempCheckIn) {
+      this.setData({ tempCheckIn: '', tempCheckOut: '', pickingStep: 'checkIn' })
+      this.buildCalendar()
+      return
+    }
+    // 再次点击已选中的退房日期：只清空退房，回到选择退房步骤
+    if (date === tempCheckOut) {
+      this.setData({ tempCheckOut: '', pickingStep: 'checkOut' })
+      this.buildCalendar()
+      return
+    }
+
     if (this.data.pickingStep === 'checkIn') {
       this.setData({ tempCheckIn: date, tempCheckOut: '', pickingStep: 'checkOut' })
     } else {
-      if (date <= this.data.tempCheckIn) {
+      if (date <= tempCheckIn) {
         this.setData({ tempCheckIn: date, tempCheckOut: '', pickingStep: 'checkOut' })
       } else {
         this.setData({ tempCheckOut: date })
@@ -197,6 +230,17 @@ Page({
   callHotel() {
     const phone = this.data.hotelConfig.hotel_phone || '400-000-0000'
     wx.makePhoneCall({ phoneNumber: phone })
+  },
+
+  onImgLoad(e) {
+    const id = e.currentTarget.dataset.id
+    const rooms = this.data.rooms.map(r => r.id === id ? { ...r, imgLoaded: true } : r)
+    this.setData({ rooms })
+  },
+  onImgError(e) {
+    const id = e.currentTarget.dataset.id
+    const rooms = this.data.rooms.map(r => r.id === id ? { ...r, imageUrl: '', imgLoaded: false } : r)
+    this.setData({ rooms })
   },
 
   noop() {}

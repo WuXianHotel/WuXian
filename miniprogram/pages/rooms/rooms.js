@@ -2,6 +2,17 @@
 const api = require('../../utils/api')
 const util = require('../../utils/util')
 
+const WEEK_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+function dateMd(s) {
+  if (!s) return ''
+  const d = new Date(s)
+  return `${d.getMonth() + 1}月${d.getDate()}日`
+}
+function dateWeek(s) {
+  if (!s) return ''
+  return WEEK_NAMES[new Date(s).getDay()]
+}
+
 Page({
   data: {
     checkIn: '', checkOut: '', checkInLabel: '', checkOutLabel: '', nights: 1,
@@ -10,7 +21,14 @@ Page({
     activeTag: '',
     priceRange: '',
     bedType: '',
-    showFilter: false
+    showFilter: false,
+    // 日期选择器
+    showDatePickerModal: false,
+    pickingStep: 'checkIn',
+    calendarMonths: [],
+    weekDays: ['日', '一', '二', '三', '四', '五', '六'],
+    tempCheckIn: '',
+    tempCheckOut: ''
   },
 
   onLoad(options) {
@@ -20,6 +38,10 @@ Page({
       checkIn, checkOut,
       checkInLabel: util.formatDate(checkIn),
       checkOutLabel: util.formatDate(checkOut),
+      checkInMd: dateMd(checkIn),
+      checkInWeek: dateWeek(checkIn),
+      checkOutMd: dateMd(checkOut),
+      checkOutWeek: dateWeek(checkOut),
       nights: util.calcNights(checkIn, checkOut)
     })
     this.loadRooms(true)
@@ -45,7 +67,7 @@ Page({
       if (activeTag === 'bigBed') params.bedType = '大床'
       if (activeTag === 'suite') params.type = 'suite'
       if (activeTag === 'smokeFree') params.smokeFree = 1
-      if (priceRange) { const [min, max] = priceRange.split('-'); params.priceMin = min; params.priceMax = max }
+      if (priceRange) { const [min, max] = priceRange.split('-'); params.minPrice = min; params.maxPrice = max }
       if (bedType) params.bedType = bedType
 
       const res = await api.getRooms(params)
@@ -80,7 +102,116 @@ Page({
   applyFilter() { this.setData({ showFilter: false }); this.loadRooms(true) },
 
   showDatePicker() {
-    wx.navigateTo({ url: `/pages/index/index` })
+    this.setData({
+      showDatePickerModal: true,
+      pickingStep: 'checkIn',
+      tempCheckIn: this.data.checkIn,
+      tempCheckOut: this.data.checkOut
+    })
+    this.buildCalendar()
+  },
+
+  closeDatePicker() {
+    this.setData({ showDatePickerModal: false })
+  },
+
+  buildCalendar() {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const { tempCheckIn, tempCheckOut } = this.data
+
+    const MONTHS_TO_SHOW = 3
+    const baseYear = today.getFullYear()
+    const baseMonth = today.getMonth()
+    const months = []
+
+    for (let offset = 0; offset < MONTHS_TO_SHOW; offset++) {
+      const year = baseYear + Math.floor((baseMonth + offset) / 12)
+      const month = (baseMonth + offset) % 12
+      const firstDay = new Date(year, month, 1).getDay()
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+      const days = []
+      for (let i = 0; i < firstDay; i++) {
+        days.push({ date: '', day: '', type: 'empty', label: '' })
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d)
+        date.setHours(0, 0, 0, 0)
+        const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+        let type = 'normal'
+        if (date < today) type = 'past'
+        else if (dateStr === tempCheckIn) type = 'selected'
+        else if (dateStr === tempCheckOut) type = 'selected'
+        else if (tempCheckIn && tempCheckOut && dateStr > tempCheckIn && dateStr < tempCheckOut) type = 'in-range'
+        else if (date.getTime() === today.getTime()) type = 'today'
+        let label = ''
+        if (dateStr === tempCheckIn) label = '入住'
+        if (dateStr === tempCheckOut) label = '退房'
+        days.push({ date: dateStr, day: d, type, label })
+      }
+      months.push({
+        key: `${year}-${month}`,
+        year,
+        month: month + 1,
+        title: `${year}年${month + 1}月`,
+        days
+      })
+    }
+    this.setData({ calendarMonths: months })
+  },
+
+  selectDate(e) {
+    const date = e.currentTarget.dataset.date
+    if (!date) return
+    const today = util.today()
+    if (date < today) return
+
+    const { tempCheckIn, tempCheckOut } = this.data
+
+    if (date === tempCheckIn) {
+      this.setData({ tempCheckIn: '', tempCheckOut: '', pickingStep: 'checkIn' })
+      this.buildCalendar()
+      return
+    }
+    if (date === tempCheckOut) {
+      this.setData({ tempCheckOut: '', pickingStep: 'checkOut' })
+      this.buildCalendar()
+      return
+    }
+
+    if (this.data.pickingStep === 'checkIn') {
+      this.setData({ tempCheckIn: date, tempCheckOut: '', pickingStep: 'checkOut' })
+    } else {
+      if (date <= tempCheckIn) {
+        this.setData({ tempCheckIn: date, tempCheckOut: '', pickingStep: 'checkOut' })
+      } else {
+        this.setData({ tempCheckOut: date })
+      }
+    }
+    this.buildCalendar()
+  },
+
+  confirmDates() {
+    const { tempCheckIn, tempCheckOut } = this.data
+    if (!tempCheckIn || !tempCheckOut) {
+      wx.showToast({ title: '请选择入住和退房日期', icon: 'none' })
+      return
+    }
+    const nights = util.calcNights(tempCheckIn, tempCheckOut)
+    this.setData({
+      checkIn: tempCheckIn,
+      checkOut: tempCheckOut,
+      checkInLabel: util.formatDate(tempCheckIn),
+      checkOutLabel: util.formatDate(tempCheckOut),
+      checkInMd: dateMd(tempCheckIn),
+      checkInWeek: dateWeek(tempCheckIn),
+      checkOutMd: dateMd(tempCheckOut),
+      checkOutWeek: dateWeek(tempCheckOut),
+      nights,
+      showDatePickerModal: false
+    })
+    this.loadRooms(true)
   },
 
   goDetail(e) {
@@ -90,6 +221,20 @@ Page({
   goBook(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/room_detail/room_detail?id=${id}&checkIn=${this.data.checkIn}&checkOut=${this.data.checkOut}` })
+  },
+
+  // 图片加载完成：标记为 loaded，触发淡入
+  onImgLoad(e) {
+    const id = e.currentTarget.dataset.id
+    const rooms = this.data.rooms.map(r => r.id === id ? { ...r, imgLoaded: true } : r)
+    this.setData({ rooms })
+  },
+
+  // 图片加载失败：清空 imageUrl，回退到占位图标
+  onImgError(e) {
+    const id = e.currentTarget.dataset.id
+    const rooms = this.data.rooms.map(r => r.id === id ? { ...r, imageUrl: '', imgLoaded: false } : r)
+    this.setData({ rooms })
   },
 
   noop() {}

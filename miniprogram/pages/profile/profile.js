@@ -11,7 +11,8 @@ Page({
     maskedPhone: '',
     orderBadge: 0,
     couponBadge: 0,
-    globalToken: ''
+    globalToken: '',
+    hotelConfig: {}
   },
 
   onShow() {
@@ -24,6 +25,7 @@ Page({
       globalToken: app.globalData.token || '',
       maskedPhone: util.maskPhone(userInfo.phone)
     })
+    this.loadHotelConfig()
     if (app.globalData.token) {
       this.loadMemberInfo()
     }
@@ -61,15 +63,23 @@ Page({
     try {
       // 上传到 COS
       const avatarUrl = await uploadToCos(tempPath, 'avatars/')
+      if (!avatarUrl || !/^https?:\/\//.test(avatarUrl)) {
+        throw new Error('COS 返回 URL 无效：' + avatarUrl)
+      }
       // 保存到后端
       await api.updateProfile({ avatarUrl })
       await app.fetchProfile()
       this.setData({ userInfo: app.globalData.userInfo, globalToken: app.globalData.token })
-      wx.showToast({ title: '头像已更新', icon: 'success' })
-    } catch (e) {
-      wx.showToast({ title: '上传失败', icon: 'none' })
-    } finally {
       wx.hideLoading()
+      wx.showToast({ title: '头像已更新', icon: 'success' })
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[onChooseAvatar] 上传失败', err)
+      wx.showModal({
+        title: '头像上传失败',
+        content: (err && err.errMsg) || (err && err.message) || '请稍后重试',
+        showCancel: false
+      })
     }
   },
 
@@ -117,20 +127,34 @@ Page({
   goInvoice() { wx.showToast({ title: '功能开发中', icon: 'none' }) },
   goPersonalInfo() { wx.navigateTo({ url: '/pages/profile_edit/profile_edit' }) },
   goSecurity() { wx.navigateTo({ url: '/pages/profile_edit/profile_edit' }) },
-  goNotifications() { wx.showToast({ title: '功能开发中', icon: 'none' }) },
-  goHelp() { wx.showToast({ title: '功能开发中', icon: 'none' }) },
-  contactService() { wx.makePhoneCall({ phoneNumber: '400-XXX-XXXX' }) },
+  // goNotifications() { wx.showToast({ title: '功能开发中', icon: 'none' }) },
+  // goHelp() { wx.showToast({ title: '功能开发中', icon: 'none' }) },
+  // contactService() { wx.makePhoneCall({ phoneNumber: '400-XXX-XXXX' }) },
 
-  async logout() {
-    const res = await new Promise(resolve => {
-      wx.showModal({ title: '退出登录', content: '确定要退出登录吗？', success: resolve })
-    })
-    if (!res.confirm) return
-    app.globalData.token = ''
-    app.globalData.userInfo = null
-    wx.removeStorageSync('token')
-    wx.removeStorageSync('userInfo')
-    this.setData({ userInfo: {}, memberInfo: {}, orderBadge: 0, couponBadge: 0, globalToken: '' })
-    wx.showToast({ title: '已退出登录', icon: 'success' })
-  }
+  // 联系酒店前台（与首页 callHotel 一致）
+  callHotel() {
+    const phone = this.data.hotelConfig.hotel_phone || '400-000-0000'
+    wx.makePhoneCall({ phoneNumber: phone })
+  },
+
+  async loadHotelConfig() {
+    try {
+      const res = await api.getHotelConfig()
+      this.setData({ hotelConfig: res.data || {} })
+    } catch (e) {}
+  },
+
+  // 退出登录功能已注释，不再暴露给用户
+  // async logout() {
+  //   const res = await new Promise(resolve => {
+  //     wx.showModal({ title: '退出登录', content: '确定要退出登录吗？', success: resolve })
+  //   })
+  //   if (!res.confirm) return
+  //   app.globalData.token = ''
+  //   app.globalData.userInfo = null
+  //   wx.removeStorageSync('token')
+  //   wx.removeStorageSync('userInfo')
+  //   this.setData({ userInfo: {}, memberInfo: {}, orderBadge: 0, couponBadge: 0, globalToken: '' })
+  //   wx.showToast({ title: '已退出登录', icon: 'success' })
+  // }
 })

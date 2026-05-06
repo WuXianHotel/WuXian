@@ -21,7 +21,7 @@
   <scroll-view scroll-y class="content safe-bottom">
     <!-- 订单详情 -->
     <view class="detail-card card">
-      <view class="detail-title">📋 订单信息</view>
+      <view class="detail-title"><text class="iconfont icon-file-text"></text> 订单信息</view>
       <view class="detail-row">
         <text class="row-label">房型</text>
         <text class="row-val">{{order.roomName}} × {{order.qty}}</text>
@@ -50,7 +50,7 @@
 
     <!-- 费用明细 -->
     <view class="fee-card card">
-      <view class="detail-title">💰 费用明细</view>
+      <view class="detail-title"><text class="iconfont icon-wallet"></text> 费用明细</view>
       <view class="fee-row">
         <text class="fee-label">{{order.roomName}} × {{order.nights}}晚 × {{order.qty}}间</text>
         <text class="fee-val">¥{{roomTotal}}</text>
@@ -104,7 +104,7 @@
     <!-- 支付方式 -->
     <view class="pay-card card">
       <view class="pay-item active">
-        <view class="pay-icon">💰</view>
+        <view class="pay-icon"><text class="iconfont icon-wallet"></text></view>
         <text class="pay-name">会员余额支付</text>
         <text class="pay-balance">¥{{walletBalance}}</text>
       </view>
@@ -130,7 +130,7 @@
     <view class="coupon-modal" catchtap="noop">
       <view class="modal-title">选择优惠券</view>
       <view wx:if="{{coupons.length === 0}}" class="empty">
-        <text class="empty-icon">🎫</text>
+        <text class="iconfont icon-tag empty-icon"></text>
         <text class="empty-text">暂无可用优惠券</text>
       </view>
       <view class="coupon-item" wx:for="{{coupons}}" wx:key="id" bindtap="selectCoupon" data-coupon="{{item}}">

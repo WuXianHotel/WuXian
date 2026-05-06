@@ -2,9 +2,9 @@
 <view class="page">
   <!-- ─── 搜索头部 ─── -->
   <view class="header">
-    <view class="header-slogan">寻找你的专属住所 🏨</view>
+    <view class="header-slogan">寻找你的专属住所 <text class="iconfont icon-bank"></text></view>
     <view class="search-box" bindtap="goRooms">
-      <text class="search-icon">🔍</text>
+      <text class="iconfont icon-search search-icon"></text>
       <text class="search-placeholder">搜索房型、设施...</text>
     </view>
     <view class="date-chips">
@@ -25,21 +25,21 @@
     <!-- 欢迎提示 + 酒店位置 -->
     <view class="welcome-bar">
       <view class="welcome-top">
-        <text class="welcome-icon">📢</text>
+        <text class="iconfont icon-notification welcome-icon"></text>
         <text class="welcome-text">欢迎入住{{hotelConfig.hotel_name || '酒店'}}，如需帮助请联系前台</text>
       </view>
       <view class="welcome-bottom" wx:if="{{hotelConfig.hotel_address}}">
         <view class="welcome-address" bindtap="navigateToHotel">
-          <text class="address-icon">📍</text>
+          <text class="iconfont icon-location address-icon"></text>
           <text class="address-text">{{hotelConfig.hotel_address}}</text>
         </view>
         <view class="welcome-actions">
           <view class="welcome-btn nav-btn" bindtap="navigateToHotel">
-            <text>🧭</text>
+            <text class="iconfont icon-compass"></text>
             <text>导航</text>
           </view>
           <view class="welcome-btn call-btn" bindtap="callHotel">
-            <text>📞</text>
+            <text class="iconfont icon-phone"></text>
             <text>电话</text>
           </view>
         </view>
@@ -60,19 +60,19 @@
     <!-- 快捷入口 -->
     <view class="quick-grid">
       <view class="quick-item" bindtap="goRooms">
-        <view class="quick-icon">🛏️</view>
+        <text class="iconfont icon-home quick-icon"></text>
         <text class="quick-label">预订房间</text>
       </view>
       <view class="quick-item" bindtap="goOrders">
-        <view class="quick-icon">📋</view>
+        <text class="iconfont icon-file-text quick-icon"></text>
         <text class="quick-label">我的订单</text>
       </view>
       <view class="quick-item" bindtap="goMember">
-        <view class="quick-icon">💎</view>
+        <text class="iconfont icon-crown quick-icon"></text>
         <text class="quick-label">会员中心</text>
       </view>
       <view class="quick-item" bindtap="goCoupons">
-        <view class="quick-icon">🎁</view>
+        <text class="iconfont icon-gift quick-icon"></text>
         <text class="quick-label">优惠券</text>
       </view>
     </view>
@@ -91,14 +91,25 @@
       <view wx:else>
         <view class="room-card" wx:for="{{rooms}}" wx:key="id" bindtap="goRoomDetail" data-id="{{item.id}}">
           <view class="room-img-wrap">
-            <image class="room-img" src="{{item.imageUrl || '/images/room-placeholder.png'}}" mode="aspectFill"/>
-            <view class="room-rating">⭐ {{item.rating}}</view>
+            <view class="img-placeholder">
+              <text class="iconfont icon-image"></text>
+            </view>
+            <image
+              wx:if="{{item.imageUrl}}"
+              class="room-img {{item.imgLoaded ? 'loaded' : ''}}"
+              src="{{item.imageUrl}}"
+              mode="aspectFill"
+              binderror="onImgError"
+              bindload="onImgLoad"
+              data-id="{{item.id}}"
+            />
+            <view class="room-rating"><text class="iconfont icon-star-fill"></text> {{item.rating}}</view>
           </view>
           <view class="room-info">
             <view class="room-name">{{item.name}}</view>
             <view class="room-tags">
-              <text class="tag tag-blue" wx:if="{{item.area}}">📐 {{item.area}}㎡</text>
-              <text class="tag tag-blue" wx:if="{{item.bedType}}">🛏 {{item.bedType}}</text>
+              <view class="tag tag-blue" wx:if="{{item.area}}"><text class="iconfont icon-border-outer"></text> {{item.area}}㎡</view>
+              <view class="tag tag-blue" wx:if="{{item.bedType}}"><text class="iconfont icon-home"></text> {{item.bedType}}</view>
               <text class="tag tag-green" wx:if="{{item.breakfast}}">含早餐</text>
               <text class="tag tag-gray" wx:if="{{item.smokeFree}}">禁烟</text>
             </view>
@@ -119,20 +130,32 @@
   <view class="modal-mask" wx:if="{{showPicker}}" bindtap="closePicker">
     <view class="date-picker-modal" catchtap="noop">
       <view class="picker-title">选择入住/退房日期</view>
-      <view class="picker-hint">请选择入住日期</view>
-      <view class="date-grid">
-        <view class="day-header" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
-        <view
-          class="day-cell {{item.type}}"
-          wx:for="{{calendarDays}}"
-          wx:key="date"
-          bindtap="selectDate"
-          data-date="{{item.date}}"
-        >
-          <text class="day-num">{{item.day}}</text>
-          <text class="day-label" wx:if="{{item.label}}">{{item.label}}</text>
-        </view>
+      <view class="picker-hint">
+        {{tempCheckIn && !tempCheckOut ? '请选择退房日期' : (tempCheckIn && tempCheckOut ? '已选 ' + tempCheckIn + ' → ' + tempCheckOut : '请选择入住日期')}}
       </view>
+      <!-- 星期表头（固定） -->
+      <view class="week-header">
+        <view class="day-header" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
+      </view>
+      <!-- 多月滚动区 -->
+      <scroll-view scroll-y class="months-scroll">
+        <block wx:for="{{calendarMonths}}" wx:key="key" wx:for-item="m">
+          <view class="month-title">{{m.title}}</view>
+          <view class="date-grid">
+            <view
+              class="day-cell {{item.type}}"
+              wx:for="{{m.days}}"
+              wx:key="date"
+              wx:for-item="item"
+              bindtap="selectDate"
+              data-date="{{item.date}}"
+            >
+              <text class="day-num">{{item.day}}</text>
+              <text class="day-label" wx:if="{{item.label}}">{{item.label}}</text>
+            </view>
+          </view>
+        </block>
+      </scroll-view>
       <view class="picker-footer">
         <view class="btn btn-primary btn-block" bindtap="confirmDates">确定</view>
       </view>

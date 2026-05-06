@@ -1,57 +1,55 @@
 /**
  * 小程序端 COS 直传工具
  * 用法：const url = await uploadToCos(tempFilePath, 'avatars/')
+ *
+ * 实现原理：
+ *   1) 请求后端 /api/mp/upload/put-sign 拿到预签名 URL（PUT）
+ *   2) 用 wx.uploadFile 走该 URL，COS 直接校验签名
+ *   3) 成功后返回 publicUrl（https://host/key，不带签名）
  */
 const api = require('./api')
 
-/**
- * 上传临时文件到腾讯云 COS
- * @param {string} filePath - wx.chooseImage / chooseAvatar 返回的临时路径
- * @param {string} prefix - COS 路径前缀，如 'avatars/'
- * @returns {Promise<string>} COS 公开 URL
- */
 async function uploadToCos(filePath, prefix) {
   prefix = prefix || 'avatars/'
-  // 1. 获取临时密钥
-  const signRes = await api.getCosSign(prefix)
-  const { credentials, bucket, region, cdnDomain } = signRes.data
+  const ext = (filePath.split('.').pop() || 'jpg').toLowerCase().slice(0, 5)
 
-  // 2. 生成唯一 key
-  const ext = filePath.split('.').pop() || 'jpg'
-  const key = `${prefix}${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+  // 1. 拿预签名 PUT URL
+  const signRes = await api.getPutSign({ prefix, ext })
+  const { uploadUrl, publicUrl } = signRes.data || {}
+  if (!uploadUrl || !publicUrl) {
+    throw new Error('获取上传签名失败')
+  }
 
-  // 3. 直传 COS（POST 方式，小程序用 wx.uploadFile）
-  const cosUrl = `https://${bucket}.cos.${region}.myqcloud.com`
-
+  // 2. 用 wx.uploadFile 走预签名 URL 上传
+  //    注意：wx.uploadFile 是 multipart/form-data，而 COS PUT 需要原始 body
+  //    所以我们用 wx.request + readFileSync 读取文件 ArrayBuffer 来发 PUT
   return new Promise((resolve, reject) => {
-    wx.uploadFile({
-      url: cosUrl,
+    wx.getFileSystemManager().readFile({
       filePath,
-      name: 'file',
-      formData: {
-        key,
-        success_action_status: '200',
-        'q-sign-algorithm': 'sha1',
-        'q-ak': credentials.tmpSecretId,
-        'q-key-time': `${Math.floor(Date.now()/1000)};${Math.floor(Date.now()/1000) + 900}`,
-        'x-cos-security-token': credentials.sessionToken,
-        policy: btoa(JSON.stringify({
-          expiration: new Date(Date.now() + 900000).toISOString(),
-          conditions: [
-            { bucket },
-            ['starts-with', '$key', prefix],
-          ]
-        }))
+      success: (res) => {
+        wx.request({
+          url: uploadUrl,
+          method: 'PUT',
+          data: res.data, // ArrayBuffer
+          header: {
+            'content-type': 'application/octet-stream',
+          },
+          success: (r) => {
+            if (r.statusCode >= 200 && r.statusCode < 300) {
+              resolve(publicUrl)
+            } else {
+              console.error('[uploadToCos] COS 返回错误', r.statusCode, r.data)
+              reject(new Error(`COS upload failed: ${r.statusCode}`))
+            }
+          },
+          fail: (err) => {
+            console.error('[uploadToCos] 网络错误', err)
+            reject(err)
+          }
+        })
       },
-      success(res) {
-        if (res.statusCode === 200) {
-          resolve(`${cdnDomain}/${key}`)
-        } else {
-          // POST 方式可能不适用于所有配置，回退用 PUT
-          reject(new Error(`COS upload failed: ${res.statusCode}`))
-        }
-      },
-      fail(err) {
+      fail: (err) => {
+        console.error('[uploadToCos] 读取文件失败', err)
         reject(err)
       }
     })

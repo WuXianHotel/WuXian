@@ -2,7 +2,7 @@
 <view class="page">
   <!-- Hero -->
   <view class="hero">
-    <view class="hero-avatar">{{memberInfo.icon || '👤'}}</view>
+    <view class="hero-avatar"><text class="iconfont {{memberInfo.icon ? '' : 'icon-user'}}">{{memberInfo.icon || ''}}</text></view>
     <view class="hero-name">{{userInfo.nickname || '会员用户'}}</view>
     <view class="hero-level" bindtap="goLevelProgress">
       {{memberInfo.level_name || '会员'}} ›
@@ -48,19 +48,19 @@
     <!-- 快捷功能 -->
     <view class="quick-row">
       <view class="quick-btn" bindtap="goWallet">
-        <text class="quick-icon">💰</text>
+        <text class="iconfont icon-wallet quick-icon"></text>
         <text class="quick-text">我的余额</text>
       </view>
       <view class="quick-btn" bindtap="goPointsMall">
-        <text class="quick-icon">🛒</text>
+        <text class="iconfont icon-shopping quick-icon"></text>
         <text class="quick-text">积分商城</text>
       </view>
       <view class="quick-btn" bindtap="goCoupons">
-        <text class="quick-icon">🎫</text>
+        <text class="iconfont icon-tag quick-icon"></text>
         <text class="quick-text">优惠券</text>
       </view>
       <view class="quick-btn" bindtap="goLevelProgress">
-        <text class="quick-icon">👑</text>
+        <text class="iconfont icon-crown quick-icon"></text>
         <text class="quick-text">等级权益</text>
       </view>
     </view>

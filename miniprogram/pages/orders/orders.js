@@ -4,13 +4,15 @@ const util = require('../../utils/util')
 const app = getApp()
 
 // 后端数字状态 → 前端字符串 key
+// 对应数据库 schema：0待支付 1待入住 2入住中 3已退房 4已取消 5退款中 6已退款
 const STATUS_NUM_TO_KEY = {
   0: 'pending_payment',
   1: 'pending_checkin',
   2: 'checked_in',
   3: 'completed',
   4: 'cancelled',
-  5: 'refund_pending'
+  5: 'refund_pending',
+  6: 'refunded'
 }
 
 Page({
@@ -19,9 +21,11 @@ Page({
       { key: 'all', label: '全部' },
       { key: 'pending_payment', label: '待支付' },
       { key: 'pending_checkin', label: '待入住' },
+      { key: 'checked_in', label: '入住中' },
       { key: 'completed', label: '已完成' },
       { key: 'cancelled', label: '已取消' },
-      { key: 'refund_pending', label: '退款中' }
+      { key: 'refund_pending', label: '退款中' },
+      { key: 'refunded', label: '已退款' }
     ],
     activeTab: 'all',
     orders: [], page: 1, pageSize: 10,
@@ -134,5 +138,16 @@ Page({
 
   viewInvoice(e) {
     wx.showToast({ title: '发票功能开发中', icon: 'none' })
+  },
+
+  onImgLoad(e) {
+    const id = e.currentTarget.dataset.id
+    const orders = this.data.orders.map(o => o.id === id ? { ...o, imgLoaded: true } : o)
+    this.setData({ orders })
+  },
+  onImgError(e) {
+    const id = e.currentTarget.dataset.id
+    const orders = this.data.orders.map(o => o.id === id ? { ...o, imageUrl: '', imgLoaded: false } : o)
+    this.setData({ orders })
   }
 })

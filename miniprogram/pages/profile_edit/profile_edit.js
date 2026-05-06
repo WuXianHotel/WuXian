@@ -3,11 +3,14 @@ const api = require('../../utils/api')
 const { uploadToCos } = require('../../utils/cos-upload')
 const app = getApp()
 
+// 证件类型枚举：后端存数字（1=身份证 2=护照 3=港澳通行证 4=台湾通行证）
+const ID_TYPE_OPTIONS = ['身份证', '护照', '港澳通行证', '台湾通行证']
+
 Page({
   data: {
-    form: { nickname: '', gender: 0, realName: '', idType: '身份证', idNumber: '' },
+    form: { nickname: '', gender: 0, realName: '', idType: 1, idNumber: '' },
     avatarUrl: '',
-    idTypes: ['身份证', '护照', '港澳通行证', '台湾通行证'],
+    idTypes: ID_TYPE_OPTIONS,
     saving: false
   },
 
@@ -25,7 +28,7 @@ Page({
           nickname: u.nickname || '',
           gender: u.gender || 0,
           realName: u.real_name || '',
-          idType: u.id_type || '身份证',
+          idType: Number(u.id_type) || 1,
           idNumber: u.id_number || ''
         }
       })
@@ -40,10 +43,16 @@ Page({
     try {
       const cosUrl = await uploadToCos(tempPath, 'avatars/')
       this.setData({ avatarUrl: cosUrl })
-    } catch (err) {
-      wx.showToast({ title: '上传失败', icon: 'none' })
-    } finally {
       wx.hideLoading()
+      wx.showToast({ title: '上传成功', icon: 'success' })
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[chooseAvatar] 上传失败', err)
+      wx.showModal({
+        title: '头像上传失败',
+        content: (err && err.errMsg) || (err && err.message) || '请稍后重试',
+        showCancel: false
+      })
     }
   },
 
@@ -57,13 +66,18 @@ Page({
   },
 
   onIdTypeChange(e) {
-    this.setData({ 'form.idType': this.data.idTypes[e.detail.value] })
+    // picker 的 value 是索引，我们用 1-based 存数字
+    this.setData({ 'form.idType': Number(e.detail.value) + 1 })
   },
 
   async save() {
     const { form, avatarUrl } = this.data
     if (!form.nickname.trim()) {
       wx.showToast({ title: '请填写昵称', icon: 'none' }); return
+    }
+    // 头像必须是 COS 上传后的 https 地址，本地临时路径（http://tmp/ 或 wxfile://）不能存
+    if (avatarUrl && !/^https?:\/\//.test(avatarUrl)) {
+      wx.showToast({ title: '头像尚未上传完成，请重试', icon: 'none' }); return
     }
     this.setData({ saving: true })
     try {

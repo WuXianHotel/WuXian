@@ -2,15 +2,24 @@
 <view class="page">
   <!-- 顶部搜索 -->
   <view class="top-bar">
-    <view class="date-summary">
-      <view class="date-block" bindtap="showDatePicker">
+    <view class="date-summary" bindtap="showDatePicker">
+      <view class="date-block">
         <text class="date-label">入住</text>
-        <text class="date-val">{{checkInLabel}}</text>
+        <view class="date-main">
+          <text class="date-md">{{checkInMd}}</text>
+          <text class="date-week">{{checkInWeek}}</text>
+        </view>
       </view>
-      <view class="nights-badge">{{nights}}晚</view>
-      <view class="date-block" bindtap="showDatePicker">
+      <view class="date-middle">
+        <view class="date-arrow">→</view>
+        <view class="nights-badge">{{nights}}晚</view>
+      </view>
+      <view class="date-block">
         <text class="date-label">退房</text>
-        <text class="date-val">{{checkOutLabel}}</text>
+        <view class="date-main">
+          <text class="date-md">{{checkOutMd}}</text>
+          <text class="date-week">{{checkOutWeek}}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -19,9 +28,19 @@
   <view class="filter-bar">
     <scroll-view scroll-x class="filter-scroll">
       <view class="filter-tabs">
-        <view class="filter-tab {{sortBy==='default'?'active':''}}" bindtap="setSort" data-sort="default">综合 ⌄</view>
-        <view class="filter-tab {{sortBy==='price_asc'||sortBy==='price_desc'?'active':''}}" bindtap="togglePrice">价格 {{sortBy==='price_asc'?'↑':sortBy==='price_desc'?'↓':'⌄'}}</view>
-        <view class="filter-tab" bindtap="showFilterModal">🔧 筛选</view>
+        <view class="filter-tab {{sortBy==='default'?'active':''}}" bindtap="setSort" data-sort="default">
+          <text>综合</text>
+        </view>
+        <view class="filter-tab {{sortBy==='price_asc'||sortBy==='price_desc'?'active':''}}" bindtap="togglePrice">
+          <text>价格</text>
+          <text wx:if="{{sortBy==='price_asc'}}" class="iconfont icon-caret-up filter-tab-icon"></text>
+          <text wx:elif="{{sortBy==='price_desc'}}" class="iconfont icon-caret-down filter-tab-icon"></text>
+          <text wx:else class="iconfont icon-caret-down filter-tab-icon"></text>
+        </view>
+        <view class="filter-tab" bindtap="showFilterModal">
+          <text class="iconfont icon-filter filter-tab-icon"></text>
+          <text>筛选</text>
+        </view>
       </view>
     </scroll-view>
     <scroll-view scroll-x class="tag-scroll">
@@ -44,7 +63,7 @@
     <view wx:if="{{loading}}" class="loading-wrap">加载中...</view>
 
     <view wx:elif="{{rooms.length === 0}}" class="empty">
-      <view class="empty-icon">🛏️</view>
+      <text class="iconfont icon-home empty-icon"></text>
       <text class="empty-text">暂无符合条件的房型</text>
     </view>
 
@@ -52,7 +71,20 @@
       <view class="room-card card" wx:for="{{rooms}}" wx:key="id">
         <!-- 图片 -->
         <view class="img-wrap">
-          <image class="room-img" src="{{item.imageUrl || '/images/room-placeholder.png'}}" mode="aspectFill"/>
+          <!-- 占位骨架：始终渲染 -->
+          <view class="img-placeholder">
+            <text class="iconfont icon-image"></text>
+            <text class="img-placeholder-text">{{item.imageUrl ? '加载中…' : '暂无图片'}}</text>
+          </view>
+          <image
+            wx:if="{{item.imageUrl}}"
+            class="room-img {{item.imgLoaded ? 'loaded' : ''}}"
+            src="{{item.imageUrl}}"
+            mode="aspectFill"
+            binderror="onImgError"
+            bindload="onImgLoad"
+            data-id="{{item.id}}"
+          />
           <view class="img-label">实景图 {{item.imageCount || 6}}张</view>
           <view class="img-badge hot" wx:if="{{item.isHot}}">热销</view>
           <view class="img-badge suite" wx:if="{{item.type==='suite'}}">套房</view>
@@ -61,10 +93,10 @@
         <view class="info-wrap">
           <view class="room-name">{{item.name}}</view>
           <view class="room-attrs">
-            <text>📐 {{item.area}}㎡</text>
-            <text>🛏 {{item.bedType}}</text>
-            <text wx:if="{{item.view}}">🏙 {{item.view}}</text>
-            <text wx:if="{{item.smokeFree}}">🚭 禁烟</text>
+            <view class="room-attr-item"><text class="iconfont icon-border-outer"></text> {{item.area}}㎡</view>
+            <view class="room-attr-item"><text class="iconfont icon-home"></text> {{item.bedType}}</view>
+            <view class="room-attr-item" wx:if="{{item.view}}"><text class="iconfont icon-eye"></text> {{item.view}}</view>
+            <view class="room-attr-item" wx:if="{{item.smokeFree}}"><text class="iconfont icon-stop"></text> 禁烟</view>
           </view>
           <view class="room-facilities">
             <text wx:if="{{item.wifi}}" class="facility">✓ 免费WiFi</text>
@@ -78,7 +110,7 @@
               <text class="price-now">¥{{item.price}}</text>
               <text class="price-unit">/晚</text>
             </view>
-            <view wx:if="{{item.memberDiscount}}" class="member-discount">💎 会员享{{item.memberDiscount}}折</view>
+            <view wx:if="{{item.memberDiscount}}" class="member-discount"><text class="iconfont icon-crown"></text> 会员享{{item.memberDiscount}}折</view>
           </view>
           <view class="card-actions">
             <view class="btn btn-outline btn-sm" bindtap="goDetail" data-id="{{item.id}}">详情</view>
@@ -116,6 +148,40 @@
       <view class="filter-actions">
         <view class="btn btn-gray btn-half" bindtap="resetFilter">重置</view>
         <view class="btn btn-primary btn-half" bindtap="applyFilter">确定</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 日期选择弹窗 -->
+  <view class="modal-mask" wx:if="{{showDatePickerModal}}" bindtap="closeDatePicker">
+    <view class="date-picker-modal" catchtap="noop">
+      <view class="picker-title">选择入住/退房日期</view>
+      <view class="picker-hint">
+        {{tempCheckIn && !tempCheckOut ? '请选择退房日期' : (tempCheckIn && tempCheckOut ? '已选 ' + tempCheckIn + ' → ' + tempCheckOut : '请选择入住日期')}}
+      </view>
+      <view class="week-header">
+        <view class="day-header" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
+      </view>
+      <scroll-view scroll-y class="months-scroll">
+        <block wx:for="{{calendarMonths}}" wx:key="key" wx:for-item="m">
+          <view class="month-title">{{m.title}}</view>
+          <view class="date-grid">
+            <view
+              class="day-cell {{item.type}}"
+              wx:for="{{m.days}}"
+              wx:key="date"
+              wx:for-item="item"
+              bindtap="selectDate"
+              data-date="{{item.date}}"
+            >
+              <text class="day-num">{{item.day}}</text>
+              <text class="day-label" wx:if="{{item.label}}">{{item.label}}</text>
+            </view>
+          </view>
+        </block>
+      </scroll-view>
+      <view class="picker-footer">
+        <view class="btn btn-primary btn-block" bindtap="confirmDates">确定</view>
       </view>
     </view>
   </view>

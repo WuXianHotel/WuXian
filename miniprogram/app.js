@@ -1,4 +1,6 @@
 // app.js
+const iconfontBase64 = require('./assets/iconfont/iconfont-base64')
+
 App({
   globalData: {
     userInfo: null,
@@ -8,6 +10,14 @@ App({
 
   onLaunch() {
     console.log('[app] onLaunch 启动')
+    // 加载 iconfont 字体
+    wx.loadFontFace({
+      family: 'iconfont',
+      source: `url("${iconfontBase64}")`,
+      global: true,
+      success: () => console.log('[app] iconfont 字体加载成功'),
+      fail: (err) => console.error('[app] iconfont 字体加载失败', err)
+    })
     const token = wx.getStorageSync('token')
     const userInfo = wx.getStorageSync('userInfo')
     if (token) {

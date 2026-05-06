@@ -1,4 +1,6 @@
 /* app.wxss */
+@import '/assets/iconfont/iconfont.wxss';
+
 page {
   font-family: 'PingFang SC', -apple-system, sans-serif;
   font-size: 28rpx;
