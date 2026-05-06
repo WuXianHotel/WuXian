@@ -114,6 +114,7 @@ const statusMap = {
   3: ['已完成', 'info'],
   4: ['已取消', 'danger'],
   5: ['退款中', 'warning'],
+  6: ['已退款', 'info'],
 }
 const statusLabel = (s) => statusMap[s]?.[0] || s
 const statusType = (s) => statusMap[s]?.[1] || 'info'

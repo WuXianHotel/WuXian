@@ -164,6 +164,7 @@ const statusConfig = [
   { key: '3', label: '已完成', countKey: 'checked_out', type: 'info' },
   { key: '4', label: '已取消', countKey: 'cancelled', type: 'danger' },
   { key: '5', label: '退款中', countKey: 'refunding', type: 'warning' },
+  { key: '6', label: '已退款', countKey: 'refunded', type: 'info' },
 ]
 
 const statusStats = computed(() =>
@@ -212,9 +213,17 @@ async function load() {
   loading.value = false
 }
 
-onMounted(async () => {
+async function loadStats() {
   try { const s = await getOrderStats(); rawStats.value = s.data || {} } catch {}
-  load()
+}
+
+// 操作后同时刷新列表和顶部统计
+async function refreshAll() {
+  await Promise.all([load(), loadStats()])
+}
+
+onMounted(() => {
+  refreshAll()
 })
 
 function resetFilter() { filter.value = { orderNo:'', phone:'', status:'', dateRange: null }; page.value=1; load() }
@@ -251,14 +260,14 @@ async function submitCheckin() {
     await checkin(checkinOrder.value.order_no, body)
     toast?.success('入住办理成功')
     showCheckin.value = false
-    load()
+    refreshAll()
   } catch (e) { toast?.error(e?.msg || '入住办理失败') }
 }
 
 async function doCheckout(o) {
   try {
     await ElMessageBox.confirm(`确认为订单 ${o.order_no} 办理退房？`, '确认退房', { type: 'info' })
-    await checkout(o.order_no); toast?.success('退房成功'); load()
+    await checkout(o.order_no); toast?.success('退房成功'); refreshAll()
   } catch (e) { if (e !== 'cancel') toast?.error(e?.msg || '操作失败') }
 }
 
@@ -268,7 +277,7 @@ async function submitRefund() {
   try {
     await auditRefund(refundOrder.value.order_no, { action: refundResult.value, remark: refundRemark.value })
     toast?.success(refundResult.value === 'approve' ? '退款已批准' : '退款已拒绝')
-    showRefund.value = false; load()
+    showRefund.value = false; refreshAll()
   } catch (e) { toast?.error(e?.msg || '操作失败') }
 }
 </script>

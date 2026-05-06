@@ -37,7 +37,7 @@
             <span class="price-unit">/晚</span>
             <span class="room-count">共 {{ r.room_count }} 间</span>
           </div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;">
             <el-button size="small" @click="openRoomMgr(r)">房间管理</el-button>
             <el-button size="small" @click="openEdit(r)">编辑</el-button>
             <el-button size="small" @click="toggleStatus(r)">{{ r.status===1?'下架':'上架' }}</el-button>
@@ -258,12 +258,12 @@ async function saveRoom() {
     const imageUrls = []
     for (const item of (form.value.imageList || [])) {
       if (item.cosUrl) {
-        // 已有的 COS URL，直接保留
-        imageUrls.push(item.cosUrl)
+        // 已有的 COS URL，保存前剥离签名参数（只存干净的 URL，避免存入过期签名）
+        imageUrls.push(String(item.cosUrl).split('?')[0])
       } else if (item.raw) {
         // 新选择的文件，上传到 COS
         const url = await uploadToCos(item.raw, 'room-images/')
-        imageUrls.push(url)
+        imageUrls.push(String(url).split('?')[0])
       }
     }
 
