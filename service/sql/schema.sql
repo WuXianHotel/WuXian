@@ -77,22 +77,24 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `member_levels` (
   `id`            TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `level`         TINYINT          NOT NULL UNIQUE COMMENT '等级值 1铜 2银 3金 4铂',
+  `level`         TINYINT          NOT NULL UNIQUE COMMENT '等级值 1铜 2银 3金 4黑金 5钻石',
   `name`          VARCHAR(20)      NOT NULL COMMENT '等级名称',
   `min_nights`    INT              NOT NULL DEFAULT 0  COMMENT '最低累计入住晚数',
   `min_points`    INT              NOT NULL DEFAULT 0  COMMENT '最低积分',
   `discount`      DECIMAL(4,2)     NOT NULL DEFAULT 1.00 COMMENT '折扣率 0.95=九五折',
   `points_rate`   DECIMAL(4,2)     NOT NULL DEFAULT 1.00 COMMENT '积分倍率',
+  `deduct_rate`   DECIMAL(4,2)     NOT NULL DEFAULT 1.00 COMMENT '积分抵扣倍率（乘以基础汇率）',
   `icon`          VARCHAR(10)      DEFAULT '🥉',
   `color`         VARCHAR(20)      DEFAULT '#cd7f32',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB COMMENT='会员等级配置';
 
-INSERT IGNORE INTO `member_levels` VALUES
-(1, 1, '铜牌会员',  0,    0,    1.00, 1.0, '🥉', '#cd7f32'),
-(2, 2, '银牌会员',  5,  500,    0.97, 1.5, '🥈', '#c0c0c0'),
-(3, 3, '金牌会员', 15, 2000,    0.95, 2.0, '🥇', '#ffd700'),
-(4, 4, '铂金会员', 30, 5000,    0.90, 3.0, '💎', '#b8860b');
+INSERT IGNORE INTO `member_levels` (`id`, `level`, `name`, `min_nights`, `min_points`, `discount`, `points_rate`, `deduct_rate`, `icon`, `color`) VALUES
+(1, 1, '铜牌会员',  0,     0,    1.00, 1.0, 1.0, '🥉', '#cd7f32'),
+(2, 2, '银牌会员',  5,   500,    0.97, 1.2, 1.0, '🥈', '#c0c0c0'),
+(3, 3, '金牌会员', 15,  2000,    0.95, 1.5, 1.2, '🥇', '#ffd700'),
+(4, 4, '黑金会员', 30,  5000,    0.90, 2.0, 1.5, '🖤', '#1a1a1a'),
+(5, 5, '钻石会员', 60, 10000,    0.85, 3.0, 2.0, '💎', '#b8860b');
 
 -- ────────────────────────────────────────────────────────────
 -- 5. 会员信息（与用户 1:1）
