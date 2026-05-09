@@ -17,7 +17,6 @@
         <view class="quick-btn {{rechargeAmount == '1000' ? 'active' : ''}}" bindtap="quickAmount" data-amount="1000">1000</view>
       </view>
       <view class="amount-input-row">
-        <text class="amount-prefix">&#165;</text>
         <input class="amount-input" type="digit" value="{{rechargeAmount}}" placeholder="输入自定义金额" bindinput="onAmountInput"/>
       </view>
       <view class="btn btn-primary btn-block {{recharging?'disabled':''}}" bindtap="doRecharge">
