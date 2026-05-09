@@ -25,7 +25,8 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  // 与 vite.config.js base 保持一致
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 

@@ -4,6 +4,8 @@ import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [vue()],
+  // 部署到 https://wuxian-hotel.online/admin/，所有静态资源走 /admin/ 前缀
+  base: '/admin/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
