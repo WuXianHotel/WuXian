@@ -1,0 +1,47 @@
+name: Admin CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'admin/**'
+      - '.github/workflows/admin-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'admin/**'
+
+jobs:
+  build:
+    name: Build Vue3 + Vite
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./admin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        env:
+          VITE_API_BASE: ${{ vars.VITE_API_BASE || 'https://wuxian-hotel.online' }}
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist-${{ github.sha }}
+          path: admin/dist
+          retention-days: 7

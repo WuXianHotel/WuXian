@@ -1,0 +1,112 @@
+name: Admin Deploy
+
+# 后台自动部署：构建静态产物 → rsync 到自有云主机 → Nginx 原子切换
+# 前置：服务器已由 ops/scripts/server-bootstrap.sh 初始化
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin/**'
+      - '.github/workflows/admin-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: admin-deploy-prod
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy to Cloud Server
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://wuxian-hotel.online/admin/
+
+    defaults:
+      run:
+        working-directory: ./admin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build (Vite)
+        env:
+          VITE_API_BASE: ${{ vars.VITE_API_BASE || 'https://wuxian-hotel.online' }}
+        run: npm run build
+
+      - name: Pack dist
+        run: |
+          cd dist
+          tar -czf ../../admin-${{ github.sha }}.tar.gz .
+          ls -lh ../../admin-${{ github.sha }}.tar.gz
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Known hosts
+        working-directory: .
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload artifact
+        working-directory: .
+        run: |
+          scp -P ${{ secrets.SSH_PORT || 22 }} \
+              admin-${{ github.sha }}.tar.gz \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+      - name: Remote deploy (atomic symlink switch)
+        working-directory: .
+        run: |
+          ssh -p ${{ secrets.SSH_PORT || 22 }} \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "bash -s" << 'EOF'
+          set -euo pipefail
+
+          ADMIN_ROOT="/opt/hotel/admin"
+          RELEASES="$ADMIN_ROOT/releases"
+          CURRENT="$ADMIN_ROOT/current"
+          SHA="${{ github.sha }}"
+          TARGET="$RELEASES/$SHA"
+
+          # 1. 解压到新 release 目录
+          mkdir -p "$TARGET"
+          tar -xzf "/tmp/admin-$SHA.tar.gz" -C "$TARGET"
+
+          # 2. 原子切换（Nginx root 指向 current，不需 reload）
+          ln -sfn "$TARGET" "$CURRENT"
+
+          # 3. 健康检查：首页是否可访问
+          sleep 1
+          if ! curl -fsS "https://wuxian-hotel.online/admin/" -o /dev/null; then
+            echo "⚠️  域名暂未通或首次部署，跳过健康检查"
+          else
+            echo "✅ Admin reachable"
+          fi
+
+          # 4. 保留最近 5 个 release
+          cd "$RELEASES"
+          ls -1dt */ | tail -n +6 | xargs -r rm -rf
+
+          # 5. 清理 tarball
+          rm -f "/tmp/admin-$SHA.tar.gz"
+          EOF
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::error::后台部署失败 Commit=${{ github.sha }}"

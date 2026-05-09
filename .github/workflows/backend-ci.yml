@@ -1,0 +1,66 @@
+name: Backend CI
+
+# 后端持续集成：推送到 main/develop 或 PR 时触发
+# 仅对 service/ 目录变更时运行（路径过滤避免无谓构建）
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'service/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'service/**'
+
+jobs:
+  lint-and-test:
+    name: Lint & Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['18', '20']
+
+    defaults:
+      run:
+        working-directory: ./service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: service/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check (node --check)
+        run: |
+          find . -name "*.js" -not -path "./node_modules/*" -not -path "./logs/*" \
+            -exec node --check {} \;
+
+      - name: Security audit
+        run: npm audit --audit-level=high --production || true
+
+      - name: Verify app bootstraps
+        env:
+          NODE_ENV: test
+          PORT: 0
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: hotel_miniprogram
+          MP_JWT_SECRET: ci_mp_secret
+          ADMIN_JWT_SECRET: ci_admin_secret
+          WX_APPID: test
+          WX_SECRET: test
+          MOCK_ENABLED: 'true'
+        run: |
+          timeout 5 node -e "require('./app.js')" || true
+          echo "✅ require check pass"

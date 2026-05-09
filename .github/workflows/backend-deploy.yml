@@ -1,0 +1,133 @@
+name: Backend Deploy
+
+# 后端自动部署：push 到 main 即部署到生产服务器
+# 策略：SSH + rsync + PM2 零停机 reload
+# 前置：服务器需安装 Node.js 18+、PM2、并配置好 service/.env
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'service/**'
+      - '.github/workflows/backend-deploy.yml'
+  workflow_dispatch:   # 支持手动触发
+
+concurrency:
+  group: backend-deploy-prod
+  cancel-in-progress: false   # 部署不允许中断
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://wuxian-hotel.online/health
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: service/package-lock.json
+
+      - name: Install production deps
+        working-directory: ./service
+        run: npm ci --omit=dev
+
+      - name: Create deployment tarball
+        run: |
+          cd service
+          tar --exclude='logs' --exclude='uploads' --exclude='.env' \
+              -czf ../service-${{ github.sha }}.tar.gz .
+          ls -lh ../service-${{ github.sha }}.tar.gz
+
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload artifact
+        run: |
+          scp -P ${{ secrets.SSH_PORT || 22 }} \
+              service-${{ github.sha }}.tar.gz \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+      - name: Remote deploy (zero-downtime reload)
+        run: |
+          ssh -p ${{ secrets.SSH_PORT || 22 }} \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "bash -s" << 'EOF'
+          set -euo pipefail
+
+          APP_NAME="hotel-service"
+          APP_DIR="/opt/hotel/service"
+          RELEASES_DIR="/opt/hotel/releases"      # 后端 releases（与 admin 并列）
+          CURRENT="/opt/hotel/service/current"    # 后端 current（PM2 cwd）
+          SHA="${{ github.sha }}"
+          RELEASE_DIR="$RELEASES_DIR/$SHA"
+          mkdir -p "$(dirname "$CURRENT")"
+
+          # 1. 准备 release 目录
+          mkdir -p "$RELEASE_DIR" "$RELEASES_DIR"
+          tar -xzf "/tmp/service-$SHA.tar.gz" -C "$RELEASE_DIR"
+
+          # 2. 链接持久化资源（.env / uploads / logs）
+          ln -sfn "$APP_DIR/.env" "$RELEASE_DIR/.env"
+          ln -sfn "$APP_DIR/uploads" "$RELEASE_DIR/uploads"
+          ln -sfn "$APP_DIR/logs" "$RELEASE_DIR/logs"
+
+          # 3. 切换 current 软链（原子切换）
+          ln -sfn "$RELEASE_DIR" "$CURRENT"
+
+          # 4. PM2 reload（零停机）或首次 start
+          cd "$CURRENT"
+          if pm2 describe "$APP_NAME" > /dev/null 2>&1; then
+            pm2 reload "$APP_NAME" --update-env
+          else
+            pm2 start app.js --name "$APP_NAME" --max-memory-restart 512M
+            pm2 save
+          fi
+
+          # 5. 健康检查（最多等 30 秒）
+          PORT=$(grep -E '^PORT=' "$APP_DIR/.env" | cut -d= -f2)
+          PORT=${PORT:-3000}
+          for i in {1..15}; do
+            if curl -fsS "http://127.0.0.1:$PORT/health" > /dev/null; then
+              echo "✅ Health check passed"
+              break
+            fi
+            if [ $i -eq 15 ]; then
+              echo "❌ Health check failed, rolling back..."
+              # 回滚到上一个 release
+              PREV=$(ls -dt $RELEASES_DIR/*/ | sed -n 2p)
+              if [ -n "$PREV" ]; then
+                ln -sfn "${PREV%/}" "$CURRENT"
+                pm2 reload "$APP_NAME" --update-env
+              fi
+              exit 1
+            fi
+            sleep 2
+          done
+
+          # 6. 清理旧版本（保留最近 5 个）
+          cd "$RELEASES_DIR"
+          ls -1dt */ | tail -n +6 | xargs -r rm -rf
+
+          # 7. 清理 tarball
+          rm -f "/tmp/service-$SHA.tar.gz"
+          EOF
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::后端部署失败，请检查日志。Commit: ${{ github.sha }}"
