@@ -7,9 +7,6 @@
  * PATCH /api/admin/members/:id/points  人工调整积分
  * PATCH /api/admin/members/:id/status  封禁/解封用户
  * GET   /api/admin/members/:id/orders  会员订单历史
- * GET   /api/admin/coupons/templates   优惠券模板列表
- * POST  /api/admin/coupons/templates   新增优惠券模板
- * POST  /api/admin/coupons/send        批量发券
  */
 const router = require('express').Router();
 const { body } = require('express-validator');
@@ -17,7 +14,6 @@ const { query, transaction } = require('../../config/db');
 const { adminAuth } = require('../../middleware/auth');
 const { validate, parsePager, ok, page } = require('../../middleware/helper');
 const { checkLevelUpgrade } = require('../../middleware/levelCheck');
-const { v4: uuidv4 } = require('uuid');
 const dayjs = require('dayjs');
 
 // ── GET /levels  获取所有会员等级 ─────────────────────────────────────────────
@@ -398,70 +394,5 @@ router.get('/:id/orders', adminAuth(), async (req, res, next) => {
     return page(res, { list, total, page: p, pageSize });
   } catch (err) { next(err); }
 });
-
-// ── 优惠券模板 ────────────────────────────────────────────────────────────────
-router.get('/coupons/templates', adminAuth(), async (req, res, next) => {
-  try {
-    const list = await query('SELECT * FROM coupon_templates ORDER BY created_at DESC');
-    return ok(res, list);
-  } catch (err) { next(err); }
-});
-
-router.post('/coupons/templates',
-  adminAuth('super', 'operation'),
-  body('name').notEmpty(),
-  body('type').isIn([1, 2]),
-  body('value').isFloat({ min: 0 }),
-  validate,
-  async (req, res, next) => {
-    try {
-      const f = req.body;
-      await query(
-        `INSERT INTO coupon_templates
-          (name, type, value, min_amount, total_count, per_limit, valid_days, start_at, end_at)
-         VALUES (?,?,?,?,?,?,?,?,?)`,
-        [f.name, f.type, f.value, f.minAmount || 0, f.totalCount ?? -1,
-         f.perLimit || 1, f.validDays || null, f.startAt || null, f.endAt || null],
-      );
-      return ok(res, null, '优惠券模板创建成功');
-    } catch (err) { next(err); }
-  },
-);
-
-// ── 批量发券 ──────────────────────────────────────────────────────────────────
-router.post('/coupons/send',
-  adminAuth('super', 'operation'),
-  body('templateId').isInt({ min: 1 }),
-  body('userIds').isArray({ min: 1 }),
-  validate,
-  async (req, res, next) => {
-    try {
-      const { templateId, userIds } = req.body;
-      const [tpl] = await query('SELECT * FROM coupon_templates WHERE id = ? AND status = 1 LIMIT 1', [templateId]);
-      if (!tpl) return res.status(404).json({ code: 404, msg: '优惠券模板不存在' });
-
-      const expireAt = tpl.valid_days
-        ? dayjs().add(tpl.valid_days, 'day').format('YYYY-MM-DD')
-        : tpl.end_at;
-
-      let sent = 0;
-      await transaction(async conn => {
-        for (const uid of userIds) {
-          const code = uuidv4().replace(/-/g, '').slice(0, 16).toUpperCase();
-          await conn.execute(
-            'INSERT IGNORE INTO user_coupons (user_id, template_id, code, expire_at) VALUES (?,?,?,?)',
-            [uid, templateId, code, expireAt],
-          );
-          sent++;
-        }
-        await conn.execute(
-          'UPDATE coupon_templates SET issued_count = issued_count + ? WHERE id = ?',
-          [sent, templateId],
-        );
-      });
-      return ok(res, { sent }, `已向 ${sent} 位用户发放优惠券`);
-    } catch (err) { next(err); }
-  },
-);
 
 module.exports = router;

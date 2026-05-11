@@ -63,10 +63,6 @@
         <text class="fee-label">会员折扣({{order.memberDiscount}}折)</text>
         <text class="fee-val green">-¥{{discountAmount}}</text>
       </view>
-      <view class="fee-row discount" wx:if="{{selectedCoupon}}">
-        <text class="fee-label">优惠券</text>
-        <text class="fee-val green">-¥{{selectedCoupon.discount}}</text>
-      </view>
       <view class="fee-row discount" wx:if="{{usePointsDeduct && pointsDeductAmount > 0}}">
         <text class="fee-label">积分抵扣</text>
         <text class="fee-val green">-¥{{pointsDeductAmount}}</text>
@@ -75,18 +71,6 @@
       <view class="fee-row total">
         <text class="fee-label total-label">实付金额</text>
         <text class="fee-val total-val">¥{{finalPrice}}</text>
-      </view>
-    </view>
-
-    <!-- 优惠券 -->
-    <view class="coupon-card card" bindtap="chooseCoupon">
-      <view wx:if="{{selectedCoupon}}">
-        <text class="coupon-text">已使用：{{selectedCoupon.name}}</text>
-        <text class="coupon-change">更换 ›</text>
-      </view>
-      <view wx:else class="coupon-empty">
-        <text class="coupon-text coupon-none">{{coupons.length > 0 ? '点击选择优惠券' : '暂无可用优惠券'}}</text>
-        <text class="coupon-change" wx:if="{{coupons.length > 0}}">选择 ›</text>
       </view>
     </view>
 
@@ -122,29 +106,6 @@
     </view>
     <view class="btn btn-primary pay-btn {{paying || !balanceEnough ?'disabled':''}}" bindtap="doPay">
       {{paying ? '支付中...' : balanceEnough ? '余额支付' : '余额不足'}}
-    </view>
-  </view>
-
-  <!-- 优惠券选择弹窗 -->
-  <view class="modal-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal">
-    <view class="coupon-modal" catchtap="noop">
-      <view class="modal-title">选择优惠券</view>
-      <view wx:if="{{coupons.length === 0}}" class="empty">
-        <text class="iconfont icon-tag empty-icon"></text>
-        <text class="empty-text">暂无可用优惠券</text>
-      </view>
-      <view class="coupon-item" wx:for="{{coupons}}" wx:key="id" bindtap="selectCoupon" data-coupon="{{item}}">
-        <view class="coupon-left">
-          <text class="coupon-amount">¥{{item.discount}}</text>
-          <text class="coupon-cond">满{{item.minAmount}}可用</text>
-        </view>
-        <view class="coupon-right">
-          <text class="coupon-name">{{item.name}}</text>
-          <text class="coupon-expire">有效期至 {{item.expireDate}}</text>
-        </view>
-        <view class="coupon-check" wx:if="{{selectedCoupon && selectedCoupon.id === item.id}}">✓</view>
-      </view>
-      <view class="coupon-no-use btn btn-gray btn-block" bindtap="noUseCoupon">不使用优惠券</view>
     </view>
   </view>
 </view>

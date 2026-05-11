@@ -71,10 +71,6 @@
         <text class="iconfont icon-crown quick-icon"></text>
         <text class="quick-label">会员中心</text>
       </view>
-      <view class="quick-item" bindtap="goCoupons">
-        <text class="iconfont icon-gift quick-icon"></text>
-        <text class="quick-label">优惠券</text>
-      </view>
     </view>
 
     <!-- 热门房型 -->

@@ -79,7 +79,6 @@
         <el-descriptions-item label="晚数">{{ detailOrder.nights }}晚</el-descriptions-item>
         <el-descriptions-item label="房间号">{{ detailOrder.room_no || '未分配' }}</el-descriptions-item>
         <el-descriptions-item label="会员优惠">¥{{ detailOrder.member_discount || 0 }}</el-descriptions-item>
-        <el-descriptions-item label="优惠券">¥{{ detailOrder.coupon_discount || 0 }}</el-descriptions-item>
         <el-descriptions-item label="实付金额"><span style="color:var(--primary);font-weight:700">¥{{ detailOrder.pay_amount }}</span></el-descriptions-item>
         <el-descriptions-item label="下单时间">{{ fmtDate(detailOrder.created_at) }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ detailOrder.special_request || '无' }}</el-descriptions-item>

@@ -31,16 +31,15 @@ router.post('/products',
   adminAuth('super', 'operation'),
   body('name').notEmpty(),
   body('pointsCost').isInt({ min: 1 }),
-  body('type').isIn([0, 1]),
   validate,
   async (req, res, next) => {
     try {
       const f = req.body;
       await query(
-        `INSERT INTO points_products (name, description, image, type, points_cost, stock, coupon_template_id, sort_order)
-         VALUES (?,?,?,?,?,?,?,?)`,
-        [f.name, f.description || null, f.image || null, f.type, f.pointsCost,
-         f.stock ?? 999, f.couponTemplateId || null, f.sortOrder || 0],
+        `INSERT INTO points_products (name, description, image, points_cost, stock, sort_order)
+         VALUES (?,?,?,?,?,?)`,
+        [f.name, f.description || null, f.image || null, f.pointsCost,
+         f.stock ?? 999, f.sortOrder || 0],
       );
       return ok(res, null, '商品创建成功');
     } catch (err) { next(err); }
@@ -54,12 +53,11 @@ router.put('/products/:id', adminAuth('super', 'operation'), async (req, res, ne
     await query(
       `UPDATE points_products SET
         name=COALESCE(?,name), description=COALESCE(?,description), image=COALESCE(?,image),
-        type=COALESCE(?,type), points_cost=COALESCE(?,points_cost), stock=COALESCE(?,stock),
-        coupon_template_id=COALESCE(?,coupon_template_id), sort_order=COALESCE(?,sort_order),
-        status=COALESCE(?,status)
+        points_cost=COALESCE(?,points_cost), stock=COALESCE(?,stock),
+        sort_order=COALESCE(?,sort_order), status=COALESCE(?,status)
        WHERE id = ?`,
-      [f.name??null, f.description??null, f.image??null, f.type??null, f.pointsCost??null,
-       f.stock??null, f.couponTemplateId??null, f.sortOrder??null, f.status??null, req.params.id],
+      [f.name??null, f.description??null, f.image??null, f.pointsCost??null,
+       f.stock??null, f.sortOrder??null, f.status??null, req.params.id],
     );
     return ok(res, null, '更新成功');
   } catch (err) { next(err); }
@@ -86,7 +84,7 @@ router.get('/exchanges', adminAuth(), async (req, res, next) => {
     const [[{ total }], list] = await Promise.all([
       query(`SELECT COUNT(*) AS total FROM points_exchanges e ${where}`, params),
       query(
-        `SELECT e.*, p.name AS product_name, p.type AS product_type, u.nickname, u.phone AS user_phone
+        `SELECT e.*, p.name AS product_name, u.nickname, u.phone AS user_phone
          FROM points_exchanges e
          JOIN points_products p ON p.id = e.product_id
          JOIN users u ON u.id = e.user_id

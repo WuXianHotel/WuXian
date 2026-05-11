@@ -13,9 +13,6 @@
     <el-card shadow="hover" v-if="tab==='products'">
       <el-table :data="products" v-loading="loading" stripe style="width:100%">
         <el-table-column prop="name" label="商品名" />
-        <el-table-column label="类型" width="100">
-          <template #default="{ row }"><el-tag :type="row.type===0?'':'warning'" size="small">{{ row.type===0?'优惠券':'实物' }}</el-tag></template>
-        </el-table-column>
         <el-table-column prop="points_cost" label="积分" width="80" />
         <el-table-column prop="stock" label="库存" width="80" />
         <el-table-column label="状态" width="80">
@@ -41,14 +38,11 @@
         </el-table-column>
         <el-table-column prop="product_name" label="商品" />
         <el-table-column prop="points_spent" label="积分" width="70" />
-        <el-table-column label="类型" width="80">
-          <template #default="{ row }">{{ row.product_type===0?'优惠券':'实物' }}</template>
-        </el-table-column>
         <el-table-column label="状态" width="80">
           <template #default="{ row }"><el-tag :type="exStatusType(row.status)" size="small">{{ exStatusLabel(row.status) }}</el-tag></template>
         </el-table-column>
         <el-table-column label="收件信息" min-width="180">
-          <template #default="{ row }">{{ row.product_type===1 ? `${row.receiver||''} ${row.phone||''} ${row.address||''}` : '-' }}</template>
+          <template #default="{ row }">{{ `${row.receiver||''} ${row.phone||''} ${row.address||''}`.trim() || '-' }}</template>
         </el-table-column>
         <el-table-column label="时间" width="120">
           <template #default="{ row }">{{ fmtDate(row.created_at) }}</template>
@@ -71,13 +65,6 @@
         <el-form-item label="商品名称"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" /></el-form-item>
         <el-form-item label="图片URL"><el-input v-model="form.image" placeholder="留空使用默认图标" /></el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="form.type" style="width:100%">
-            <el-option label="优惠券" :value="0" />
-            <el-option label="实物" :value="1" />
-          </el-select>
-        </el-form-item>
-        <el-form-item v-if="form.type===0" label="优惠券模板ID"><el-input-number v-model="form.couponTemplateId" style="width:100%" /></el-form-item>
         <el-form-item label="所需积分"><el-input-number v-model="form.pointsCost" :min="1" style="width:100%" /></el-form-item>
         <el-form-item label="库存"><el-input-number v-model="form.stock" :min="0" style="width:100%" /></el-form-item>
         <el-form-item label="状态">
@@ -136,13 +123,13 @@ async function loadExchanges() {
 
 function openCreate() {
   editingId.value = null
-  form.value = { name: '', description: '', image: '', type: 0, pointsCost: null, stock: 999, couponTemplateId: null, status: 1 }
+  form.value = { name: '', description: '', image: '', pointsCost: null, stock: 999, status: 1 }
   showModal.value = true
 }
 
 function openEdit(p) {
   editingId.value = p.id
-  form.value = { name: p.name, description: p.description, image: p.image, type: p.type, pointsCost: p.points_cost, stock: p.stock, couponTemplateId: p.coupon_template_id, status: p.status }
+  form.value = { name: p.name, description: p.description, image: p.image, pointsCost: p.points_cost, stock: p.stock, status: p.status }
   showModal.value = true
 }
 

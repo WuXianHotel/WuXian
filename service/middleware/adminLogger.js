@@ -38,8 +38,6 @@ const ACTION_MAP = [
   [/\/mall\/products\/\d+$/,  'PUT',    '编辑积分商品'],
   [/\/mall\/products\/\d+$/,  'DELETE', '删除积分商品'],
   [/\/mall\/exchanges\/\d+$/, 'PATCH',  '处理兑换订单'],
-  [/\/coupons\/templates$/,   'POST',   '新增优惠券模板'],
-  [/\/coupons\/send$/,        'POST',   '批量发放优惠券'],
 ];
 
 function getAction(path, method) {

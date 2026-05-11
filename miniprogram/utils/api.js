@@ -66,7 +66,6 @@ const api = {
   // ─── 会员 ───
   getMemberInfo: () => request({ url: '/api/mp/member/info' }),
   getPointsHistory: (params) => request({ url: '/api/mp/member/points', data: params }),
-  getCoupons: (params) => request({ url: '/api/mp/member/coupons', data: params }),
   getMemberLevels: () => request({ url: '/api/mp/member/levels' }),
 
   // ─── 评价 ───

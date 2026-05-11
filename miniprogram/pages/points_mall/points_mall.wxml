@@ -12,8 +12,7 @@
       <view class="product-card card" wx:for="{{products}}" wx:key="id" bindtap="openExchange" data-item="{{item}}">
         <view class="product-img-wrap">
           <image wx:if="{{item.image}}" class="product-img" src="{{item.image}}" mode="aspectFill"/>
-          <view wx:else class="product-img-placeholder"><text class="iconfont {{item.type === 0 ? 'icon-tag' : 'icon-gift'}}"></text></view>
-          <view class="product-type-tag">{{item.type === 0 ? '优惠券' : '实物'}}</view>
+          <view wx:else class="product-img-placeholder"><text class="iconfont icon-gift"></text></view>
         </view>
         <view class="product-info">
           <view class="product-name">{{item.name}}</view>

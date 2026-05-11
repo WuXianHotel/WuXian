@@ -69,7 +69,7 @@ import { getOrderStats, getOrders } from '@/api/order'
 import { getMemberStats } from '@/api/member'
 import {
   Document, House, Money, User,
-  TrendCharts, Setting, Ticket, ShoppingCart,
+  TrendCharts, Setting, ShoppingCart,
 } from '@element-plus/icons-vue'
 
 const stats = ref({})
@@ -105,7 +105,6 @@ const quickItems = [
   { to: '/mall',    icon: markRaw(ShoppingCart),  label: '积分商城' },
   { to: '/reports', icon: markRaw(TrendCharts),   label: '财务报表' },
   { to: '/system',  icon: markRaw(Setting),       label: '系统设置' },
-  // { to: '/members', icon: markRaw(Ticket),        label: '发放优惠券' },
 ]
 
 const statusMap = {

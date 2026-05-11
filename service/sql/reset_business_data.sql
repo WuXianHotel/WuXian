@@ -4,8 +4,7 @@
 -- 保留表：admin_users、admin_logs、member_levels、settings、
 --        points_products、room_types、rooms
 -- 清空表：users、members、orders、payments、refunds、reviews、
---        user_coupons、coupon_templates（按需）、points_logs、
---        wallet_logs、points_exchanges、price_calendar
+--        points_logs、wallet_logs、points_exchanges、price_calendar
 -- ────────────────────────────────────────────────────────────────
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -20,9 +19,6 @@ TRUNCATE TABLE refunds;
 TRUNCATE TABLE reviews;
 TRUNCATE TABLE payments;
 TRUNCATE TABLE orders;
-
--- 用户优惠券（用户侧实例）
-TRUNCATE TABLE user_coupons;
 
 -- 价格日历
 TRUNCATE TABLE price_calendar;
@@ -43,7 +39,6 @@ UNION ALL SELECT 'orders', COUNT(*) FROM orders
 UNION ALL SELECT 'payments', COUNT(*) FROM payments
 UNION ALL SELECT 'refunds', COUNT(*) FROM refunds
 UNION ALL SELECT 'reviews', COUNT(*) FROM reviews
-UNION ALL SELECT 'user_coupons', COUNT(*) FROM user_coupons
 UNION ALL SELECT 'points_logs', COUNT(*) FROM points_logs
 UNION ALL SELECT 'points_exchanges', COUNT(*) FROM points_exchanges
 UNION ALL SELECT 'wallet_logs', COUNT(*) FROM wallet_logs
@@ -54,5 +49,4 @@ UNION ALL SELECT 'member_levels', COUNT(*) FROM member_levels
 UNION ALL SELECT 'settings', COUNT(*) FROM settings
 UNION ALL SELECT 'room_types', COUNT(*) FROM room_types
 UNION ALL SELECT 'rooms', COUNT(*) FROM rooms
-UNION ALL SELECT 'points_products', COUNT(*) FROM points_products
-UNION ALL SELECT 'coupon_templates', COUNT(*) FROM coupon_templates;
+UNION ALL SELECT 'points_products', COUNT(*) FROM points_products;

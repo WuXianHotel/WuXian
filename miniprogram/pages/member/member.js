@@ -65,9 +65,5 @@ Page({
 
   goPointsMall() {
     wx.navigateTo({ url: '/pages/points_mall/points_mall' })
-  },
-
-  goCoupons() {
-    wx.navigateTo({ url: '/pages/member/member?tab=coupons' })
   }
 })

@@ -1,9 +1,9 @@
 {
   "desc": "项目配置文件",
   "projectname": "hotel-miniprogram",
-  "appid": "wx1613398a07e49699",
+  "appid": "wxc299ab4a17cafbc8",
   "compileType": "miniprogram",
-  "libVersion": "3.4.0",
+  "libVersion": "3.15.2",
   "packOptions": {
     "ignore": [],
     "include": []

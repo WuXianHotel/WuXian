@@ -5,7 +5,7 @@ App({
   globalData: {
     userInfo: null,
     token: '',
-    apiBase: 'http://101.126.16.71:3000'
+    apiBase: 'https://wuxian-hotel.online'
   },
 
   onLaunch() {

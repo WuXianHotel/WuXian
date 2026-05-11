@@ -70,10 +70,6 @@ Page({
     wx.navigateTo({ url: '/pages/member/member' })
   },
 
-  goCoupons() {
-    wx.navigateTo({ url: '/pages/member/member?tab=coupons' })
-  },
-
   goRoomDetail(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({

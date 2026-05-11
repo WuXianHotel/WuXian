@@ -132,44 +132,7 @@ CREATE TABLE IF NOT EXISTS `points_logs` (
 ) ENGINE=InnoDB COMMENT='积分流水';
 
 -- ────────────────────────────────────────────────────────────
--- 7. 优惠券模板
--- ────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `coupon_templates` (
-  `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  `name`          VARCHAR(80)   NOT NULL,
-  `type`          TINYINT       NOT NULL COMMENT '1=减金额 2=折扣',
-  `value`         DECIMAL(8,2)  NOT NULL COMMENT '减X元 或 折扣率0.9',
-  `min_amount`    DECIMAL(8,2)  NOT NULL DEFAULT 0 COMMENT '最低消费金额',
-  `total_count`   INT           NOT NULL DEFAULT -1 COMMENT '-1不限制',
-  `issued_count`  INT           NOT NULL DEFAULT 0,
-  `per_limit`     TINYINT       NOT NULL DEFAULT 1 COMMENT '每人限领',
-  `valid_days`    INT           DEFAULT NULL COMMENT '领取后有效天数，NULL=固定时间',
-  `start_at`      DATE          DEFAULT NULL,
-  `end_at`        DATE          DEFAULT NULL,
-  `status`        TINYINT(1)    NOT NULL DEFAULT 1,
-  `created_at`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB COMMENT='优惠券模板';
-
--- ────────────────────────────────────────────────────────────
--- 8. 用户持有优惠券
--- ────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `user_coupons` (
-  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id`       INT UNSIGNED    NOT NULL,
-  `template_id`   INT UNSIGNED    NOT NULL,
-  `code`          VARCHAR(32)     NOT NULL UNIQUE COMMENT '兑换码',
-  `status`        TINYINT         NOT NULL DEFAULT 0 COMMENT '0未使用 1已使用 2已过期',
-  `used_order_no` VARCHAR(40)     DEFAULT NULL,
-  `expire_at`     DATE            NOT NULL,
-  `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_user_status` (`user_id`, `status`),
-  INDEX `idx_expire` (`expire_at`)
-) ENGINE=InnoDB COMMENT='用户优惠券';
-
--- ────────────────────────────────────────────────────────────
--- 9. 房型
+-- 7. 房型
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `room_types` (
   `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
@@ -245,8 +208,6 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `special_request` VARCHAR(500)    DEFAULT NULL,
   `room_price`      DECIMAL(10,2)   NOT NULL COMMENT '房费合计（折前）',
   `member_discount` DECIMAL(10,2)   NOT NULL DEFAULT 0 COMMENT '会员折扣金额',
-  `coupon_discount` DECIMAL(10,2)   NOT NULL DEFAULT 0 COMMENT '优惠券减免金额',
-  `coupon_id`       BIGINT UNSIGNED DEFAULT NULL,
   `pay_amount`      DECIMAL(10,2)   NOT NULL COMMENT '实付金额',
   `refund_amount`   DECIMAL(10,2)   NOT NULL DEFAULT 0,
   `status`          TINYINT         NOT NULL DEFAULT 0
@@ -383,15 +344,13 @@ CREATE TABLE IF NOT EXISTS `points_products` (
   `name`                VARCHAR(100) NOT NULL,
   `description`         TEXT,
   `image`               VARCHAR(500),
-  `type`                TINYINT      NOT NULL DEFAULT 0 COMMENT '0优惠券 1实物',
   `points_cost`         INT          NOT NULL,
   `stock`               INT          NOT NULL DEFAULT 999,
-  `coupon_template_id`  INT UNSIGNED DEFAULT NULL COMMENT 'type=0时关联优惠券模板',
   `status`              TINYINT      NOT NULL DEFAULT 1,
   `sort_order`          INT          DEFAULT 0,
   `created_at`          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB COMMENT='积分商城商品';
+) ENGINE=InnoDB COMMENT='积分商城商品（仅实物兑换）';
 
 -- ────────────────────────────────────────────────────────────
 -- 20. 积分兑换记录

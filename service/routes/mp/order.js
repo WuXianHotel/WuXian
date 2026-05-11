@@ -47,7 +47,7 @@ router.post('/',
     try {
       const {
         roomTypeId, checkInDate, checkOutDate,
-        roomCount = 1, guestsInfo, specialRequest, couponId, usePoints,
+        roomCount = 1, guestsInfo, specialRequest, usePoints,
       } = req.body;
 
       const nights = dayjs(checkOutDate).diff(dayjs(checkInDate), 'day');
@@ -92,25 +92,6 @@ router.post('/',
       const memberDiscountRate = member ? (1 - Number(member.discount)) : 0;
       let memberDiscount = parseFloat((roomPrice * memberDiscountRate).toFixed(2));
 
-      // 优惠券
-      let couponDiscount = 0;
-      if (couponId) {
-        const [uc] = await query(
-          `SELECT uc.*, ct.type AS tp, ct.value AS cv, ct.min_amount
-           FROM user_coupons uc
-           JOIN coupon_templates ct ON ct.id = uc.template_id
-           WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 0 AND uc.expire_at >= CURDATE() LIMIT 1`,
-          [couponId, req.userId],
-        );
-        if (!uc) return res.status(400).json({ code: 400, msg: '优惠券无效或已过期' });
-        if (roomPrice < Number(uc.min_amount)) {
-          return res.status(400).json({ code: 400, msg: `需满 ¥${uc.min_amount} 才能使用该优惠券` });
-        }
-        couponDiscount = uc.tp === 1
-          ? Math.min(Number(uc.cv), roomPrice - memberDiscount)
-          : parseFloat(((1 - Number(uc.cv)) * (roomPrice - memberDiscount)).toFixed(2));
-      }
-
       // 积分抵扣
       let pointsDiscount = 0;
       let pointsUsed = 0;
@@ -125,13 +106,13 @@ router.post('/',
           const actualPoints = Math.min(usePoints, availPoints);
           pointsDiscount = parseFloat((actualPoints / rate).toFixed(2));
           // 不能超过应付金额
-          const tempPay = roomPrice - memberDiscount - couponDiscount;
+          const tempPay = roomPrice - memberDiscount;
           if (pointsDiscount > tempPay) pointsDiscount = tempPay;
           pointsUsed = Math.ceil(pointsDiscount * rate);
         }
       }
 
-      const payAmount = parseFloat((roomPrice - memberDiscount - couponDiscount - pointsDiscount).toFixed(2));
+      const payAmount = parseFloat((roomPrice - memberDiscount - pointsDiscount).toFixed(2));
       const orderNo   = genOrderNo();
 
       let orderId;
@@ -139,20 +120,13 @@ router.post('/',
         const [result] = await conn.execute(
           `INSERT INTO orders
             (order_no, user_id, room_type_id, check_in_date, check_out_date, nights, room_count,
-             guests_info, special_request, room_price, member_discount, coupon_discount, coupon_id, pay_amount, status)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
+             guests_info, special_request, room_price, member_discount, pay_amount, status)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0)`,
           [orderNo, req.userId, roomTypeId, checkInDate, checkOutDate, nights, roomCount,
            JSON.stringify(guestsInfo || []), specialRequest || null,
-           roomPrice, memberDiscount, couponDiscount, couponId || null, payAmount],
+           roomPrice, memberDiscount, payAmount],
         );
         orderId = result.insertId;
-        // 标记优惠券已使用
-        if (couponId) {
-          await conn.execute(
-            'UPDATE user_coupons SET status = 1, used_order_no = ? WHERE id = ?',
-            [orderNo, couponId],
-          );
-        }
         // 扣减积分
         if (pointsUsed > 0) {
           await conn.execute(

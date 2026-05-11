@@ -10,7 +10,6 @@ Page({
     memberInfo: {},
     maskedPhone: '',
     orderBadge: 0,
-    couponBadge: 0,
     globalToken: '',
     hotelConfig: {}
   },
@@ -35,11 +34,10 @@ Page({
     try {
       const res = await api.getMemberInfo()
       const info = res.data || {}
-      this.setData({ memberInfo: info, couponBadge: info.couponCount || 0 })
+      this.setData({ memberInfo: info })
     } catch (e) {
       this.setData({
-        memberInfo: { levelName: '黄金会员', points: 2380 },
-        couponBadge: 3
+        memberInfo: { levelName: '黄金会员', points: 2380 }
       })
     }
     // 获取待处理订单数
@@ -123,7 +121,6 @@ Page({
 
   goOrders() { wx.switchTab({ url: '/pages/orders/orders' }) },
   goMember() { wx.navigateTo({ url: '/pages/member/member' }) },
-  goCoupons() { wx.navigateTo({ url: '/pages/member/member?tab=coupons' }) },
   goInvoice() { wx.showToast({ title: '功能开发中', icon: 'none' }) },
   goPersonalInfo() { wx.navigateTo({ url: '/pages/profile_edit/profile_edit' }) },
   goSecurity() { wx.navigateTo({ url: '/pages/profile_edit/profile_edit' }) },
@@ -154,7 +151,7 @@ Page({
   //   app.globalData.userInfo = null
   //   wx.removeStorageSync('token')
   //   wx.removeStorageSync('userInfo')
-  //   this.setData({ userInfo: {}, memberInfo: {}, orderBadge: 0, couponBadge: 0, globalToken: '' })
+  //   this.setData({ userInfo: {}, memberInfo: {}, orderBadge: 0, globalToken: '' })
   //   wx.showToast({ title: '已退出登录', icon: 'success' })
   // }
 })

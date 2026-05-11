@@ -2,9 +2,9 @@
 /**
  * 小程序端 · 会员中心
  * GET  /api/mp/member/info        会员信息
+ * GET  /api/mp/member/levels      等级列表
  * GET  /api/mp/member/points      积分流水
- * GET  /api/mp/member/coupons     我的优惠券
- * POST /api/mp/member/exchange    积分兑换优惠券（预留）
+ * GET  /api/mp/member/deduct-info 积分抵扣信息
  */
 const router = require('express').Router();
 const { query } = require('../../config/db');
@@ -52,56 +52,6 @@ router.get('/points', mpAuth, async (req, res, next) => {
       query(
         'SELECT id, type, points, balance, remark, ref_id, created_at FROM points_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
         [req.userId, pageSize, offset],
-      ),
-    ]);
-    return page(res, { list, total, page: p, pageSize });
-  } catch (err) { next(err); }
-});
-
-// ── GET /coupons  我的优惠券 ──────────────────────────────────────────────────
-router.get('/coupons', mpAuth, async (req, res, next) => {
-  try {
-    const { status } = req.query; // 0未使用 1已使用 2已过期
-    const { pageSize, offset, page: p } = parsePager(req.query);
-
-    const conditions = ['uc.user_id = ?'];
-    const params = [req.userId];
-    // 兼容字符串枚举：available=0未使用, used=1已使用, expired=2已过期
-    const statusAlias = { available: 0, unused: 0, used: 1, expired: 2 };
-    let statusNum;
-    if (status !== undefined && status !== '') {
-      statusNum = statusAlias[status] !== undefined ? statusAlias[status] : Number(status);
-    }
-    if (Number.isInteger(statusNum) && [0, 1, 2].includes(statusNum)) {
-      conditions.push('uc.status = ?');
-      params.push(statusNum);
-      // available 状态也要先懒清理过期
-      if (statusNum === 0) {
-        await query(
-          "UPDATE user_coupons SET status = 2 WHERE user_id = ? AND status = 0 AND expire_at < CURDATE()",
-          [req.userId],
-        );
-      }
-    } else {
-      // 自动将过期券标记（懒更新）
-      await query(
-        "UPDATE user_coupons SET status = 2 WHERE user_id = ? AND status = 0 AND expire_at < CURDATE()",
-        [req.userId],
-      );
-    }
-    const where = 'WHERE ' + conditions.join(' AND ');
-
-    const [[{ total }], list] = await Promise.all([
-      query(`SELECT COUNT(*) AS total FROM user_coupons uc ${where}`, params),
-      query(
-        `SELECT uc.id, uc.code, uc.status, uc.expire_at,
-                ct.name, ct.type, ct.value, ct.min_amount
-         FROM user_coupons uc
-         JOIN coupon_templates ct ON ct.id = uc.template_id
-         ${where}
-         ORDER BY uc.status ASC, uc.expire_at ASC
-         LIMIT ? OFFSET ?`,
-        [...params, pageSize, offset],
       ),
     ]);
     return page(res, { list, total, page: p, pageSize });

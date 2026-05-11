@@ -9,9 +9,6 @@ Page({
     guests: [],
     checkInDisplay: '', checkOutDisplay: '',
     roomTotal: 0, discountAmount: 0, finalPrice: 0,
-    coupons: [],
-    selectedCoupon: null,
-    showCouponModal: false,
     paying: false,
     // 积分抵扣
     deductInfo: null,
@@ -46,7 +43,6 @@ Page({
       roomTotal
     })
     this.calcPrice()
-    this.loadCoupons()
     this.loadDeductInfo()
     this.loadWalletBalance()
   },
@@ -72,54 +68,25 @@ Page({
     } catch (e) {}
   },
 
-  async loadCoupons() {
-    try {
-      const res = await api.getCoupons({ status: 'available' })
-      this.setData({ coupons: res.data?.list || [] })
-    } catch (e) {
-      this.setData({
-        coupons: [{ id: 1, name: '满600减50券', discount: 50, minAmount: 600, expireDate: '2026-06-30' }]
-      })
-    }
-  },
-
   calcPrice() {
-    const { order, roomTotal, selectedCoupon, usePointsDeduct, deductInfo } = this.data
+    const { order, roomTotal, usePointsDeduct, deductInfo } = this.data
     let discount = 0
     if (order.memberDiscount) {
       discount = Math.round(roomTotal * (1 - order.memberDiscount / 10))
     }
-    let couponDiscount = selectedCoupon ? selectedCoupon.discount : 0
-    let afterCoupon = Math.max(0, roomTotal - discount - couponDiscount)
+    let afterDiscount = Math.max(0, roomTotal - discount)
     // 积分抵扣
     let pointsDeductAmount = 0
     if (usePointsDeduct && deductInfo && deductInfo.enabled) {
-      pointsDeductAmount = Math.min(deductInfo.maxDeduct, afterCoupon)
+      pointsDeductAmount = Math.min(deductInfo.maxDeduct, afterDiscount)
     }
-    const final = Math.max(0, afterCoupon - pointsDeductAmount)
+    const final = Math.max(0, afterDiscount - pointsDeductAmount)
     this.setData({ discountAmount: discount, pointsDeductAmount, finalPrice: final })
     this.checkBalance()
   },
 
   togglePointsDeduct() {
     this.setData({ usePointsDeduct: !this.data.usePointsDeduct }, this.calcPrice)
-  },
-
-  chooseCoupon() {
-    this.setData({ showCouponModal: true })
-  },
-  closeCouponModal() {
-    this.setData({ showCouponModal: false })
-  },
-  selectCoupon(e) {
-    const coupon = e.currentTarget.dataset.coupon
-    if (coupon.minAmount > this.data.roomTotal) {
-      wx.showToast({ title: `需消费满¥${coupon.minAmount}`, icon: 'none' }); return
-    }
-    this.setData({ selectedCoupon: coupon, showCouponModal: false }, this.calcPrice)
-  },
-  noUseCoupon() {
-    this.setData({ selectedCoupon: null, showCouponModal: false }, this.calcPrice)
   },
 
   async doPay() {
@@ -141,7 +108,7 @@ Page({
     }
 
     try {
-      const { order, selectedCoupon, finalPrice, usePointsDeduct, deductInfo, pointsDeductAmount } = this.data
+      const { order, finalPrice, usePointsDeduct, deductInfo, pointsDeductAmount } = this.data
       // 计算实际使用的积分数
       const usePoints = (usePointsDeduct && deductInfo) ? Math.ceil(pointsDeductAmount * deductInfo.rate) : 0
       // 1. 创建订单
@@ -152,7 +119,6 @@ Page({
         guestsInfo: this.data.guests.map(g => ({ name: g.name, phone: g.phone })),
         qty: order.qty,
         remark: order.remark,
-        couponId: selectedCoupon?.id,
         usePoints
       })
       const orderNo = createRes.data?.orderNo
