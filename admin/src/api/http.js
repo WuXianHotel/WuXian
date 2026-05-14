@@ -23,7 +23,14 @@ http.interceptors.response.use(
   err => {
     if (err.response?.status === 401) {
       localStorage.removeItem('admin_token')
-      window.location.href = '/login'
+      // 用 BASE_URL 拼接，避免被部署到子路径（/admin/）时跳错
+      // import.meta.env.BASE_URL 末尾自带 "/"，直接拼 "login"
+      const base = import.meta.env.BASE_URL || '/'
+      // 已经在 login 页就别再跳了，避免死循环
+      const loginPath = `${base}login`.replace(/\/+/g, '/')
+      if (window.location.pathname !== loginPath) {
+        window.location.href = loginPath
+      }
     }
     return Promise.reject(err.response?.data || err)
   }
