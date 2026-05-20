@@ -38,6 +38,67 @@ async function code2Session(code) {
   return data; // { openid, unionid, session_key }
 }
 
+// ── 微信 access_token（带进程内缓存，2 小时）─────────────────────────────────
+let _accessTokenCache = { token: '', expiresAt: 0 };
+async function getWxAccessToken() {
+  if (_accessTokenCache.token && Date.now() < _accessTokenCache.expiresAt) {
+    return _accessTokenCache.token;
+  }
+  const { data } = await axios.get('https://api.weixin.qq.com/cgi-bin/token', {
+    params: {
+      grant_type: 'client_credential',
+      appid:      process.env.WX_APPID,
+      secret:     process.env.WX_SECRET,
+    },
+    timeout: 5000,
+  });
+  if (data.errcode) throw Object.assign(new Error(data.errmsg), { status: 502 });
+  _accessTokenCache = {
+    token: data.access_token,
+    expiresAt: Date.now() + (data.expires_in - 300) * 1000, // 提前 5 分钟过期
+  };
+  return data.access_token;
+}
+
+// ── 用 getPhoneNumber 的 code 换真实手机号 ──────────────────────────────────
+// 文档: https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/user-info/phone-number/getPhoneNumber.html
+async function getPhoneByCode(code) {
+  if (mock.wxLogin) {
+    // mock 模式返回假号，方便联调
+    console.log('[getPhoneByCode] MOCK 模式，返回 13800000000');
+    return '13800000000';
+  }
+  const accessToken = await getWxAccessToken();
+  const { data } = await axios.post(
+    `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${accessToken}`,
+    { code },
+    { timeout: 5000 },
+  );
+  // 调试日志（不要打印 phoneNumber 明文，已脱敏）
+  console.log('[getPhoneByCode] 微信返回:', {
+    errcode: data.errcode,
+    errmsg: data.errmsg,
+    has_phone_info: !!data.phone_info,
+  });
+
+  if (data.errcode !== 0) {
+    // 常见错误码：40029 invalid code（已使用/过期）；40097 参数错误；
+    //            45011 频率超限；43104/41030 接口未开通
+    throw Object.assign(
+      new Error(`微信获取手机号失败: ${data.errmsg || ''} (errcode=${data.errcode})`),
+      { status: 400 },
+    );
+  }
+  const phone = data.phone_info && data.phone_info.purePhoneNumber;
+  if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+    throw Object.assign(
+      new Error(`微信返回的手机号格式异常: ${phone || '(空)'}`),
+      { status: 502 },
+    );
+  }
+  return phone;
+}
+
 // ── 生成会员编号 ──────────────────────────────────────────────────────────────
 async function genMemberNo() {
   const prefix = 'M' + dayjs().format('YYYYMM');
@@ -96,17 +157,56 @@ router.post('/login',
 );
 
 // ── POST /bind-phone ──────────────────────────────────────────────────────────
+// 支持两种方式：
+//   1. 传 phoneCode（微信 getPhoneNumber 回调的 code） → 后端换取真实手机号【推荐】
+//   2. 传 phone（明文手机号，仅供测试 / admin 迁移使用）
+//
+// 注意：用 optional({ values: 'falsy' }) 让空串/null 也能跳过校验，
+//       否则前端误传 phone:'' 时会被 isMobilePhone 拦截。
 router.post('/bind-phone',
   mpAuth,
-  body('phone').isMobilePhone('zh-CN').withMessage('手机号格式不正确'),
+  body('phoneCode').optional({ values: 'falsy' }).isString().withMessage('phoneCode 类型错误'),
+  body('phone').optional({ values: 'falsy' }).isMobilePhone('zh-CN').withMessage('手机号格式不正确'),
   validate,
   async (req, res, next) => {
     try {
-      const { phone } = req.body;
-      const [exist] = await query('SELECT id FROM users WHERE phone = ? AND id <> ? LIMIT 1', [phone, req.userId]);
-      if (exist) return res.status(400).json({ code: 400, msg: '该手机号已被其他账号绑定' });
+      let { phone, phoneCode } = req.body;
+      // 规范化空白
+      if (typeof phone === 'string')     phone     = phone.trim();
+      if (typeof phoneCode === 'string') phoneCode = phoneCode.trim();
+
+      // 优先用 phoneCode 换取（生产环境正常路径）
+      if (!phone && phoneCode) {
+        try {
+          phone = await getPhoneByCode(phoneCode);
+        } catch (err) {
+          // 把微信错误透传给前端，便于排查
+          return res.status(err.status || 400).json({
+            code: err.status || 400,
+            msg:  err.message || '获取手机号失败',
+          });
+        }
+      }
+
+      if (!phone) {
+        return res.status(400).json({ code: 400, msg: '请提供 phoneCode 或 phone' });
+      }
+
+      // 二次校验：避免任何路径下脏数据落库
+      if (!/^1[3-9]\d{9}$/.test(phone)) {
+        return res.status(400).json({ code: 400, msg: '手机号格式不正确' });
+      }
+
+      const [exist] = await query(
+        'SELECT id FROM users WHERE phone = ? AND id <> ? LIMIT 1',
+        [phone, req.userId],
+      );
+      if (exist) {
+        return res.status(409).json({ code: 409, msg: '该手机号已被其他账号绑定' });
+      }
+
       await query('UPDATE users SET phone = ? WHERE id = ?', [phone, req.userId]);
-      return ok(res, null, '手机号绑定成功');
+      return ok(res, { phone }, '手机号绑定成功');
     } catch (err) { next(err); }
   },
 );
