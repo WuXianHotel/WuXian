@@ -33,7 +33,15 @@
       </view>
       <view class="hero-meta">
         <text class="iconfont icon-phone hero-meta-icon"></text>
-        <text class="hero-meta-text">{{userInfo.phone ? maskedPhone : '未绑定手机号'}}</text>
+        <!-- 已绑定：显示脱敏手机号 -->
+        <text wx:if="{{userInfo.phone}}" class="hero-meta-text">{{maskedPhone}}</text>
+        <!-- 未绑定：点击触发微信授权一键获取手机号 -->
+        <button
+          wx:else
+          class="hero-meta-text hero-phone-btn"
+          open-type="getPhoneNumber"
+          bindgetphonenumber="onGetPhoneNumber"
+        >未绑定手机号 · 一键绑定</button>
       </view>
       <view class="hero-badges">
         <view class="hero-badge level-badge" bindtap="goMember">

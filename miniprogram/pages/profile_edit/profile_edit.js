@@ -71,6 +71,7 @@ Page({
   },
 
   async save() {
+    if (this.data.saving) return   // 防重复点击
     const { form, avatarUrl } = this.data
     if (!form.nickname.trim()) {
       wx.showToast({ title: '请填写昵称', icon: 'none' }); return
@@ -79,7 +80,9 @@ Page({
     if (avatarUrl && !/^https?:\/\//.test(avatarUrl)) {
       wx.showToast({ title: '头像尚未上传完成，请重试', icon: 'none' }); return
     }
+    console.log('[profile_edit.save] 提交', { ...form, avatarUrl })
     this.setData({ saving: true })
+    wx.showLoading({ title: '保存中...', mask: true })
     try {
       await api.updateProfile({
         nickname: form.nickname,
@@ -89,14 +92,30 @@ Page({
         idNumber: form.idNumber,
         avatarUrl: avatarUrl || undefined
       })
-      // 同步更新全局用户信息
-      await app.fetchProfile()
+      wx.hideLoading()
       wx.showToast({ title: '保存成功', icon: 'success' })
+      // 乐观更新全局用户信息（立刻同步到 globalData，不阻塞 navigateBack）
+      const nextUser = {
+        ...(app.globalData.userInfo || {}),
+        nickname: form.nickname,
+        gender: form.gender,
+        real_name: form.realName,
+        id_type: form.idType,
+        id_number: form.idNumber,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {})
+      }
+      app.globalData.userInfo = nextUser
+      wx.setStorageSync('userInfo', nextUser)
+      // 后台异步拉取完整资料兜底（失败也不影响保存结果）
+      app.fetchProfile().catch(() => {})
       setTimeout(() => wx.navigateBack(), 800)
     } catch (e) {
-      wx.showToast({ title: e?.msg || '保存失败', icon: 'none' })
+      wx.hideLoading()
+      console.error('[profile_edit.save] 保存失败', e)
+      wx.showToast({ title: (e && e.msg) || '保存失败，请重试', icon: 'none' })
+    } finally {
+      this.setData({ saving: false })
     }
-    this.setData({ saving: false })
   },
 
   goBack() { wx.navigateBack() }

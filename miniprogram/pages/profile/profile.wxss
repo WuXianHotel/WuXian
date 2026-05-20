@@ -102,6 +102,23 @@
 }
 .hero-meta-icon { font-size: 22rpx; }
 
+/* 未绑定手机号 button 的样式重置（让它看起来像普通文字） */
+.hero-phone-btn {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  line-height: 1.4;
+  background: transparent;
+  color: rgba(255,255,255,0.95);
+  font-size: 24rpx;
+  font-weight: normal;
+  text-align: left;
+  border: none;
+  text-decoration: underline;
+}
+.hero-phone-btn::after { border: none; }
+
 .hero-badges {
   display: flex;
   gap: 12rpx;
