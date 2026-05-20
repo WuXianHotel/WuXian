@@ -1,16 +1,21 @@
 // utils/api.js
-const app = getApp()
 
 function request(options) {
+  const app = getApp()
+  const apiBase = (app && app.globalData && app.globalData.apiBase) || ''
+
   return new Promise((resolve, reject) => {
-    const token = app.globalData.token || wx.getStorageSync('token')
+    const token = (app && app.globalData.token) || wx.getStorageSync('token')
     const header = {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     }
 
+    const fullUrl = `${apiBase}${options.url}`
+    console.log('[api] request:', fullUrl)   // 方便排查
+
     wx.request({
-      url: `${app.globalData.apiBase}${options.url}`,
+      url: fullUrl,
       method: options.method || 'GET',
       data: options.data,
       header,
@@ -26,9 +31,15 @@ function request(options) {
         if (res.data && res.data.code === 0) {
           resolve(res.data)
         } else {
-          const msg = res.data?.msg || '请求失败'
-          wx.showToast({ title: msg, icon: 'none' })
-          reject(res.data)
+          // 优先展示字段级错误（express-validator 的 errors[0].msg），更精确
+          const fieldMsg = res.data?.errors?.[0]?.msg
+          const msg = fieldMsg || res.data?.msg || '请求失败'
+          // options.silent: 调用方自己 toast 时，跳过 api 层 toast
+          if (!options.silent) {
+            wx.showToast({ title: msg, icon: 'none' })
+          }
+          // 把规范化的错误塞回去，方便调用方判断
+          reject(Object.assign({}, res.data, { _msg: msg }))
         }
       },
       fail(err) {
@@ -44,6 +55,7 @@ const api = {
   login: (data) => request({ url: '/api/mp/auth/login', method: 'POST', data }),
   getProfile: () => request({ url: '/api/mp/auth/profile' }),
   updateProfile: (data) => request({ url: '/api/mp/auth/profile', method: 'PUT', data }),
+  bindPhone: (data) => request({ url: '/api/mp/auth/bind-phone', method: 'POST', data }),
 
   // ─── 房型 ───
   getRooms: (params) => request({ url: '/api/mp/rooms', data: params }),

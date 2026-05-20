@@ -66,10 +66,17 @@ Page({
       }
       // 保存到后端
       await api.updateProfile({ avatarUrl })
-      await app.fetchProfile()
-      this.setData({ userInfo: app.globalData.userInfo, globalToken: app.globalData.token })
+      // 先乐观更新 UI，再异步 fetchProfile 兜底
+      const nextUser = { ...(app.globalData.userInfo || {}), avatar_url: avatarUrl }
+      app.globalData.userInfo = nextUser
+      wx.setStorageSync('userInfo', nextUser)
+      this.setData({ userInfo: nextUser })
       wx.hideLoading()
       wx.showToast({ title: '头像已更新', icon: 'success' })
+      // 后台刷新完整资料（不阻塞 UI）
+      app.fetchProfile().then(() => {
+        this.setData({ userInfo: app.globalData.userInfo || nextUser })
+      }).catch(() => {})
     } catch (err) {
       wx.hideLoading()
       console.error('[onChooseAvatar] 上传失败', err)
@@ -92,11 +99,79 @@ Page({
     }
     try {
       await api.updateProfile({ nickname })
-      await app.fetchProfile()
-      this.setData({ userInfo: app.globalData.userInfo, globalToken: app.globalData.token })
+      // 乐观更新
+      const nextUser = { ...(app.globalData.userInfo || {}), nickname }
+      app.globalData.userInfo = nextUser
+      wx.setStorageSync('userInfo', nextUser)
+      this.setData({ userInfo: nextUser })
       wx.showToast({ title: '昵称已更新', icon: 'success' })
+      // 后台刷新
+      app.fetchProfile().then(() => {
+        this.setData({ userInfo: app.globalData.userInfo || nextUser })
+      }).catch(() => {})
     } catch (e) {
       wx.showToast({ title: '更新失败', icon: 'none' })
+    }
+  },
+
+  // 微信一键获取手机号
+  async onGetPhoneNumber(e) {
+    console.log('[onGetPhoneNumber] e.detail =', e.detail)
+
+    // 1) 用户拒绝授权 / 回调异常
+    if (!e.detail || !e.detail.code) {
+      const errMsg = (e.detail && e.detail.errMsg) || ''
+      if (errMsg.indexOf('deny') > -1 || errMsg.indexOf('cancel') > -1) {
+        wx.showToast({ title: '已取消授权', icon: 'none' })
+      } else if (errMsg && errMsg.indexOf('ok') === -1) {
+        wx.showToast({ title: '获取手机号失败', icon: 'none' })
+      }
+      return
+    }
+
+    // 2) 未登录则先登录，确保有 token
+    if (!app.globalData.token) {
+      try {
+        await app.login()
+      } catch (err) {
+        wx.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
+    }
+
+    // 3) 调后端用 phoneCode 换取手机号
+    //    注意：只传 phoneCode，绝对不要传 phone / encryptedData / iv
+    wx.showLoading({ title: '绑定中...', mask: true })
+    try {
+      const res = await api.bindPhone({ phoneCode: e.detail.code })
+      const phone = res?.data?.phone
+      wx.hideLoading()
+
+      if (!phone) {
+        wx.showToast({ title: '绑定失败：未返回手机号', icon: 'none' })
+        return
+      }
+
+      // 乐观更新本地数据
+      const nextUser = { ...(app.globalData.userInfo || {}), phone }
+      app.globalData.userInfo = nextUser
+      wx.setStorageSync('userInfo', nextUser)
+      this.setData({
+        userInfo: nextUser,
+        maskedPhone: util.maskPhone(phone),
+      })
+
+      wx.showToast({ title: '绑定成功', icon: 'success' })
+
+      // 后台静默刷新一次，纠正本地状态
+      app.fetchProfile().then(() => {
+        const u = app.globalData.userInfo || {}
+        this.setData({ userInfo: u, maskedPhone: util.maskPhone(u.phone) })
+      }).catch(() => {})
+    } catch (err) {
+      wx.hideLoading()
+      console.error('[onGetPhoneNumber] 绑定失败', err)
+      // api.js 已根据 errors[0].msg / msg 弹过 toast，此处不再重复
     }
   },
 
