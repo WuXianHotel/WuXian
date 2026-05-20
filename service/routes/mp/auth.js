@@ -163,37 +163,83 @@ router.post('/login',
 //
 // 注意：用 optional({ values: 'falsy' }) 让空串/null 也能跳过校验，
 //       否则前端误传 phone:'' 时会被 isMobilePhone 拦截。
+
+// —— 调试中间件：在校验之前完整记录入参，用于定位「手机号格式不正确」这类问题 ——
+function debugBindPhoneIn(req, _res, next) {
+  console.log('━━━━━━━━━━━━━━━━ [bind-phone] IN ━━━━━━━━━━━━━━━━');
+  console.log('[bind-phone] userId           =', req.userId);
+  console.log('[bind-phone] Content-Type     =', req.headers['content-type']);
+  console.log('[bind-phone] Content-Length   =', req.headers['content-length']);
+  console.log('[bind-phone] req.body (raw)   =', JSON.stringify(req.body));
+  console.log('[bind-phone] body keys        =', Object.keys(req.body || {}));
+  const { phone, phoneCode } = req.body || {};
+  console.log('[bind-phone] phone     typeof =', typeof phone,
+              '| len =', typeof phone === 'string' ? phone.length : '-',
+              '| value =', JSON.stringify(phone));
+  console.log('[bind-phone] phoneCode typeof =', typeof phoneCode,
+              '| len =', typeof phoneCode === 'string' ? phoneCode.length : '-',
+              '| value =', JSON.stringify(phoneCode));
+  next();
+}
+
+// —— 调试：把 express-validator 的校验结果也打出来 ——
+function debugBindPhoneValidate(req, res, next) {
+  const { validationResult } = require('express-validator');
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    console.log('[bind-phone] ❌ 校验失败:', JSON.stringify(result.array()));
+    return res.status(400).json({
+      code: 400,
+      msg: '参数校验失败',
+      errors: result.array().map(e => ({ field: e.path, msg: e.msg, value: e.value })),
+    });
+  }
+  console.log('[bind-phone] ✅ 校验通过');
+  next();
+}
+
 router.post('/bind-phone',
   mpAuth,
+  debugBindPhoneIn,
   body('phoneCode').optional({ values: 'falsy' }).isString().withMessage('phoneCode 类型错误'),
   body('phone').optional({ values: 'falsy' }).isMobilePhone('zh-CN').withMessage('手机号格式不正确'),
-  validate,
+  debugBindPhoneValidate,
   async (req, res, next) => {
     try {
       let { phone, phoneCode } = req.body;
       // 规范化空白
       if (typeof phone === 'string')     phone     = phone.trim();
       if (typeof phoneCode === 'string') phoneCode = phoneCode.trim();
+      console.log('[bind-phone] after trim → phone =', JSON.stringify(phone),
+                  ', phoneCode =', JSON.stringify(phoneCode));
 
       // 优先用 phoneCode 换取（生产环境正常路径）
       if (!phone && phoneCode) {
+        console.log('[bind-phone] → 走 phoneCode 换取手机号路径');
         try {
           phone = await getPhoneByCode(phoneCode);
+          console.log('[bind-phone] ← 微信返回手机号 (脱敏) =',
+            phone ? phone.slice(0, 3) + '****' + phone.slice(-4) : '(空)');
         } catch (err) {
+          console.error('[bind-phone] ❌ getPhoneByCode 抛错:', err.message);
           // 把微信错误透传给前端，便于排查
           return res.status(err.status || 400).json({
             code: err.status || 400,
             msg:  err.message || '获取手机号失败',
           });
         }
+      } else {
+        console.log('[bind-phone] → 直接使用入参 phone（未走微信换取）');
       }
 
       if (!phone) {
+        console.log('[bind-phone] ❌ 最终 phone 为空');
         return res.status(400).json({ code: 400, msg: '请提供 phoneCode 或 phone' });
       }
 
       // 二次校验：避免任何路径下脏数据落库
       if (!/^1[3-9]\d{9}$/.test(phone)) {
+        console.log('[bind-phone] ❌ 手机号正则不通过, value =', JSON.stringify(phone));
         return res.status(400).json({ code: 400, msg: '手机号格式不正确' });
       }
 
@@ -202,10 +248,12 @@ router.post('/bind-phone',
         [phone, req.userId],
       );
       if (exist) {
+        console.log('[bind-phone] ❌ 手机号已被 user_id =', exist.id, '占用');
         return res.status(409).json({ code: 409, msg: '该手机号已被其他账号绑定' });
       }
 
       await query('UPDATE users SET phone = ? WHERE id = ?', [phone, req.userId]);
+      console.log('[bind-phone] ✅ 绑定成功, userId =', req.userId);
       return ok(res, { phone }, '手机号绑定成功');
     } catch (err) { next(err); }
   },
