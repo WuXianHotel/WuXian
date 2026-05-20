@@ -89,14 +89,15 @@ jobs:
           # 3. 切换 current 软链（原子切换）
           ln -sfn "$RELEASE_DIR" "$CURRENT"
 
-          # 4. PM2 reload（零停机）或首次 start
+          # 4. PM2 重启（每次 delete + start 确保 cwd 指向最新 release）
           cd "$CURRENT"
           if pm2 describe "$APP_NAME" > /dev/null 2>&1; then
-            pm2 reload "$APP_NAME" --update-env
-          else
-            pm2 start app.js --name "$APP_NAME" --max-memory-restart 512M
-            pm2 save
+            echo "停止旧进程..."
+            pm2 delete "$APP_NAME"
           fi
+          echo "启动新版本: $SHA"
+          pm2 start app.js --name "$APP_NAME" --max-memory-restart 512M
+          pm2 save
 
           # 5. 健康检查（最多等 30 秒）
           PORT=$(grep -E '^PORT=' "$APP_DIR/.env" | cut -d= -f2)
