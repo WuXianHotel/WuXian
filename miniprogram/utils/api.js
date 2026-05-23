@@ -93,6 +93,7 @@ const api = {
 
   // ─── 积分商城 ───
   getMallProducts: (params) => request({ url: '/api/mp/mall/products', data: params }),
+  getExchangeRecords: (params) => request({ url: '/api/mp/mall/exchanges', data: params }),
   exchangeProduct: (data) => request({ url: '/api/mp/mall/exchange', method: 'POST', data }),
 
   // ─── 积分抵扣 ───

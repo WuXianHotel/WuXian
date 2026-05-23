@@ -7,8 +7,8 @@
   </view>
 
   <scroll-view scroll-y class="content safe-bottom" bindscrolltolower="loadMore">
-    <!-- 充值区域 -->
-    <view class="recharge-card card">
+    <!-- 充值区域（暂时屏蔽） -->
+    <!-- <view class="recharge-card card">
       <view class="section-title">充值</view>
       <view class="quick-amounts">
         <view class="quick-btn {{rechargeAmount == '100' ? 'active' : ''}}" bindtap="quickAmount" data-amount="100">100</view>
@@ -22,7 +22,7 @@
       <view class="btn btn-primary btn-block {{recharging?'disabled':''}}" bindtap="doRecharge">
         {{recharging ? '充值中...' : '立即充值'}}
       </view>
-    </view>
+    </view> -->
 
     <!-- 流水记录 -->
     <view class="logs-card card">

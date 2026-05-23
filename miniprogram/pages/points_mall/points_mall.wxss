@@ -1,28 +1,37 @@
 /* pages/points_mall/points_mall.wxss */
 .page { background: #f7f7f7; min-height: 100vh; }
-.nav-bar { background: #1a56db; display: flex; align-items: center; padding: 16rpx 24rpx; position: relative; }
-.nav-back { color: #fff; font-size: 48rpx; width: 60rpx; height: 60rpx; display: flex; align-items: center; justify-content: center; }
-.nav-title { position: absolute; left: 50%; transform: translateX(-50%); color: #fff; font-size: 32rpx; font-weight: 600; }
 
 .points-banner {
   background: linear-gradient(135deg, #f59e0b, #fbbf24);
   margin: 20rpx 24rpx; padding: 28rpx 32rpx; border-radius: 16rpx;
   display: flex; align-items: center; justify-content: space-between;
 }
-.points-label { font-size: 28rpx; color: rgba(255,255,255,0.85); }
+.points-label { font-size: 28rpx; color: rgba(255,255,255,.85); }
 .points-num { font-size: 48rpx; font-weight: 700; color: #fff; }
 
+/* ─── Tab 切换 ─── */
+.tab-bar {
+  display: flex; margin: 0 24rpx 20rpx; background: #fff;
+  border-radius: 12rpx; overflow: hidden;
+}
+.tab-item {
+  flex: 1; text-align: center; padding: 20rpx 0;
+  font-size: 28rpx; color: #666; position: relative;
+}
+.tab-item.active { color: #1a56db; font-weight: 600; }
+.tab-item.active:after {
+  content: ''; position: absolute; bottom: 0; left: 50%;
+  transform: translateX(-50%); width: 48rpx; height: 4rpx;
+  background: #1a56db; border-radius: 2rpx;
+}
+
+/* ─── 商品列表 ─── */
 .content { padding: 0 24rpx; }
 .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16rpx; }
 .product-card { padding: 0; overflow: hidden; }
 .product-img-wrap { position: relative; height: 200rpx; background: #f0f5ff; display: flex; align-items: center; justify-content: center; }
 .product-img { width: 100%; height: 100%; object-fit: cover; }
 .product-img-placeholder { font-size: 64rpx; }
-.product-type-tag {
-  position: absolute; top: 10rpx; left: 10rpx;
-  font-size: 20rpx; padding: 4rpx 12rpx; border-radius: 6rpx;
-  background: rgba(0,0,0,0.5); color: #fff;
-}
 .product-info { padding: 16rpx; }
 .product-name { font-size: 28rpx; font-weight: 600; margin-bottom: 8rpx; }
 .product-desc { font-size: 22rpx; color: #999; margin-bottom: 12rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -31,9 +40,41 @@
 .product-stock { font-size: 22rpx; color: #ef4444; }
 
 .empty-tip { grid-column: 1/-1; text-align: center; padding: 80rpx; color: #999; font-size: 28rpx; }
+.loading-tip { text-align: center; padding: 30rpx; font-size: 26rpx; color: #999; }
+
+/* ─── 兑换记录 ─── */
+.records-list { display: flex; flex-direction: column; gap: 16rpx; }
+.record-item { padding: 24rpx; }
+.record-top { display: flex; align-items: center; }
+.record-img {
+  width: 80rpx; height: 80rpx; border-radius: 8rpx;
+  flex-shrink: 0; object-fit: cover;
+}
+.record-img-placeholder {
+  width: 80rpx; height: 80rpx; border-radius: 8rpx;
+  background: #f0f5ff; display: flex; align-items: center;
+  justify-content: center; font-size: 40rpx; flex-shrink: 0;
+}
+.record-info { flex: 1; margin-left: 16rpx; }
+.record-name { font-size: 28rpx; font-weight: 600; color: #1a1a1a; display: block; }
+.record-points { font-size: 24rpx; color: #f59e0b; font-weight: 600; margin-top: 4rpx; display: block; }
+.record-status {
+  font-size: 22rpx; padding: 4rpx 12rpx; border-radius: 6rpx;
+  flex-shrink: 0;
+}
+.record-status.status-0 { background: #fef3c7; color: #d97706; }
+.record-status.status-1 { background: #d1fae5; color: #059669; }
+.record-status.status-2 { background: #f3f4f6; color: #9ca3af; }
+.record-bottom {
+  margin-top: 12rpx; padding-top: 12rpx;
+  border-top: 1rpx solid #f5f5f5;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.record-address { font-size: 22rpx; color: #666; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-date { font-size: 22rpx; color: #999; flex-shrink: 0; margin-left: 12rpx; }
 
 /* ─── 兑换弹窗 ─── */
-.modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 99; }
+.modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-end; justify-content: center; z-index: 99; }
 .exchange-modal { width: 100%; background: #fff; border-radius: 24rpx 24rpx 0 0; padding: 32rpx; padding-bottom: calc(env(safe-area-inset-bottom) + 32rpx); }
 .modal-title { font-size: 32rpx; font-weight: 700; text-align: center; margin-bottom: 24rpx; }
 .exchange-info { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0; border-bottom: 1rpx solid #f0f0f0; margin-bottom: 20rpx; }
@@ -47,3 +88,4 @@
 .modal-footer { display: flex; gap: 16rpx; margin-top: 24rpx; }
 .modal-footer .btn { flex: 1; text-align: center; padding: 20rpx 0; border-radius: 12rpx; font-size: 28rpx; }
 .btn-gray { background: #f1f5f9; color: #666; }
+

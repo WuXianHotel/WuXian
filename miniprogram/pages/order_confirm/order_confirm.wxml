@@ -93,7 +93,7 @@
         <text class="pay-balance">¥{{walletBalance}}</text>
       </view>
       <view class="pay-insufficient" wx:if="{{!balanceEnough && finalPrice > 0}}">
-        余额不足，还差 ¥{{finalPrice - walletBalance}}，请联系前台充值
+        余额不足，还差 ¥{{finalPrice - walletBalance}}，请联系前台处理
       </view>
     </view>
   </scroll-view>
