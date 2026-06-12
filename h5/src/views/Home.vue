@@ -18,6 +18,21 @@
       <span>酒店正在试业中，欢迎您的入住！</span>
     </div>
 
+    <!-- 地址 & 电话 -->
+    <div class="contact" v-if="hotel.address">
+      <div class="contact__item contact__address" @click="openNav">
+        <MapPin :size="18" :stroke-width="1.5" />
+        <span>{{ hotel.address }}</span>
+        <ChevronRight :size="14" class="contact__arrow" />
+      </div>
+      <div class="contact__divider"></div>
+      <a class="contact__item contact__phone" @click="callPhone">
+        <Phone :size="18" :stroke-width="1.5" />
+        <span>{{ hotel.phone }}</span>
+        <ChevronRight :size="14" class="contact__arrow" />
+      </a>
+    </div>
+
     <!-- 快捷入口 -->
     <div class="quick">
       <div v-for="item in quickItems" :key="item.path" class="quick__item" @click="$router.push(item.path)">
@@ -69,11 +84,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList } from 'lucide-vue-next';
+import { ref, onMounted, reactive } from 'vue';
+import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone } from 'lucide-vue-next';
 
 const rooms = ref([]);
 const loading = ref(true);
+const hotel = reactive({ address: '', phone: '', latitude: 0, longitude: 0 });
 const quickItems = [
   { path: '/rooms', icon: BedSingle, label: '客房预订', bg: 'rgba(0,212,255,.12)' },
   { path: '/orders', icon: ClipboardList, label: '我的订单', bg: 'rgba(0,255,136,.12)' },
@@ -89,14 +105,57 @@ const facilityMap = [
 onMounted(async () => {
   try {
     const { default: api } = await import('../utils/api.js');
-    const res = await api.getRooms();
-    rooms.value = ((res.data?.list || [])).slice(0, 4).map(r => ({
+    const [roomRes, configRes] = await Promise.all([
+      api.getRooms().catch(() => ({ data: { list: [] } })),
+      api.getHotelConfig().catch(() => ({ data: {} })),
+    ]);
+    rooms.value = ((roomRes.data?.list || [])).slice(0, 4).map(r => ({
       ...r,
       facilities: facilityMap.filter(f => r[f.key]).map(f => f.name),
     }));
+    const cfg = configRes.data || {};
+    hotel.address = cfg.address || '';
+    hotel.phone = cfg.phone || '';
+    hotel.latitude = parseFloat(cfg.latitude) || 0;
+    hotel.longitude = parseFloat(cfg.longitude) || 0;
+    // 兜底：如果接口没返回，用默认值保证显示
+    if (!hotel.address) {
+      hotel.address = '柳州市城中区';
+      hotel.phone = '0772-8888888';
+    }
   } catch { /* ignore */ }
   finally { loading.value = false; }
 });
+
+// 通过小程序 bridge 打开导航（WebView 内无法直接调地图）
+function openNav() {
+  wx?.miniProgram?.postMessage({
+    data: {
+      action: 'openLocation',
+      latitude: hotel.latitude || 24.315,
+      longitude: hotel.longitude || 109.413,
+      name: '柳州无限电竞酒店',
+      address: hotel.address,
+    },
+  });
+  // 兜底：h5 环境尝试用浏览器打开
+  if (!wx) {
+    const { latitude, longitude, address } = hotel;
+    window.open(`https://uri.amap.com/marker?position=${longitude},${latitude}&name=${encodeURIComponent(address)}`);
+  }
+}
+
+// 通过小程序 bridge 拨打电话
+function callPhone(e) {
+  e?.preventDefault?.();
+  wx?.miniProgram?.postMessage({
+    data: { action: 'makePhoneCall', phoneNumber: hotel.phone },
+  });
+  // 兜底：h5 环境直接 tel:
+  if (!wx && hotel.phone) {
+    window.location.href = `tel:${hotel.phone}`;
+  }
+}
 </script>
 
 <style scoped>
@@ -114,6 +173,13 @@ onMounted(async () => {
 
 .notice { display: flex; align-items: center; gap: 10px; margin: 14px; padding: 12px 14px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.15); border-radius: var(--radius-md); font-size: 12px; color: var(--neon-gold); }
 .notice :deep(svg) { flex-shrink: 0; }
+
+.contact { margin: 0 14px 6px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
+.contact__item { display: flex; align-items: center; gap: 10px; padding: 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-fast); text-decoration: none; }
+.contact__item:hover { background: rgba(0,212,255,.04); }
+.contact__item :deep(svg:first-child) { color: var(--neon-cyan); flex-shrink: 0; }
+.contact__arrow { color: var(--text-muted); margin-left: auto; flex-shrink: 0; }
+.contact__divider { height: 1px; background: var(--border-subtle); margin: 0 14px; }
 
 .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 14px; margin-bottom: 8px; }
 .quick__item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }

@@ -137,6 +137,24 @@ Page({
         wx.removeStorageSync('token');
         this.initAuth();
         break;
+      case 'openLocation':
+        // H5 请求打开位置导航
+        if (data.latitude && data.longitude) {
+          wx.openLocation({
+            latitude: data.latitude,
+            longitude: data.longitude,
+            name: data.name || '柳州无限电竞酒店',
+            address: data.address || '',
+            scale: 16,
+          });
+        }
+        break;
+      case 'makePhoneCall':
+        // H5 请求拨打电话
+        if (data.phoneNumber) {
+          wx.makePhoneCall({ phoneNumber: data.phoneNumber });
+        }
+        break;
       default:
         break;
     }
