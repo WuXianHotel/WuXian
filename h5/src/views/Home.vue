@@ -90,7 +90,7 @@ onMounted(async () => {
   try {
     const { default: api } = await import('../utils/api.js');
     const res = await api.getRooms();
-    rooms.value = (res.data || []).slice(0, 4).map(r => ({
+    rooms.value = ((res.data?.list || [])).slice(0, 4).map(r => ({
       ...r,
       facilities: facilityMap.filter(f => r[f.key]).map(f => f.name),
     }));

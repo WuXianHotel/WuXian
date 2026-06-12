@@ -69,7 +69,7 @@ const facilityMap = [
 onMounted(async () => {
   try {
     const res = await api.getRooms();
-    rooms.value = (res.data || []).map(r => ({
+    rooms.value = (res.data?.list || []).map(r => ({
       ...r,
       facilityList: facilityMap.filter(f => r[f.key]).map(f => f.name),
     }));
