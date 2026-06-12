@@ -19,7 +19,7 @@ router.get('/', async (req, res, next) => {
       config[r.key] = r.type === 'number' ? Number(r.value) : r.value;
     }
 
-    // 系统版本控制：默认 '0.0.1' 为审核模式（仅展示位置信息，隐藏预订功能）
+    // 系统版本控制
     if (systemRows.length > 0) {
       config.app_version = systemRows[0].value;
     } else {

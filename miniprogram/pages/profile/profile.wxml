@@ -61,7 +61,7 @@
   </view>
 
   <scroll-view scroll-y class="content safe-bottom">
-    <!-- 菜单组1（非审核模式显示） -->
+    <!-- 菜单组1 -->
     <view class="menu-group" wx:if="{{appVersion !== '0.0.1'}}">
       <view class="menu-item" bindtap="goOrders" data-tab="">
         <view class="menu-icon" style="background:#e8f0fe"><text class="iconfont icon-file-text"></text></view>
@@ -81,7 +81,7 @@
       </view>
     </view>
 
-    <!-- 菜单组2（非审核模式显示） -->
+    <!-- 菜单组2 -->
     <view class="menu-group" wx:if="{{appVersion !== '0.0.1'}}">
       <view class="menu-item" bindtap="goPersonalInfo">
         <view class="menu-icon" style="background:#f3e5f5"><text class="iconfont icon-user"></text></view>
@@ -101,7 +101,7 @@
       </view>
     </view>
 
-    <!-- 菜单组3（审核模式下也显示联系客服） -->
+    <!-- 菜单组3 -->
     <view class="menu-group">
       <view class="menu-item" bindtap="callHotel">
         <view class="menu-icon" style="background:#e8f0fe"><text class="iconfont icon-phone"></text></view>
@@ -110,7 +110,7 @@
       </view>
     </view>
 
-    <!-- 未登录时的一键登录引导（非审核模式显示） -->
+    <!-- 一键登录引导 -->
     <view class="login-cta" wx:if="{{!globalToken && appVersion !== '0.0.1'}}">
       <view class="login-cta-title">登录以解锁全部会员权益</view>
       <view class="login-cta-desc">积分、折扣、订单记录、会员等级…</view>

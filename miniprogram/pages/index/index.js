@@ -5,8 +5,8 @@ const app = getApp()
 
 Page({
   data: {
-    appVersion: '',      // 服务端版本号，'0.0.1' 为审核模式
-    versionReady: false, // 版本号加载完成标记
+    appVersion: '',
+    versionReady: false,
     checkIn: '',
     checkOut: '',
     checkInLabel: '',
@@ -56,7 +56,6 @@ Page({
         return
       }
       if (++retries > 50) {
-        // 超时，按审核模式初始化
         this.setData({ versionReady: true, appVersion: '0.0.1' })
         this.loadHotelConfig()
         return

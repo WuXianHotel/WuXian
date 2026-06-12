@@ -6,8 +6,8 @@ App({
     userInfo: null,
     token: '',
     apiBase: 'https://wuxian-hotel.online',
-    appVersion: '',       // 服务端版本号，'0.0.1' 为审核模式（仅展示位置信息）
-    versionReady: false   // 版本号是否已获取完毕（用于控制首页 loading）
+    appVersion: '',       // 服务端版本号，用于控制功能展示范围
+    versionReady: false   // 版本号是否已获取完毕
   },
 
   onLaunch() {
@@ -51,7 +51,7 @@ App({
       fail: () => {
         this.globalData.appVersion = '0.0.1'
         this.globalData.versionReady = true
-        console.log('[app] 获取版本失败，默认审核模式')
+        console.log('[app] 获取版本失败，使用默认配置')
       }
     })
   },

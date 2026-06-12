@@ -10,7 +10,7 @@
     <text class="launch-loading-text">加载中...</text>
   </view>
 
-  <!-- ─── 搜索头部（非审核模式显示） ─── -->
+  <!-- ─── 搜索头部 ─── -->
   <view class="header">
     <view class="header-slogan">寻找你的专属住所 <text class="iconfont icon-bank"></text></view>
     <view class="search-box" bindtap="goRooms" wx:if="{{appVersion !== '0.0.1'}}">
@@ -56,7 +56,7 @@
       </view>
     </view>
 
-    <!-- 轮播 Banner（非审核模式显示） -->
+    <!-- 轮播 Banner -->
     <swiper class="banner" autoplay interval="3000" circular indicator-dots indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#fff">
       <swiper-item wx:for="{{banners}}" wx:key="id">
         <view class="banner-item">
@@ -67,7 +67,7 @@
       </swiper-item>
     </swiper>
 
-    <!-- 快捷入口（非审核模式显示） -->
+    <!-- 快捷入口 -->
     <view class="quick-grid" wx:if="{{appVersion !== '0.0.1'}}">
       <view class="quick-item" bindtap="goRooms">
         <text class="iconfont icon-home quick-icon"></text>
@@ -83,7 +83,7 @@
       </view>
     </view>
 
-    <!-- 热门房型（非审核模式显示） -->
+    <!-- 热门房型 -->
     <view class="section">
       <view class="section-header">
         <text class="section-title">热门推荐</text>
