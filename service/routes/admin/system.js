@@ -39,7 +39,10 @@ router.put('/settings',
     try {
       const entries = Object.entries(req.body.settings);
       for (const [key, value] of entries) {
-        await query('UPDATE settings SET `value` = ? WHERE `key` = ?', [String(value ?? ''), key]);
+        await query(
+          'INSERT INTO settings (`key`, `value`, `type`, `group`) VALUES (?, ?, \'string\', \'system\') ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
+          [key, String(value ?? '')]
+        );
       }
       return ok(res, null, `已更新 ${entries.length} 项设置`);
     } catch (err) { next(err); }
