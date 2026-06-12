@@ -62,12 +62,13 @@ select_mode() {
   echo -e "${GREEN}请选择部署模式：${NC}"
   echo ""
   echo "  1) 本地开发部署（启动本地服务）"
-  echo "  2) 生产构建（构建前端 + 启动后端）"
-  echo "  3) 仅构建前端"
-  echo "  4) 仅启动后端"
-  echo "  5) 初始化项目（安装依赖 + 初始化数据库）"
+  echo "  2) 生产构建（构建前端 + H5 + 启动后端）"
+  echo "  3) 仅构建前端（管理后台）"
+  echo "  4) 仅构建 H5（小程序 WebView）"
+  echo "  5) 仅启动后端"
+  echo "  6) 初始化项目（安装依赖 + 初始化数据库）"
   echo ""
-  read -p "请输入选项 [1-5]: " mode
+  read -p "请输入选项 [1-6]: " mode
   echo ""
 }
 
@@ -145,7 +146,7 @@ start_service() {
 
 # 构建前端
 build_admin() {
-  info "构建前端项目..."
+  info "构建管理后台..."
   cd "$ADMIN_DIR"
 
   # 检查 VITE_API_BASE 是否设置
@@ -159,7 +160,17 @@ build_admin() {
   fi
 
   npm run build
-  success "前端构建完成，产物目录: $ADMIN_DIR/dist"
+  success "管理后台构建完成，产物目录: $ADMIN_DIR/dist"
+}
+
+# 构建 H5（小程序 WebView SPA）
+build_h5() {
+  info "构建小程序 H5..."
+  cd "$PROJECT_ROOT/h5"
+
+  npm install
+  npm run build
+  success "H5 构建完成，产物目录: $PROJECT_ROOT/h5/dist"
 }
 
 # 启动前端开发服务
@@ -259,19 +270,25 @@ main() {
       check_env "$ADMIN_DIR" "前端"
       stop_services
       build_admin
+      build_h5
       start_service "production"
       sleep 2
       show_result "production"
       ;;
     3)
-      # 仅构建前端
+      # 仅构建前端（管理后台）
       cd "$ADMIN_DIR"
       npm install
       check_env "$ADMIN_DIR" "前端"
       build_admin
-      success "前端构建完成: $ADMIN_DIR/dist"
+      success "管理后台构建完成: $ADMIN_DIR/dist"
       ;;
     4)
+      # 仅构建 H5
+      build_h5
+      success "H5 构建完成: $PROJECT_ROOT/h5/dist"
+      ;;
+    5)
       # 仅启动后端
       cd "$SERVICE_DIR"
       npm install --production=false
@@ -283,7 +300,7 @@ main() {
       port=${port:-3000}
       success "后端已启动: http://localhost:$port"
       ;;
-    5)
+    6)
       # 初始化项目
       install_deps
       check_env "$SERVICE_DIR" "后端"

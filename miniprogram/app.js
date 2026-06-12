@@ -1,59 +1,29 @@
 // app.js
-const iconfontBase64 = require('./assets/iconfont/iconfont-base64')
+// 小程序精简版：仅保留登录鉴权逻辑，UI 全部由 H5 WebView 承载
 
 App({
   globalData: {
     userInfo: null,
     token: '',
-    apiBase: 'https://wuxian-hotel.online',
-    appVersion: '',       // 服务端版本号，用于控制功能展示范围
-    versionReady: false   // 版本号是否已获取完毕
+    apiBase: 'https://wuxian-hotel.online', // 生产环境域名，开发时可按需修改
   },
 
   onLaunch() {
-    console.log('[app] onLaunch 启动')
-    // 加载 iconfont 字体
-    wx.loadFontFace({
-      family: 'iconfont',
-      source: `url("${iconfontBase64}")`,
-      global: true,
-      success: () => console.log('[app] iconfont 字体加载成功'),
-      fail: (err) => console.error('[app] iconfont 字体加载失败', err)
-    })
-    const token = wx.getStorageSync('token')
-    const userInfo = wx.getStorageSync('userInfo')
+    console.log('[app] onLaunch 启动');
+
+    const token = wx.getStorageSync('token');
+    const userInfo = wx.getStorageSync('userInfo');
     if (token) {
-      this.globalData.token = token
+      this.globalData.token = token;
     }
     if (userInfo) {
-      this.globalData.userInfo = userInfo
+      this.globalData.userInfo = userInfo;
     }
-    // 获取服务端版本控制配置
-    this.fetchAppVersion()
+
     // 静默登录：无 token 时自动用 wx.login code 换取 JWT
     if (!token) {
-      this.login().catch(() => {})
+      this.login().catch(() => {});
     }
-  },
-
-  // 获取服务端版本号，控制小程序功能展示
-  fetchAppVersion() {
-    wx.request({
-      url: `${this.globalData.apiBase}/api/mp/config`,
-      method: 'GET',
-      success: (res) => {
-        const data = res.data?.data || {}
-        const version = data.app_version || '0.0.1'
-        this.globalData.appVersion = version
-        this.globalData.versionReady = true
-        console.log('[app] 服务端版本:', version)
-      },
-      fail: () => {
-        this.globalData.appVersion = '0.0.1'
-        this.globalData.versionReady = true
-        console.log('[app] 获取版本失败，使用默认配置')
-      }
-    })
   },
 
   // 全局登录（静默登录）
@@ -62,88 +32,84 @@ App({
       wx.login({
         success: (res) => {
           if (res.code) {
-            console.log('[login] wx.login 成功，code:', res.code.slice(0, 6) + '...')
+            console.log('[login] wx.login 成功');
             wx.request({
               url: `${this.globalData.apiBase}/api/mp/auth/login`,
               method: 'POST',
               data: { code: res.code },
               success: (result) => {
-                const body = result.data || {}
-                const payload = body.data || {}
+                const body = result.data || {};
+                const payload = body.data || {};
                 if (body.code === 0 && payload.token) {
-                  console.log('[login] 登录成功，userId:', payload.userId)
-                  this.globalData.token = payload.token
-                  wx.setStorageSync('token', payload.token)
-                  // 登录成功后拉取完整用户资料
-                  this.fetchProfile().then(profile => {
-                    resolve(profile)
-                  }).catch(() => {
-                    // profile 拉取失败时退回 login 返回的基础信息
-                    this.globalData.userInfo = payload
-                    wx.setStorageSync('userInfo', payload)
-                    resolve(payload)
-                  })
+                  console.log('[login] 登录成功，userId:', payload.userId);
+                  this.globalData.token = payload.token;
+                  wx.setStorageSync('token', payload.token);
+                  this.fetchProfile()
+                    .then(profile => resolve(profile))
+                    .catch(() => {
+                      this.globalData.userInfo = payload;
+                      wx.setStorageSync('userInfo', payload);
+                      resolve(payload);
+                    });
                 } else {
-                  console.error('[login] 登录失败，响应:', body)
-                  reject(body)
+                  console.error('[login] 登录失败:', body);
+                  reject(body);
                 }
               },
               fail: (err) => {
-                console.error('[login] 网络请求失败:', err)
-                reject(err)
-              }
-            })
+                console.error('[login] 网络请求失败:', err);
+                reject(err);
+              },
+            });
           } else {
-            reject(new Error('wx.login failed'))
+            reject(new Error('wx.login failed'));
           }
         },
-        fail: reject
-      })
-    })
+        fail: reject,
+      });
+    });
   },
 
-  // 拉取完整用户资料并缓存
+  // 拉取完整用户资料
   fetchProfile() {
     return new Promise((resolve, reject) => {
-      const token = this.globalData.token
+      const token = this.globalData.token;
       wx.request({
         url: `${this.globalData.apiBase}/api/mp/auth/profile`,
         method: 'GET',
         header: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         success: (res) => {
-          const body = res.data || {}
+          const body = res.data || {};
           if (body.code === 0 && body.data) {
-            console.log('[fetchProfile] 用户资料:', body.data.nickname, body.data.avatar_url)
-            this.globalData.userInfo = body.data
-            wx.setStorageSync('userInfo', body.data)
-            resolve(body.data)
+            this.globalData.userInfo = body.data;
+            wx.setStorageSync('userInfo', body.data);
+            resolve(body.data);
           } else {
-            console.error('[fetchProfile] 拉取失败:', body)
-            reject(body)
+            reject(body);
           }
         },
         fail: (err) => {
-          console.error('[fetchProfile] 网络请求失败:', err)
-          reject(err)
-        }
-      })
-    })
+          reject(err);
+        },
+      });
+    });
   },
 
-  // 确保已登录；未登录时先触发登录再继续，失败则弹提示
+  // 确保已登录；未登录时先触发登录再继续
   ensureLogin() {
-    console.log('this.globalData.token', this.globalData.token)
-    if (this.globalData.token) return Promise.resolve()
-    wx.showLoading({ title: '登录中...' })
+    if (this.globalData.token) {
+      return Promise.resolve();
+    }
+    wx.showLoading({ title: '登录中...' });
     return this.login()
-      .then(() => { wx.hideLoading() })
+      .then(() => { wx.hideLoading(); })
       .catch(err => {
-        wx.hideLoading()
-        wx.showToast({ title: '登录失败，请重试', icon: 'none' })
-        return Promise.reject(err)
-      })
-  }
-})
+        wx.hideLoading();
+        wx.showToast({ title: '登录失败，请重试', icon: 'none' });
+        return Promise.reject(err);
+      });
+  },
+});

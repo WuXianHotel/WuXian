@@ -1,0 +1,118 @@
+// 路由配置 —— 与 miniprogram/app.json 页面一一对应
+import { createRouter, createWebHashHistory } from 'vue-router';
+import { getToken } from '../utils/auth.js';
+
+function requireAuth(to, from, next) {
+  const token = getToken();
+  if (!token) {
+    // 无 token：跳转到登录提示页（实际由小程序重新授权）
+    next('/auth-fail');
+    return;
+  }
+  next();
+}
+
+const routes = [
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('../views/Home.vue'),
+    meta: { tabIndex: 0, title: '首页' },
+  },
+  {
+    path: '/rooms',
+    name: 'rooms',
+    component: () => import('../views/Rooms.vue'),
+    meta: { tabIndex: 1, title: '探索' },
+  },
+  {
+    path: '/orders',
+    name: 'orders',
+    component: () => import('../views/Orders.vue'),
+    beforeEnter: requireAuth,
+    meta: { tabIndex: 2, title: '订单' },
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('../views/Profile.vue'),
+    beforeEnter: requireAuth,
+    meta: { tabIndex: 3, title: '我的' },
+  },
+  // ── 非 tab 页 ──
+  {
+    path: '/room/:id',
+    name: 'roomDetail',
+    component: () => import('../views/RoomDetail.vue'),
+    meta: { title: '房型详情' },
+  },
+  {
+    path: '/order/create',
+    name: 'orderCreate',
+    component: () => import('../views/OrderCreate.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '填写订单' },
+  },
+  {
+    path: '/order/confirm/:id',
+    name: 'orderConfirm',
+    component: () => import('../views/OrderConfirm.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '确认订单' },
+  },
+  {
+    path: '/order/:id',
+    name: 'orderDetail',
+    component: () => import('../views/OrderDetail.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '订单详情' },
+  },
+  {
+    path: '/member',
+    name: 'member',
+    component: () => import('../views/Member.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '会员中心' },
+  },
+  {
+    path: '/member/level',
+    name: 'memberLevel',
+    component: () => import('../views/MemberLevel.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '会员等级' },
+  },
+  {
+    path: '/profile/edit',
+    name: 'profileEdit',
+    component: () => import('../views/ProfileEdit.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '编辑资料' },
+  },
+  {
+    path: '/wallet',
+    name: 'wallet',
+    component: () => import('../views/Wallet.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '我的钱包' },
+  },
+  {
+    path: '/mall',
+    name: 'pointsMall',
+    component: () => import('../views/PointsMall.vue'),
+    beforeEnter: requireAuth,
+    meta: { title: '积分商城' },
+  },
+  {
+    path: '/auth-fail',
+    name: 'authFail',
+    component: () => import('../views/AuthFail.vue'),
+    meta: { title: '需要登录' },
+  },
+];
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes,
+});
+
+export default router;

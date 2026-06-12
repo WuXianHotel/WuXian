@@ -1,0 +1,67 @@
+<template>
+  <div class="member-level">
+    <header class="ml__header"><h2 class="ml__title">会员等级</h2></header>
+    <div v-if="loading" class="ml__loading">加载中...</div>
+    <div v-else class="ml__list">
+      <div v-for="level in levels" :key="level.level" class="ml__card" :class="{ 'ml__card--current': level.is_current }">
+        <span class="ml__icon">{{ level.icon || '⭐' }}</span>
+        <div class="ml__info">
+          <h3 class="ml__name">{{ level.name }}</h3>
+          <p class="ml__desc">消费 {{ level.min_nights || 0 }} 间夜后升级</p>
+          <p class="ml__discount">折扣：{{ level.discount || 100 }}折</p>
+        </div>
+        <span v-if="level.is_current" class="ml__current-badge">当前</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import api from '../utils/api.js';
+
+const levels = ref([]);
+const loading = ref(true);
+
+onMounted(async () => {
+  try {
+    const res = await api.getMemberLevels();
+    levels.value = res.data || [];
+  } catch {
+    // ignore
+  } finally {
+    loading.value = false;
+  }
+});
+</script>
+
+<style scoped>
+.ml__header { padding: 16px; }
+.ml__title { font-size: 18px; font-weight: 700; }
+.ml__loading { text-align: center; color: #999; padding: 60px 0; }
+.ml__list { padding: 0 12px 20px; display: flex; flex-direction: column; gap: 12px; }
+.ml__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+}
+.ml__card--current { border: 2px solid #1a56db; }
+.ml__icon { font-size: 36px; }
+.ml__info { flex: 1; }
+.ml__name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.ml__desc, .ml__discount { font-size: 12px; color: #999; }
+.ml__current-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #1a56db;
+  color: #fff;
+}
+</style>

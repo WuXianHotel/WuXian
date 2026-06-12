@@ -1,0 +1,56 @@
+/* pages/h5/h5.wxss */
+.h5-container {
+  width: 100%;
+  height: 100vh;
+  background: #f7f7f7;
+}
+
+/* 加载状态 */
+.h5-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+}
+.h5-loading__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e5e5;
+  border-top-color: #1a56db;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.h5-loading__text {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 错误状态 */
+.h5-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+  padding: 40px;
+}
+.h5-error__text {
+  font-size: 15px;
+  color: #999;
+  text-align: center;
+  line-height: 1.6;
+}
+.h5-error__btn {
+  padding: 10px 32px;
+  background: #1a56db;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+}

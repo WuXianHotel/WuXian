@@ -47,6 +47,9 @@ app.use(express.urlencoded({ extended: true }));
 // 静态文件（上传图片）
 app.use('/uploads', express.static(path.join(__dirname, process.env.UPLOAD_DIR || 'uploads')));
 
+// 注意：H5 SPA 由 Nginx 直接托管 /h5/ 路径（对齐 /admin/ 部署模式），
+//       Express 不再负责 H5 静态文件服务（性能优化 + 架构统一）。
+
 // 请求日志
 app.use((req, _res, next) => {
   logger.info(`${req.method} ${req.path}`);
