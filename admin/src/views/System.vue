@@ -44,6 +44,47 @@
         </el-form>
       </el-card>
 
+      <!-- Version Control -->
+      <el-card v-if="activeTab === 'version'" shadow="hover">
+        <template #header><span style="font-weight:600">小程序版本控制</span></template>
+        <div v-loading="loadingSettings">
+          <el-alert
+            :title="appVersion === '0.0.1' ? '当前为审核模式，仅展示酒店位置信息' : '当前为正常模式，展示全部功能'"
+            :type="appVersion === '0.0.1' ? 'warning' : 'success'"
+            show-icon
+            :closable="false"
+            style="margin-bottom:20px"
+          />
+          <el-form label-width="100px">
+            <el-form-item label="当前版本">
+              <el-tag :type="appVersion === '0.0.1' ? 'warning' : 'success'" size="large">
+                {{ appVersion }}
+              </el-tag>
+            </el-form-item>
+            <el-form-item label="切换模式">
+              <el-radio-group v-model="versionMode" @change="onVersionChange">
+                <el-radio-button value="0.0.1">
+                  <span>审核模式</span>
+                  <el-tooltip content="仅展示酒店位置信息，隐藏预订、订单、会员等功能" placement="top">
+                    <el-icon style="margin-left:4px;vertical-align:middle"><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </el-radio-button>
+                <el-radio-button value="1.0.0">
+                  <span>正常模式</span>
+                  <el-tooltip content="展示全部功能：房型浏览、预订、订单管理、会员中心等" placement="top">
+                    <el-icon style="margin-left:4px;vertical-align:middle"><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item v-if="versionMode !== appVersion">
+              <el-button type="primary" @click="saveVersion" :loading="savingVersion">保存版本</el-button>
+              <el-button @click="versionMode = appVersion">取消</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-card>
+
       <!-- Admins -->
       <el-card v-if="activeTab === 'admins'" shadow="hover">
         <template #header>
@@ -123,17 +164,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject, markRaw } from 'vue'
+import { ref, computed, onMounted, inject, markRaw } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { OfficeBuilding, User, EditPen } from '@element-plus/icons-vue'
+import { OfficeBuilding, User, EditPen, Setting, QuestionFilled } from '@element-plus/icons-vue'
 import { getSettings, saveSettings, getAdmins, createAdmin, updateAdmin, setAdminStatus, deleteAdmin, getLogs } from '@/api/system'
 
 const toast = inject('toast')
 const activeTab = ref('hotel')
 const tabs = [
-  { key: 'hotel',  icon: markRaw(OfficeBuilding), label: '酒店设置' },
-  { key: 'admins', icon: markRaw(User),     label: '管理员' },
-  { key: 'logs',   icon: markRaw(EditPen),        label: '操作日志' },
+  { key: 'hotel',   icon: markRaw(OfficeBuilding), label: '酒店设置' },
+  { key: 'version', icon: markRaw(Setting),         label: '版本控制' },
+  { key: 'admins',  icon: markRaw(User),            label: '管理员' },
+  { key: 'logs',    icon: markRaw(EditPen),         label: '操作日志' },
 ]
 
 // Hotel settings
@@ -141,11 +183,13 @@ const settings = ref({})
 const loadingSettings = ref(true)
 const saving = ref(false)
 
+const appVersion = computed(() => settings.value.app_version || '0.0.1')
+const versionMode = ref('')
+const savingVersion = ref(false)
+
 onMounted(async () => {
   try {
     const res = await getSettings()
-    // API 返回 { hotel: [{key,value},...], policy: [...], points: [...] }
-    // 铺平成 { hotel_name: '...', check_in_time: '14:00', ... }
     const flat = {}
     const grouped = res.data || {}
     for (const group of Object.values(grouped)) {
@@ -156,6 +200,7 @@ onMounted(async () => {
       }
     }
     settings.value = flat
+    versionMode.value = flat.app_version || '0.0.1'
   } catch {}
   loadingSettings.value = false
   loadAdmins()
@@ -167,6 +212,22 @@ async function saveHotelSettings() {
   try { await saveSettings(settings.value); toast?.success('设置已保存') }
   catch (e) { toast?.error(e?.msg || '保存失败') }
   saving.value = false
+}
+
+// Version control
+function onVersionChange(val) {
+  // 切换回当前值时隐藏保存按钮（由 v-if 自动处理）
+}
+async function saveVersion() {
+  savingVersion.value = true
+  try {
+    await saveSettings({ app_version: versionMode.value })
+    settings.value.app_version = versionMode.value
+    toast?.success(`已切换为${versionMode.value === '0.0.1' ? '审核模式' : '正常模式'}`)
+  } catch (e) {
+    toast?.error(e?.msg || '保存失败')
+  }
+  savingVersion.value = false
 }
 
 // Admins
