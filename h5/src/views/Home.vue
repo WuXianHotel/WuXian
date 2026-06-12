@@ -125,32 +125,22 @@ onMounted(async () => {
   finally { loading.value = false; }
 });
 
-// 通过小程序 bridge 打开导航（WebView 内无法直接调地图）
+// 导航：微信内置浏览器不支持 postMessage 即时通信，改用地图 URL 跳转
+// 系统会自动唤起高德/百度/腾讯地图或微信内置地图
 function openNav() {
-  wx?.miniProgram?.postMessage({
-    data: {
-      action: 'openLocation',
-      latitude: hotel.latitude || 24.315,
-      longitude: hotel.longitude || 109.413,
-      name: '柳州无限电竞酒店',
-      address: hotel.address,
-    },
-  });
-  // 兜底：h5 环境尝试用浏览器打开
-  if (!wx) {
-    const { latitude, longitude, address } = hotel;
-    window.open(`https://uri.amap.com/marker?position=${longitude},${latitude}&name=${encodeURIComponent(address)}`);
-  }
+  const { latitude, longitude, address } = hotel;
+  const lat = latitude || 24.315;
+  const lng = longitude || 109.413;
+  const name = '柳州无限电竞酒店';
+  // 腾讯地图 URI（微信环境兼容性最好）
+  const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title:${encodeURIComponent(name)};addr:${encodeURIComponent(address || '')}&referer=wxhotel`;
+  window.location.href = url;
 }
 
-// 通过小程序 bridge 拨打电话
+// 电话：tel: 链接在微信 WebView 中可直接唤起拨号
 function callPhone(e) {
   e?.preventDefault?.();
-  wx?.miniProgram?.postMessage({
-    data: { action: 'makePhoneCall', phoneNumber: hotel.phone },
-  });
-  // 兜底：h5 环境直接 tel:
-  if (!wx && hotel.phone) {
+  if (hotel.phone) {
     window.location.href = `tel:${hotel.phone}`;
   }
 }
