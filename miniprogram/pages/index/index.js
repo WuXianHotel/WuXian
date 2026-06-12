@@ -1,4 +1,4 @@
-// pages/h5/h5.js
+// pages/index/index.js
 // 小程序唯一页面：登录鉴权 → 将 token + 路由信息传入 WebView
 const app = getApp();
 
@@ -48,7 +48,7 @@ Page({
 
   // 根据小程序入口构造 H5 地址
   buildUrl(apiBase, token) {
-    // H5 SPA 地址
+    // H5 SPA 地址（部署后由 Express 托管在 /h5 路径下）
     const baseUrl = `${apiBase}/h5/`;
 
     // 构造 H5 内的路由 path（hash 模式）
@@ -56,9 +56,12 @@ Page({
     const opts = this.entryOptions || {};
 
     // 根据小程序原页面路径映射到 H5 路由
+    // opts 中可能包含 scene 参数，用于分享链接场景
     const scene = opts.scene || '';
 
     if (scene) {
+      // 分享场景：从 scene 解析路径
+      // scene 格式可能是 roomDetail?id=xxx 或 order?id=xxx
       h5Path = this.parseScene(scene);
     }
 
@@ -67,10 +70,9 @@ Page({
       h5Path = '/';
     }
 
-    // 关键：token 必须放在 # 之前，否则 window.location.search 拿不到
-    // 正确：https://域名/h5/?token=xxx#/路由
-    // 错误：https://域名/h5/#/路由?token=xxx
-    return `${baseUrl}?token=${encodeURIComponent(token)}#${h5Path}`;
+    // 拼接完整 URL：baseUrl#H5路径?token=xxx
+    // 使用 encodeURIComponent 防止特殊字符
+    return `${baseUrl}#${h5Path}?token=${encodeURIComponent(token)}`;
   },
 
   // 解析小程序 scene 参数到 H5 路由

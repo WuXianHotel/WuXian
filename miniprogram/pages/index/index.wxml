@@ -1,0 +1,23 @@
+<!-- pages/h5/h5.wxml -->
+<view class="h5-container">
+  <!-- 加载中 -->
+  <view wx:if="{{ loading }}" class="h5-loading">
+    <view class="h5-loading__spinner"></view>
+    <text class="h5-loading__text">正在加载...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{ errorMsg }}" class="h5-error">
+    <text class="h5-error__text">{{ errorMsg }}</text>
+    <button class="h5-error__btn" bindtap="initAuth">重试</button>
+  </view>
+
+  <!-- WebView -->
+  <web-view
+    wx:else
+    src="{{ webviewUrl }}"
+    bindload="onWebviewLoad"
+    binderror="onWebviewError"
+    bindmessage="onWebviewMessage"
+  />
+</view>

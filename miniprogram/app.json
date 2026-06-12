@@ -1,6 +1,6 @@
 {
   "pages": [
-    "pages/h5/h5"
+    "pages/index/index"
   ],
   "window": {
     "backgroundTextStyle": "light",
