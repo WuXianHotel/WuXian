@@ -1,43 +1,55 @@
 <template>
-  <div class="order-confirm">
+  <div class="ocf">
     <NavBar title="确认订单" />
-    <div v-if="loading" class="ocf__loading">加载中...</div>
-    <template v-else-if="order.id">
-      <!-- 状态 -->
-      <div class="ocf__status">
-        <span class="ocf__status-icon">✓</span>
-        <h2 class="ocf__status-title">订单已生成</h2>
-        <p class="ocf__order-no">{{ order.order_no }}</p>
-      </div>
 
-      <!-- 房间信息 -->
-      <div class="ocf__section">
-        <div class="ocf__room">
-          <img :src="order.room_image || '/placeholder.jpg'" :alt="order.room_name" class="ocf__room-img" />
-          <div>
-            <h3 class="ocf__room-name">{{ order.room_name }}</h3>
-            <p class="ocf__dates">{{ order.check_in }} ~ {{ order.check_out }} · {{ order.nights }}晚</p>
-          </div>
+    <!-- 步骤条 -->
+    <div class="ocf__steps">
+      <div class="ocf__step"><div class="ocf__step-num ocf__step-num--done">✓</div><span class="ocf__step-label ocf__step-label--done">选择日期</span></div>
+      <div class="ocf__step-line ocf__step-line--done"></div>
+      <div class="ocf__step"><div class="ocf__step-num ocf__step-num--done">✓</div><span class="ocf__step-label ocf__step-label--done">填写信息</span></div>
+      <div class="ocf__step-line ocf__step-line--done"></div>
+      <div class="ocf__step"><div class="ocf__step-num ocf__step-num--active">3</div><span class="ocf__step-label ocf__step-label--active">确认支付</span></div>
+    </div>
+
+    <div v-if="loading" class="ocf__state">加载中...</div>
+    <template v-else-if="order.id">
+      <!-- 订单详情 -->
+      <div class="ocf__card">
+        <div class="ocf__card-title">📋 订单详情</div>
+        <div class="ocf__card-body">
+          <div class="ocf__row"><span>房型</span><span class="ocf__row-val">{{ order.room_name }}</span></div>
+          <div class="ocf__row"><span>入住</span><span class="ocf__row-val">{{ order.check_in }}</span></div>
+          <div class="ocf__row"><span>退房</span><span class="ocf__row-val">{{ order.check_out }}</span></div>
+          <div class="ocf__row"><span>入住人</span><span class="ocf__row-val">{{ order.guest_name || '-' }}</span></div>
+          <div class="ocf__row" v-if="order.remark"><span>备注</span><span class="ocf__row-val" style="max-width:180px;text-align:right;font-size:12px;color:#888">{{ order.remark }}</span></div>
         </div>
       </div>
 
-      <!-- 费用 -->
-      <div class="ocf__section">
-        <div class="ocf__row"><span>房费 ({{ order.nights }}晚)</span><span>¥{{ order.total_price }}</span></div>
-        <div class="ocf__row ocf__row--total"><span>应付金额</span><span class="ocf__total">¥{{ order.total_price }}</span></div>
+      <!-- 费用明细 -->
+      <div class="ocf__card">
+        <div class="ocf__card-title">💰 费用明细</div>
+        <div class="ocf__card-body">
+          <div class="ocf__row"><span>房费 × {{ order.nights || 1 }}晚</span><span>¥{{ order.total_price }}</span></div>
+          <div class="ocf__row ocf__row--total"><span>应付金额</span><span class="ocf__total-price">¥{{ order.total_price }}</span></div>
+        </div>
       </div>
 
-      <!-- 支付 -->
-      <div class="ocf__section" v-if="order.status === 'pending'">
-        <h3 class="ocf__section-title">确认支付</h3>
-        <p class="ocf__pay-info">将使用钱包余额支付 (余额: ¥{{ walletBalance }})</p>
-        <button class="ocf__pay-btn" @click="payNow" :disabled="paying">
-          {{ paying ? '支付中...' : `立即支付 ¥${order.total_price}` }}
-        </button>
-      </div>
-
-      <div class="ocf__section" v-else>
-        <p class="ocf__pay-done">{{ statusMap[order.status] || order.status }}</p>
+      <!-- 支付方式 + 支付按钮 -->
+      <div class="ocf__card">
+        <div class="ocf__card-title">💳 支付方式</div>
+        <div class="ocf__card-body ocf__pay">
+          <span class="ocf__pay-icon">💰</span>
+          <span class="ocf__pay-text">钱包余额支付</span>
+          <span class="ocf__pay-check">●</span>
+        </div>
+        <div class="ocf__card-body" v-if="order.status === 'pending'">
+          <button class="ocf__pay-btn" @click="payNow" :disabled="paying">
+            {{ paying ? '支付中...' : `立即支付 ¥${order.total_price}` }}
+          </button>
+        </div>
+        <div class="ocf__card-body" v-else>
+          <p class="ocf__pay-done">{{ statusMap[order.status] || order.status }}</p>
+        </div>
       </div>
     </template>
   </div>
@@ -53,24 +65,16 @@ const route = useRoute();
 const order = ref({});
 const loading = ref(true);
 const paying = ref(false);
-const walletBalance = ref('0.00');
 
 const statusMap = { pending: '待支付', paid: '已支付', confirmed: '已确认' };
 
 onMounted(async () => {
   const id = route.params.id;
   try {
-    const [orderRes, walletRes] = await Promise.all([
-      api.getOrderDetail(id),
-      api.getWalletInfo().catch(() => ({ data: {} })),
-    ]);
-    order.value = orderRes.data || {};
-    walletBalance.value = (walletRes.data?.balance || 0).toFixed(2);
-  } catch {
-    // ignore
-  } finally {
-    loading.value = false;
-  }
+    const res = await api.getOrderDetail(id);
+    order.value = res.data || {};
+  } catch { /* ignore */ }
+  finally { loading.value = false; }
 });
 
 async function payNow() {
@@ -78,34 +82,42 @@ async function payNow() {
   try {
     await api.walletPay(order.value.order_no);
     alert('支付成功！');
-    // 刷新订单状态
     const res = await api.getOrderDetail(order.value.id);
     order.value = res.data || {};
-  } catch {
-    // error handled by api
-  } finally {
-    paying.value = false;
-  }
+  } catch { /* error handled by api */ }
+  finally { paying.value = false; }
 }
 </script>
 
 <style scoped>
-.ocf__loading { text-align: center; color: #999; padding: 60px 0; }
-.ocf__status { text-align: center; padding: 30px 16px; background: #d1fae5; }
-.ocf__status-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #10b981; color: #fff; font-size: 24px; margin-bottom: 12px; }
-.ocf__status-title { font-size: 18px; font-weight: 700; color: #065f46; margin-bottom: 4px; }
-.ocf__order-no { font-size: 13px; color: #999; }
-.ocf__section { margin: 12px; padding: 16px; background: #fff; border-radius: 12px; }
-.ocf__room { display: flex; gap: 12px; }
-.ocf__room-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #eee; }
-.ocf__room-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-.ocf__dates { font-size: 13px; color: #999; }
-.ocf__section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-.ocf__row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
-.ocf__row--total { font-weight: 600; border-top: 1px solid #f5f5f5; padding-top: 8px; margin-top: 8px; }
-.ocf__total { font-size: 20px; color: #e02424; }
-.ocf__pay-info { font-size: 13px; color: #666; margin-bottom: 12px; }
-.ocf__pay-btn { width: 100%; padding: 14px; background: #e02424; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; }
+.ocf__steps { display: flex; align-items: center; padding: 14px 20px; background: #fff; }
+.ocf__step { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ocf__step-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.ocf__step-num--done { background: #1a56db; color: #fff; }
+.ocf__step-num--active { background: #1a56db; color: #fff; box-shadow: 0 0 0 3px rgba(26,86,219,.2); }
+.ocf__step-label { font-size: 11px; color: #999; }
+.ocf__step-label--done { color: #1a56db; }
+.ocf__step-label--active { color: #1a56db; font-weight: 600; }
+.ocf__step-line { flex: 1; height: 1px; background: #e0e0e0; margin-bottom: 14px; }
+.ocf__step-line--done { background: #1a56db; }
+
+.ocf__state { text-align: center; color: #999; padding: 60px 0; }
+
+.ocf__card { background: #fff; margin: 8px 12px; border-radius: 12px; overflow: hidden; }
+.ocf__card-title { padding: 14px 16px 10px; font-size: 15px; font-weight: 700; color: #1a1a1a; border-bottom: 1px solid #f5f5f5; }
+.ocf__card-body { padding: 14px 16px; }
+
+.ocf__row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #555; border-bottom: 1px solid #f5f5f5; }
+.ocf__row:last-child { border-bottom: 0; }
+.ocf__row-val { color: #1a1a1a; font-weight: 600; }
+.ocf__row--total { border-bottom: 0; border-top: 1px solid #f0f0f0; padding-top: 10px; margin-top: 4px; font-weight: 700; color: #1a1a1a; }
+.ocf__total-price { font-size: 18px; font-weight: 700; color: #ff4d4f; }
+
+.ocf__pay { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.ocf__pay-icon { font-size: 24px; }
+.ocf__pay-text { font-weight: 600; flex: 1; }
+.ocf__pay-check { color: #1a56db; font-size: 16px; }
+.ocf__pay-btn { width: 100%; padding: 14px; background: #ff4d4f; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; }
 .ocf__pay-btn:disabled { opacity: .6; }
-.ocf__pay-done { font-size: 16px; font-weight: 600; text-align: center; color: #10b981; }
+.ocf__pay-done { text-align: center; font-size: 16px; font-weight: 600; color: #10b981; }
 </style>
