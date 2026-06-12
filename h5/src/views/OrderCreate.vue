@@ -1,5 +1,6 @@
 <template>
   <div class="order-create">
+    <NavBar title="填写订单" />
     <div v-if="loading" class="oc__loading">加载中...</div>
     <template v-else>
       <!-- 房型信息 -->
@@ -63,6 +64,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const route = useRoute();

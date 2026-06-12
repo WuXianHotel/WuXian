@@ -1,5 +1,6 @@
 <template>
   <div class="room-detail">
+    <NavBar title="房型详情" />
     <!-- 顶部图片滚动 -->
     <div class="rd__carousel">
       <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="rd__hero" />
@@ -89,6 +90,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const route = useRoute();

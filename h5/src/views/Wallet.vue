@@ -1,5 +1,6 @@
 <template>
   <div class="wallet">
+    <NavBar title="我的钱包" />
     <header class="wallet__header">
       <h2 class="wallet__title">我的钱包</h2>
     </header>
@@ -27,6 +28,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const info = ref({});

@@ -1,5 +1,6 @@
 <template>
   <div class="mall">
+    <NavBar title="积分商城" />
     <header class="mall__header"><h2 class="mall__title">积分商城</h2></header>
     <div v-if="loading" class="mall__loading">加载中...</div>
     <div v-else-if="!products.length" class="mall__empty">暂无商品</div>
@@ -20,6 +21,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const products = ref([]);

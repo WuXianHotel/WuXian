@@ -1,5 +1,6 @@
 <template>
   <div class="member-level">
+    <NavBar title="会员等级" />
     <header class="ml__header"><h2 class="ml__title">会员等级</h2></header>
     <div v-if="loading" class="ml__loading">加载中...</div>
     <div v-else class="ml__list">
@@ -18,6 +19,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const levels = ref([]);

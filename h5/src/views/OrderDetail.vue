@@ -1,5 +1,6 @@
 <template>
   <div class="order-detail">
+    <NavBar title="订单详情" />
     <div v-if="loading" class="od__loading">加载中...</div>
     <template v-else-if="order.id">
       <div class="od__status" :style="{ background: statusBg }">
@@ -34,6 +35,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const route = useRoute();

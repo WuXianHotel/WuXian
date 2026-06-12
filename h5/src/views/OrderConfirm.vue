@@ -1,5 +1,6 @@
 <template>
   <div class="order-confirm">
+    <NavBar title="确认订单" />
     <div v-if="loading" class="ocf__loading">加载中...</div>
     <template v-else-if="order.id">
       <!-- 状态 -->
@@ -45,6 +46,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const route = useRoute();

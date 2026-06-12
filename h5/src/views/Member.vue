@@ -1,5 +1,6 @@
 <template>
   <div class="member">
+    <NavBar title="会员中心" />
     <header class="member__header">
       <div class="member__card">
         <span class="member__level-icon">{{ info.level_icon || '⭐' }}</span>
@@ -55,6 +56,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const router = useRouter();
