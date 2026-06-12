@@ -1,71 +1,63 @@
 <template>
-  <header class="nav-bar">
-    <button class="nav-bar__back" @click="goBack" aria-label="返回">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <header class="nb">
+    <button class="nb__back" @click="goBack" aria-label="返回">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M16 19L7 12l9-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <h1 class="nav-bar__title">{{ title }}</h1>
-    <!-- 占位保持标题居中 -->
-    <span class="nav-bar__placeholder"></span>
+    <h1 class="nb__title">{{ title }}</h1>
+    <span class="nb__spacer"></span>
   </header>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router';
 
-defineProps({
-  title: {
-    type: String,
-    default: '',
-  },
-});
-
+defineProps({ title: { type: String, default: '' } });
 const router = useRouter();
 
 function goBack() {
-  if (window.history.length > 1) {
-    router.back();
-  } else {
-    // 无历史记录时跳回首页
-    router.replace('/');
-  }
+  if (window.history.length > 1) router.back();
+  else router.replace('/');
 }
 </script>
 
 <style scoped>
-.nav-bar {
+.nb {
   display: flex;
   align-items: center;
   height: 44px;
   padding: 0 8px;
-  background: #fff;
+  background: rgba(10, 14, 26, .88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
   z-index: 50;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
 }
-.nav-bar__back {
+.nb__back {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  color: #333;
+  width: 40px;
+  height: 40px;
+  color: var(--text-secondary);
   flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  transition: all var(--dur-fast) var(--ease-out);
 }
-.nav-bar__title {
+.nb__back:hover { color: var(--neon-cyan); background: rgba(0, 212, 255, .08); }
+.nb__title {
   flex: 1;
   text-align: center;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: .5px;
 }
-.nav-bar__placeholder {
-  width: 44px;
-  flex-shrink: 0;
-}
+.nb__spacer { width: 40px; flex-shrink: 0; }
 </style>

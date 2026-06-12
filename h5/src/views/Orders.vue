@@ -1,34 +1,24 @@
 <template>
   <div class="orders">
-    <header class="orders__header">
-      <h1 class="orders__title">我的订单</h1>
-    </header>
-    <!-- 标签切换 -->
+    <h1 class="orders__title">我的订单</h1>
+
     <div class="orders__tabs">
-      <span
-        v-for="t in tabs"
-        :key="t.key"
-        class="orders__tab"
-        :class="{ 'orders__tab--active': activeTab === t.key }"
-        @click="activeTab = t.key; loadOrders()"
-      >{{ t.label }}</span>
+      <span v-for="t in tabs" :key="t.key" class="orders__tab" :class="{'orders__tab--active':activeTab===t.key}" @click="activeTab=t.key;loadOrders()">{{ t.label }}</span>
     </div>
-    <div v-if="loading" class="orders__loading">加载中...</div>
+
+    <div v-if="loading" class="orders__skeleton">
+      <div v-for="i in 3" :key="i" class="skeleton" style="height:80px;margin-bottom:10px;border-radius:14px"></div>
+    </div>
     <div v-else-if="!list.length" class="orders__empty">暂无订单</div>
     <div v-else class="orders__list">
-      <div
-        v-for="item in list"
-        :key="item.id"
-        class="orders__card"
-        @click="goDetail(item.id)"
-      >
-        <img :src="item.room_image || '/placeholder.jpg'" :alt="item.room_name" class="orders__img" />
-        <div class="orders__info">
-          <h3 class="orders__name">{{ item.room_name }}</h3>
-          <p class="orders__date">{{ item.check_in }} ~ {{ item.check_out }}</p>
-          <div class="orders__bottom">
-            <span class="orders__price">¥{{ item.total_price }}</span>
-            <span class="orders__status" :style="{ color: statusColor(item.status) }">{{ statusMap[item.status] || item.status }}</span>
+      <div v-for="(item,idx) in list" :key="item.id" class="order-card fade-in-up" :style="{animationDelay:idx*.07+'s'}" @click="go(item.id)">
+        <img :src="item.room_image||'/placeholder.jpg'" :alt="item.room_name" class="order-card__img" />
+        <div class="order-card__info">
+          <h3>{{ item.room_name }}</h3>
+          <p class="order-card__date">{{ item.check_in }} ~ {{ item.check_out }}</p>
+          <div class="order-card__footer">
+            <span class="order-card__price">¥{{ item.total_price }}</span>
+            <span class="order-card__status" :style="{color:statusColor(item.status)}">{{ statusMap[item.status]||item.status }}</span>
           </div>
         </div>
       </div>
@@ -42,89 +32,43 @@ import { useRouter } from 'vue-router';
 import api from '../utils/api.js';
 
 const router = useRouter();
-const loading = ref(true);
-const activeTab = ref('all');
-const list = ref([]);
+const loading=ref(true), activeTab=ref('all'), list=ref([]);
+const tabs=[{key:'all',label:'全部'},{key:'pending',label:'待支付'},{key:'confirmed',label:'已确认'},{key:'completed',label:'已完成'}];
+const statusMap={pending:'待支付',paid:'已支付',confirmed:'已确认',checked_in:'已入住',completed:'已完成',cancelled:'已取消'};
+const statusColor=s=> ({pending:'var(--neon-gold)',paid:'var(--neon-green)',confirmed:'var(--neon-cyan)',completed:'var(--text-muted)',cancelled:'var(--neon-pink)'}[s]||'var(--text-muted)');
 
-const tabs = [
-  { key: 'all', label: '全部' },
-  { key: 'pending', label: '待支付' },
-  { key: 'confirmed', label: '已确认' },
-  { key: 'completed', label: '已完成' },
-];
-
-const statusMap = {
-  pending: '待支付',
-  paid: '已支付',
-  confirmed: '已确认',
-  checked_in: '已入住',
-  completed: '已完成',
-  cancelled: '已取消',
-};
-
-function statusColor(status) {
-  const colors = { pending: '#f59e0b', paid: '#10b981', confirmed: '#3b82f6', checked_in: '#8b5cf6', completed: '#6b7280', cancelled: '#ef4444' };
-  return colors[status] || '#999';
+onMounted(()=>{loadOrders();});
+async function loadOrders(){
+  loading.value=true;
+  try{ const p=activeTab.value!=='all'?{status:activeTab.value}:{}; const r=await api.getOrders(p); list.value=r.data||[]; }catch{}
+  finally{loading.value=false;}
 }
-
-onMounted(() => { loadOrders(); });
-
-async function loadOrders() {
-  loading.value = true;
-  try {
-    const params = activeTab.value !== 'all' ? { status: activeTab.value } : {};
-    const res = await api.getOrders(params);
-    list.value = res.data || [];
-  } catch {
-    // ignore
-  } finally {
-    loading.value = false;
-  }
-}
-
-function goDetail(id) { router.push(`/order/${id}`); }
+function go(id){ router.push(`/order/${id}`); }
 </script>
 
 <style scoped>
-.orders__header {
-  padding: 20px 16px 12px;
-  background: #fff;
-}
-.orders__title { font-size: 20px; font-weight: 700; }
-.orders__tabs {
-  display: flex;
-  background: #fff;
-  padding: 0 16px 12px;
-  gap: 8px;
-}
+.orders__title { padding: 20px 16px 8px; font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.orders__tabs { display: flex; gap: 8px; padding: 0 16px 14px; }
 .orders__tab {
-  font-size: 13px;
-  padding: 6px 14px;
-  border-radius: 20px;
-  background: #f5f5f5;
-  color: #666;
-  cursor: pointer;
-  transition: .2s;
+  font-size: 13px; padding: 6px 16px; border-radius: var(--radius-full);
+  background: var(--bg-card); color: var(--text-muted); cursor: pointer; border: 1px solid var(--border-subtle);
+  transition: all var(--dur-fast);
 }
-.orders__tab--active {
-  background: #1a56db;
-  color: #fff;
+.orders__tab--active { background: rgba(0,212,255,.1); color: var(--neon-cyan); border-color: var(--border-glow); }
+.orders__skeleton { padding: 0 14px; }
+.orders__empty { text-align: center; color: var(--text-muted); padding: 60px 0; }
+.orders__list { padding: 0 14px 20px; display: flex; flex-direction: column; gap: 10px; }
+.order-card {
+  display: flex; gap: 12px; padding: 12px;
+  background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+  cursor: pointer; transition: all var(--dur-normal) var(--ease-out);
 }
-.orders__loading, .orders__empty { text-align: center; color: #999; padding: 60px 0; }
-.orders__list { padding: 0 12px 20px; display: flex; flex-direction: column; gap: 10px; }
-.orders__card {
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
-  cursor: pointer;
-  display: flex;
-}
-.orders__img { width: 100px; height: 100px; object-fit: cover; background: #eee; flex-shrink: 0; }
-.orders__info { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
-.orders__name { font-size: 15px; font-weight: 600; }
-.orders__date { font-size: 12px; color: #999; }
-.orders__bottom { display: flex; justify-content: space-between; align-items: center; }
-.orders__price { font-size: 16px; font-weight: 700; color: #1a56db; }
-.orders__status { font-size: 12px; font-weight: 500; }
+.order-card:hover { border-color: var(--border-glow); }
+.order-card__img { width: 80px; height: 80px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; background: rgba(255,255,255,.03); }
+.order-card__info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.order-card__info h3 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.order-card__date { font-size: 12px; color: var(--text-muted); }
+.order-card__footer { display: flex; justify-content: space-between; align-items: center; }
+.order-card__price { font-size: 17px; font-weight: 700; color: var(--neon-cyan); }
+.order-card__status { font-size: 12px; font-weight: 600; }
 </style>

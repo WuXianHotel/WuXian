@@ -1,63 +1,82 @@
 <template>
   <div class="app">
-    <router-view />
-    <!-- 底部导航仅 tab 页显示 -->
+    <router-view v-slot="{ Component, route }">
+      <transition :name="transitionName" mode="out-in">
+        <component :is="Component" :key="route.path" />
+      </transition>
+    </router-view>
     <BottomNav v-if="showTabBar" />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import BottomNav from './components/BottomNav.vue';
 
 const route = useRoute();
-
-// tab 页才显示底部导航
+const transitionName = ref('fade-up');
 const showTabBar = computed(() => route.meta.tabIndex !== undefined);
+
+// 根据页面层级决定动效方向
+watch(() => route.path, (to, from) => {
+  const toDepth = (to.match(/\//g) || []).length;
+  const fromDepth = (from || '').match(/\//g)?.length || 0;
+  transitionName.value = toDepth > fromDepth ? 'slide-left' : 'slide-right';
+});
 </script>
 
 <style>
-/* ── 全局重置 ── */
-*,
-*:before,
-*:after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-html {
-  font-size: 16px;
-  -webkit-text-size-adjust: 100%;
-}
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #f7f7f7;
-  color: #333;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-a {
-  color: inherit;
-  text-decoration: none;
-}
-img {
-  max-width: 100%;
-  display: block;
-}
-input, button, textarea, select {
-  font: inherit;
-  color: inherit;
-  outline: none;
-}
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-}
 .app {
   min-height: 100vh;
   padding-bottom: 56px;
   padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 页面过渡动效 ── */
+.fade-up-enter-active {
+  animation: fadeInUp .35s cubic-bezier(.16,1,.3,1);
+}
+.fade-up-leave-active {
+  animation: fadeOutDown .25s cubic-bezier(.4,0,1,1);
+}
+.slide-left-enter-active {
+  animation: slideInRight .3s cubic-bezier(.16,1,.3,1);
+}
+.slide-left-leave-active {
+  animation: slideOutLeft .25s cubic-bezier(.4,0,1,1);
+}
+.slide-right-enter-active {
+  animation: slideInLeft .3s cubic-bezier(.16,1,.3,1);
+}
+.slide-right-leave-active {
+  animation: slideOutRight .25s cubic-bezier(.4,0,1,1);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeOutDown {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(20px); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-30px); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(30px); }
 }
 </style>
