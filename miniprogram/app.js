@@ -6,7 +6,8 @@ App({
     userInfo: null,
     token: '',
     apiBase: 'https://wuxian-hotel.online',
-    appVersion: '' // 服务端版本号，'0.0.1' 为审核模式（仅展示位置信息）
+    appVersion: '',       // 服务端版本号，'0.0.1' 为审核模式（仅展示位置信息）
+    versionReady: false   // 版本号是否已获取完毕（用于控制首页 loading）
   },
 
   onLaunch() {
@@ -44,14 +45,12 @@ App({
         const data = res.data?.data || {}
         const version = data.app_version || '0.0.1'
         this.globalData.appVersion = version
+        this.globalData.versionReady = true
         console.log('[app] 服务端版本:', version)
-        // 审核模式：隐藏 tabBar
-        if (version === '0.0.1') {
-          wx.hideTabBar()
-        }
       },
       fail: () => {
         this.globalData.appVersion = '0.0.1'
+        this.globalData.versionReady = true
         console.log('[app] 获取版本失败，默认审核模式')
       }
     })

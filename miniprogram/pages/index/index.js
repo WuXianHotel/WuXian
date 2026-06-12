@@ -5,7 +5,8 @@ const app = getApp()
 
 Page({
   data: {
-    appVersion: '', // 服务端版本号，'0.0.1' 为审核模式
+    appVersion: '',      // 服务端版本号，'0.0.1' 为审核模式
+    versionReady: false, // 版本号加载完成标记
     checkIn: '',
     checkOut: '',
     checkInLabel: '',
@@ -31,28 +32,54 @@ Page({
     const today = util.today()
     const tomorrow = util.addDays(today, 1)
     this.setData({
-      appVersion: app.globalData.appVersion || '',
       checkIn: today,
       checkOut: tomorrow,
       checkInLabel: util.formatDate(today),
       checkOutLabel: util.formatDate(tomorrow),
       nights: 1
     })
-    if (app.globalData.appVersion !== '0.0.1') {
-      this.loadRooms()
+    // 轮询等待 app 获取版本号完成（app.onLaunch 和页 onLoad 并发执行）
+    this._waitVersionAndInit()
+  },
+
+  // 等待 app.globalData.versionReady 后初始化页面
+  _waitVersionAndInit() {
+    if (app.globalData.versionReady) {
+      this._initWithVersion()
+      return
     }
+    // 轮询等待，最多等 5 秒
+    let retries = 0
+    const check = () => {
+      if (app.globalData.versionReady) {
+        this._initWithVersion()
+        return
+      }
+      if (++retries > 50) {
+        // 超时，按审核模式初始化
+        this.setData({ versionReady: true, appVersion: '0.0.1' })
+        this.loadHotelConfig()
+        return
+      }
+      setTimeout(check, 100)
+    }
+    setTimeout(check, 100)
+  },
+
+  _initWithVersion() {
+    const version = app.globalData.appVersion || '0.0.1'
+    this.setData({ versionReady: true, appVersion: version })
+    // if (version !== '0.0.1') {
+    this.loadRooms()
+    // }
     this.loadHotelConfig()
   },
 
   onShow() {
-    // 审核模式下隐藏 tabBar，显示 tabBar
-    const version = app.globalData.appVersion
-    this.setData({ appVersion: version })
-    if (version === '0.0.1') {
-      wx.hideTabBar()
-    } else {
-      wx.showTabBar()
+    if (app.globalData.versionReady) {
+      this.setData({ appVersion: app.globalData.appVersion || '' })
     }
+    // 同步自定义 tabBar 选中状态
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 })
     }

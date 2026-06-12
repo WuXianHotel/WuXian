@@ -1,9 +1,19 @@
 <!-- pages/index/index.wxml -->
 <view class="page">
+  <!-- 全屏 loading：始终存在，用 hidden 属性切换（避免 wx:if 导致的 DOM 重建闪烁） -->
+  <view class="launch-loading" hidden="{{versionReady}}">
+    <view class="launch-loading-icon">
+      <view class="dot-bounce" style="animation-delay:0s"></view>
+      <view class="dot-bounce" style="animation-delay:0.2s"></view>
+      <view class="dot-bounce" style="animation-delay:0.4s"></view>
+    </view>
+    <text class="launch-loading-text">加载中...</text>
+  </view>
+
   <!-- ─── 搜索头部（非审核模式显示） ─── -->
-  <view class="header" wx:if="{{appVersion !== '0.0.1'}}">
+  <view class="header">
     <view class="header-slogan">寻找你的专属住所 <text class="iconfont icon-bank"></text></view>
-    <view class="search-box" bindtap="goRooms">
+    <view class="search-box" bindtap="goRooms" wx:if="{{appVersion !== '0.0.1'}}">
       <text class="iconfont icon-search search-icon"></text>
       <text class="search-placeholder">搜索房型、设施...</text>
     </view>
@@ -22,7 +32,7 @@
   </view>
 
   <scroll-view scroll-y class="content safe-bottom">
-    <!-- 欢迎提示 + 酒店位置 -->
+    <!-- 欢迎提示 + 酒店位置（始终显示） -->
     <view class="welcome-bar">
       <view class="welcome-top">
         <text class="iconfont icon-notification welcome-icon"></text>
@@ -47,7 +57,7 @@
     </view>
 
     <!-- 轮播 Banner（非审核模式显示） -->
-    <swiper wx:if="{{appVersion !== '0.0.1'}}" class="banner" autoplay interval="3000" circular indicator-dots indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#fff">
+    <swiper class="banner" autoplay interval="3000" circular indicator-dots indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#fff">
       <swiper-item wx:for="{{banners}}" wx:key="id">
         <view class="banner-item">
           <view class="banner-tag">{{item.tag}}</view>
@@ -74,7 +84,7 @@
     </view>
 
     <!-- 热门房型（非审核模式显示） -->
-    <view class="section" wx:if="{{appVersion !== '0.0.1'}}">
+    <view class="section">
       <view class="section-header">
         <text class="section-title">热门推荐</text>
         <text class="section-more" bindtap="goRooms">查看全部 ›</text>
@@ -114,7 +124,7 @@
                 <text class="room-price">¥{{item.price}}</text>
                 <text class="room-unit">/晚</text>
               </view>
-              <view class="btn btn-primary room-btn" catchtap="goBook" data-id="{{item.id}}">立即预订</view>
+              <view wx:if="{{appVersion !== '0.0.1'}}" class="btn btn-primary room-btn" catchtap="goBook" data-id="{{item.id}}">立即预订</view>
             </view>
           </view>
         </view>
@@ -129,11 +139,9 @@
       <view class="picker-hint">
         {{tempCheckIn && !tempCheckOut ? '请选择退房日期' : (tempCheckIn && tempCheckOut ? '已选 ' + tempCheckIn + ' → ' + tempCheckOut : '请选择入住日期')}}
       </view>
-      <!-- 星期表头（固定） -->
       <view class="week-header">
         <view class="day-header" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
       </view>
-      <!-- 多月滚动区 -->
       <scroll-view scroll-y class="months-scroll">
         <block wx:for="{{calendarMonths}}" wx:key="key" wx:for-item="m">
           <view class="month-title">{{m.title}}</view>
