@@ -17,7 +17,7 @@
         :style="{ animationDelay: idx * .08 + 's' }"
       >
         <div class="room-card__photo" @click="goDetail(room.id)">
-          <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="room-card__photo-img" />
+          <img v-if="room.imageUrl" :src="room.imageUrl" :alt="room.name" class="room-card__photo-img" />
           <div v-else class="room-card__photo room-card__photo--ph"><BedSingle :size="48" :stroke-width="1.5" /></div>
           <span v-if="room.is_hot" class="room-card__badge room-card__badge--hot">热销</span>
           <span v-else-if="room.room_type=='suite'" class="room-card__badge room-card__badge--suite">套房</span>

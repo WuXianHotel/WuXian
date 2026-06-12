@@ -27,7 +27,7 @@
         <div class="oc__card-title"><BedSingle :size="16" /> 预订信息</div>
         <div class="oc__card-body">
           <div class="oc__room-summary">
-            <img :src="room.image_url || '/placeholder.jpg'" :alt="room.name" class="oc__room-thumb" />
+            <img :src="room.imageUrl || '/placeholder.jpg'" :alt="room.name" class="oc__room-thumb" />
             <div>
               <h4 class="oc__room-name">{{ room.name }}</h4>
               <p class="oc__room-meta" v-if="room.area || room.bed_type">{{ room.area ? room.area+'㎡' : '' }}{{ room.area && room.bed_type ? ' · ' : '' }}{{ room.bed_type || '' }}</p>

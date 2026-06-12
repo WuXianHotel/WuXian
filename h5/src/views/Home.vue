@@ -62,7 +62,7 @@
           @click="$router.push(`/room/${room.id}`)"
         >
           <div class="room-card__img-wrap">
-            <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="room-card__img" />
+            <img v-if="room.imageUrl" :src="room.imageUrl" :alt="room.name" class="room-card__img" />
             <div v-else class="room-card__img room-card__img--ph"><BedSingle :size="36" :stroke-width="1.5" /></div>
           </div>
           <div class="room-card__body">

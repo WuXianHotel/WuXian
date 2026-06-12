@@ -3,7 +3,7 @@
     <NavBar title="房型详情" />
 
     <div class="rd__hero">
-      <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="rd__hero-img" />
+      <img v-if="room.imageUrl" :src="room.imageUrl" :alt="room.name" class="rd__hero-img" />
       <div v-else class="rd__hero-img rd__hero-img--ph"><BedSingle :size="72" :stroke-width="1" /></div>
     </div>
 
