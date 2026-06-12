@@ -24,7 +24,8 @@
   justify-content: center;
   min-height: 100vh;
   padding: 20px;
-  background: #f7f7f7;
+  background: var(--bg-deep);
+  color: var(--text-primary);
 }
 .auth-fail__card {
   text-align: center;

@@ -46,16 +46,17 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
   padding: 16px;
   position: relative;
 }
-.ml__card--current { border: 2px solid #1a56db; }
+.ml__card--current { border: 2px solid var(--neon-cyan); }
 .ml__icon { font-size: 36px; }
 .ml__info { flex: 1; }
-.ml__name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-.ml__desc, .ml__discount { font-size: 12px; color: #999; }
+.ml__name { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
+.ml__desc, .ml__discount { font-size: 12px; color: var(--text-muted); }
 .ml__current-badge {
   position: absolute;
   top: 8px;
@@ -63,7 +64,7 @@ onMounted(async () => {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
-  background: #1a56db;
-  color: #fff;
+  background: var(--neon-cyan);
+  color: var(--bg-deep);
 }
 </style>

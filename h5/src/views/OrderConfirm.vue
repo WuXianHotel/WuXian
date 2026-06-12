@@ -91,34 +91,34 @@ async function payNow() {
 </script>
 
 <style scoped>
-.ocf__steps { display: flex; align-items: center; padding: 14px 20px; background: #fff; }
+.ocf__steps { display: flex; align-items: center; padding: 14px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border-subtle); }
 .ocf__step { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .ocf__step-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
-.ocf__step-num--done { background: #1a56db; color: #fff; }
-.ocf__step-num--active { background: #1a56db; color: #fff; box-shadow: 0 0 0 3px rgba(26,86,219,.2); }
-.ocf__step-label { font-size: 11px; color: #999; }
-.ocf__step-label--done { color: #1a56db; }
-.ocf__step-label--active { color: #1a56db; font-weight: 600; }
-.ocf__step-line { flex: 1; height: 1px; background: #e0e0e0; margin-bottom: 14px; }
-.ocf__step-line--done { background: #1a56db; }
+.ocf__step-num--done { background: var(--neon-cyan); color: var(--bg-deep); }
+.ocf__step-num--active { background: var(--neon-cyan); color: var(--bg-deep); box-shadow: 0 0 0 3px rgba(0,212,255,.2); }
+.ocf__step-label { font-size: 11px; color: var(--text-muted); }
+.ocf__step-label--done { color: var(--neon-cyan); }
+.ocf__step-label--active { color: var(--neon-cyan); font-weight: 600; }
+.ocf__step-line { flex: 1; height: 1px; background: var(--border-subtle); margin-bottom: 14px; }
+.ocf__step-line--done { background: var(--neon-cyan); }
 
-.ocf__state { text-align: center; color: #999; padding: 60px 0; }
+.ocf__state { text-align: center; color: var(--text-muted); padding: 60px 0; }
 
-.ocf__card { background: #fff; margin: 8px 12px; border-radius: 12px; overflow: hidden; }
-.ocf__card-title { padding: 14px 16px 10px; font-size: 15px; font-weight: 700; color: #1a1a1a; border-bottom: 1px solid #f5f5f5; }
+.ocf__card { background: var(--bg-card); margin: 8px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
+.ocf__card-title { padding: 14px 16px 10px; font-size: 15px; font-weight: 700; color: var(--text-primary); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 8px; }
 .ocf__card-body { padding: 14px 16px; }
 
-.ocf__row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #555; border-bottom: 1px solid #f5f5f5; }
+.ocf__row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border-subtle); }
 .ocf__row:last-child { border-bottom: 0; }
-.ocf__row-val { color: #1a1a1a; font-weight: 600; }
-.ocf__row--total { border-bottom: 0; border-top: 1px solid #f0f0f0; padding-top: 10px; margin-top: 4px; font-weight: 700; color: #1a1a1a; }
-.ocf__total-price { font-size: 18px; font-weight: 700; color: #ff4d4f; }
+.ocf__row-val { color: var(--text-primary); font-weight: 600; }
+.ocf__row--total { border-bottom: 0; border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 4px; font-weight: 700; color: var(--text-primary); }
+.ocf__total-price { font-size: 18px; font-weight: 700; color: var(--neon-cyan); }
 
-.ocf__pay { display: flex; align-items: center; gap: 12px; font-size: 14px; }
-.ocf__pay-icon { font-size: 24px; }
+.ocf__pay { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text-primary); }
+.ocf__pay-icon { color: var(--neon-cyan); }
 .ocf__pay-text { font-weight: 600; flex: 1; }
-.ocf__pay-check { color: #1a56db; font-size: 16px; }
-.ocf__pay-btn { width: 100%; padding: 14px; background: #ff4d4f; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; }
+.ocf__pay-check { color: var(--neon-cyan); }
+.ocf__pay-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 600; }
 .ocf__pay-btn:disabled { opacity: .6; }
-.ocf__pay-done { text-align: center; font-size: 16px; font-weight: 600; color: #10b981; }
+.ocf__pay-done { text-align: center; font-size: 16px; font-weight: 600; color: var(--neon-green); }
 </style>

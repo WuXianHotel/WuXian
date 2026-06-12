@@ -148,10 +148,8 @@ async function submitOrder() {
 <style scoped>
 /* 步骤条 */
 .oc__steps {
-  display: flex;
-  align-items: center;
-  padding: 14px 20px;
-  background: #fff;
+  display: flex; align-items: center; padding: 14px 20px;
+  background: var(--bg-card); border-bottom: 1px solid var(--border-subtle);
 }
 .oc__step { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .oc__step-num {
@@ -159,68 +157,74 @@ async function submitOrder() {
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700;
 }
-.oc__step-num--done { background: #1a56db; color: #fff; }
-.oc__step-num--active { background: #1a56db; color: #fff; box-shadow: 0 0 0 3px rgba(26,86,219,.2); }
-.oc__step-num--todo { background: #f0f0f0; color: #999; }
-.oc__step-label { font-size: 11px; color: #999; }
-.oc__step-label--done { color: #1a56db; }
-.oc__step-label--active { color: #1a56db; font-weight: 600; }
-.oc__step-line { flex: 1; height: 1px; background: #e0e0e0; margin-bottom: 14px; }
-.oc__step-line--done { background: #1a56db; }
+.oc__step-num--done { background: var(--neon-cyan); color: var(--bg-deep); }
+.oc__step-num--active { background: var(--neon-cyan); color: var(--bg-deep); box-shadow: 0 0 0 3px rgba(0,212,255,.2); }
+.oc__step-num--todo { background: rgba(255,255,255,.06); color: var(--text-muted); }
+.oc__step-label { font-size: 11px; color: var(--text-muted); }
+.oc__step-label--done { color: var(--neon-cyan); }
+.oc__step-label--active { color: var(--neon-cyan); font-weight: 600; }
+.oc__step-line { flex: 1; height: 1px; background: var(--border-subtle); margin-bottom: 14px; }
+.oc__step-line--done { background: var(--neon-cyan); }
 
-.oc__state { text-align: center; color: #999; padding: 60px 0; }
+.oc__state { text-align: center; color: var(--text-muted); padding: 60px 0; }
 
 /* 卡片 */
-.oc__card { background: #fff; margin: 8px 12px; border-radius: 12px; overflow: hidden; }
-.oc__card-title { padding: 14px 16px 10px; font-size: 15px; font-weight: 700; color: #1a1a1a; border-bottom: 1px solid #f5f5f5; }
+.oc__card { background: var(--bg-card); margin: 8px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
+.oc__card-title { padding: 14px 16px 10px; font-size: 15px; font-weight: 700; color: var(--text-primary); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 8px; }
 .oc__card-body { padding: 14px 16px; }
 
 .oc__room-summary { display: flex; gap: 12px; margin-bottom: 14px; }
-.oc__room-thumb { width: 80px; height: 60px; border-radius: 8px; object-fit: cover; background: linear-gradient(135deg, #667eea, #764ba2); flex-shrink: 0; }
-.oc__room-name { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
-.oc__room-meta { font-size: 12px; color: #888; }
+.oc__room-thumb { width: 80px; height: 60px; border-radius: 8px; object-fit: cover; background: rgba(255,255,255,.03); flex-shrink: 0; }
+.oc__room-name { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.oc__room-meta { font-size: 12px; color: var(--text-secondary); }
 
 .oc__date-row { display: flex; align-items: center; justify-content: space-between; }
 .oc__date-item { text-align: center; }
-.oc__date-label { display: block; font-size: 11px; color: #999; margin-bottom: 4px; }
-.oc__date-val { font-size: 16px; font-weight: 700; color: #1a1a1a; }
-.oc__date-arrow { color: #1a56db; font-size: 18px; }
-.oc__nights-badge { background: #e8f0fe; color: #1a56db; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.oc__date-label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.oc__date-val { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.oc__date-arrow { color: var(--neon-cyan); }
+.oc__nights-badge { background: rgba(0,212,255,.1); color: var(--neon-cyan); padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; }
 
 /* 表单 */
 .oc__field { margin-bottom: 14px; }
 .oc__field:last-child { margin-bottom: 0; }
-.oc__label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; }
-.oc__required { color: #ff4d4f; }
-.oc__label-hint { font-size: 11px; color: #999; }
+.oc__label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.oc__required { color: var(--neon-pink); }
+.oc__label-hint { font-size: 11px; color: var(--text-muted); }
 .oc__input {
   width: 100%; padding: 10px 12px;
-  border: 1px solid #e0e0e0; border-radius: 8px;
-  font-size: 14px; background: #fafafa;
+  border: 1px solid var(--border-subtle); border-radius: 8px;
+  font-size: 14px; background: rgba(255,255,255,.03); color: var(--text-primary);
   transition: border-color .2s;
 }
-.oc__input--filled { background: #fff; border-color: #1a56db; }
+.oc__input::placeholder { color: var(--text-muted); }
+.oc__input--filled { border-color: var(--neon-cyan); }
 .oc__textarea {
   width: 100%; padding: 10px 12px;
-  border: 1px solid #e0e0e0; border-radius: 8px;
-  font-size: 13px; background: #fafafa; resize: none;
+  border: 1px solid var(--border-subtle); border-radius: 8px;
+  font-size: 13px; background: rgba(255,255,255,.03); color: var(--text-primary); resize: none;
 }
-.oc__policy { font-size: 12px; color: #666; line-height: 1.8; }
+.oc__textarea::placeholder { color: var(--text-muted); }
+.oc__policy { font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
 
-/* 底部 */
+/* 底部固定栏 + 留白防遮挡 */
+.oc {
+  padding-bottom: calc(70px + env(safe-area-inset-bottom));
+}
 .oc__bar {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: #fff; border-top: 1px solid #f0f0f0;
+  background: rgba(10,14,26,.95); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-subtle);
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   display: flex; align-items: center; justify-content: space-between;
   z-index: 20;
 }
-.oc__bar-price { font-size: 12px; color: #999; }
-.oc__bar-price strong { font-size: 20px; color: #ff4d4f; }
+.oc__bar-price { font-size: 12px; color: var(--text-muted); }
+.oc__bar-price strong { font-size: 20px; color: var(--neon-cyan); }
 .oc__bar-btn {
-  background: #1a56db; color: #fff; border: none;
-  border-radius: 24px; padding: 12px 32px;
-  font-size: 15px; font-weight: 600;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  color: #fff; border: none; border-radius: var(--radius-full);
+  padding: 12px 32px; font-size: 15px; font-weight: 600;
 }
 .oc__bar-btn:disabled { opacity: .6; }
 </style>

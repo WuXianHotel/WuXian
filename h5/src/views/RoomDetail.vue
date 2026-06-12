@@ -133,6 +133,7 @@ function goBook(){if(!checkIn.value||!checkOut.value){alert('请先选择日期'
 </script>
 
 <style scoped>
+.rd{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
 .rd__hero{height:240px;overflow:hidden}.rd__hero-img{width:100%;height:100%;object-fit:cover}.rd__hero-img--ph{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(0,212,255,.1),rgba(168,85,247,.1));color:var(--neon-cyan)}
 .rd__card{margin:10px 14px;padding:16px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md)}
 .rd__name{font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:8px}

@@ -74,21 +74,21 @@ async function cancelOrder() {
 </script>
 
 <style scoped>
-.od__loading { text-align: center; color: #999; padding: 60px 0; }
+.od__loading { text-align: center; color: var(--text-muted); padding: 60px 0; }
 .od__status { padding: 24px 16px; text-align: center; }
-.od__status-text { font-size: 18px; font-weight: 700; }
-.od__order-no { font-size: 12px; color: #999; margin-top: 4px; }
-.od__section { margin: 12px; padding: 16px; background: #fff; border-radius: 12px; }
+.od__status-text { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.od__order-no { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.od__section { margin: 10px 14px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
 .od__room { display: flex; gap: 12px; }
-.od__room-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: #eee; }
-.od__room-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-.od__dates { font-size: 13px; color: #999; }
-.od__row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
+.od__room-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background: rgba(255,255,255,.03); }
+.od__room-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
+.od__dates { font-size: 13px; color: var(--text-muted); }
+.od__row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: var(--text-secondary); }
 .od__row:last-child { margin-bottom: 0; }
-.od__row--total { font-weight: 600; border-top: 1px solid #f5f5f5; padding-top: 8px; margin-top: 8px; }
-.od__discount { color: #10b981; }
-.od__total-price { font-size: 20px; color: #1a56db; }
+.od__row--total { font-weight: 600; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 8px; color: var(--text-primary); }
+.od__discount { color: var(--neon-green); }
+.od__total-price { font-size: 20px; color: var(--neon-cyan); }
 .od__actions { padding: 12px; }
 .od__btn { width: 100%; padding: 12px; border-radius: 8px; font-size: 15px; }
-.od__btn--danger { background: #fff; color: #ef4444; border: 1px solid #ef4444; }
+.od__btn--danger { background: transparent; color: var(--neon-pink); border: 1px solid var(--neon-pink); }
 </style>

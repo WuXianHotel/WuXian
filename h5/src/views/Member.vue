@@ -89,10 +89,10 @@ function goTo(path) { router.push(path); }
 <style scoped>
 .member__header { padding: 16px; }
 .member__card {
-  background: linear-gradient(135deg, #1a56db, #2563eb);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0,212,255,.15), rgba(168,85,247,.15));
+  border-radius: var(--radius-lg);
   padding: 20px;
-  color: #fff;
+  color: var(--text-primary);
 }
 .member__level-icon { font-size: 32px; display: block; margin-bottom: 8px; }
 .member__level-name { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
@@ -101,16 +101,16 @@ function goTo(path) { router.push(path); }
 .member__stat { display: flex; flex-direction: column; }
 .member__stat-val { font-size: 20px; font-weight: 700; }
 .member__stat-label { font-size: 11px; opacity: .75; }
-.member__section { margin: 0 12px 12px; background: #fff; border-radius: 12px; padding: 16px; }
+.member__section { margin: 0 14px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; }
 .member__section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
 .member__privileges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-.member__privilege { display: flex; align-items: center; gap: 4px; font-size: 13px; color: #666; }
+.member__privilege { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary); }
 .member__privilege-icon { color: #10b981; font-weight: 700; }
 .member__btn {
   width: 100%;
   padding: 10px;
-  background: #f0f4ff;
-  color: #1a56db;
+  background: rgba(0,212,255,.08);
+  color: var(--neon-cyan);
   border: none;
   border-radius: 8px;
   font-size: 14px;

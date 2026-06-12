@@ -68,24 +68,25 @@ async function submit() {
 </script>
 
 <style scoped>
-.profile-edit { padding: 12px; }
-.profile-edit__form { background: #fff; border-radius: 12px; padding: 16px; }
+.profile-edit { padding: 12px 14px; }
+.profile-edit__form { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; }
 .profile-edit__field { margin-bottom: 16px; }
-.profile-edit__label { display: block; font-size: 14px; color: #666; margin-bottom: 6px; }
+.profile-edit__label { display: block; font-size: 14px; color: var(--text-secondary); margin-bottom: 6px; }
 .profile-edit__input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   font-size: 15px;
-  background: #fafafa;
+  background: rgba(255,255,255,.03);
+  color: var(--text-primary);
 }
 .profile-edit__radio-group { display: flex; gap: 20px; }
-.profile-edit__radio { display: flex; align-items: center; gap: 4px; font-size: 14px; cursor: pointer; }
+.profile-edit__radio { display: flex; align-items: center; gap: 4px; font-size: 14px; color: var(--text-secondary); cursor: pointer; }
 .profile-edit__submit {
   width: 100%;
   padding: 12px;
-  background: #1a56db;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
   color: #fff;
   border: none;
   border-radius: 8px;
