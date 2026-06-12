@@ -24,7 +24,7 @@
     <template v-else>
       <!-- 预订信息 -->
       <div class="oc__card">
-        <div class="oc__card-title">🛏 预订信息</div>
+        <div class="oc__card-title"><BedSingle :size="16" /> 预订信息</div>
         <div class="oc__card-body">
           <div class="oc__room-summary">
             <img :src="room.image_url || '/placeholder.jpg'" :alt="room.name" class="oc__room-thumb" />
@@ -39,9 +39,9 @@
               <span class="oc__date-label">入住</span>
               <span class="oc__date-val">{{ checkIn }}</span>
             </div>
-            <span class="oc__date-arrow">→</span>
-            <span class="oc__nights-badge">{{ nights }}晚</span>
-            <span class="oc__date-arrow">→</span>
+          <ArrowRight :size="16" class="oc__date-arrow" />
+          <span class="oc__nights-badge">{{ nights }}晚</span>
+          <ArrowRight :size="16" class="oc__date-arrow" />
             <div class="oc__date-item">
               <span class="oc__date-label">退房</span>
               <span class="oc__date-val">{{ checkOut }}</span>
@@ -52,7 +52,7 @@
 
       <!-- 入住人信息 -->
       <div class="oc__card">
-        <div class="oc__card-title">👤 入住人信息</div>
+        <div class="oc__card-title"><User :size="16" /> 入住人信息</div>
         <div class="oc__card-body">
           <div class="oc__field">
             <label class="oc__label">姓名 <span class="oc__required">*</span></label>
@@ -71,7 +71,7 @@
 
       <!-- 取消政策 -->
       <div class="oc__card">
-        <div class="oc__card-title">📋 取消政策</div>
+        <div class="oc__card-title"><FileText :size="16" /> 取消政策</div>
         <div class="oc__card-body oc__policy">
           <p>• 入住前24小时免费取消</p>
           <p>• 入住前24小时内取消，收取首晚房费</p>
@@ -93,6 +93,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { BedSingle, User, FileText, ArrowRight } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 

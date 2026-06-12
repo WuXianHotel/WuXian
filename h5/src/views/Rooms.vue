@@ -12,32 +12,31 @@
 
     <div v-else class="rooms__list">
       <div
-        v-for="(room, idx) in rooms"
-        :key="room.id"
+        v-for="(room, idx) in rooms" :key="room.id"
         class="room-card fade-in-up"
         :style="{ animationDelay: idx * .08 + 's' }"
       >
         <div class="room-card__photo" @click="goDetail(room.id)">
           <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="room-card__photo-img" />
-          <div v-else class="room-card__photo room-card__photo--ph">🛏️</div>
+          <div v-else class="room-card__photo room-card__photo--ph"><BedSingle :size="48" :stroke-width="1.5" /></div>
           <span v-if="room.is_hot" class="room-card__badge room-card__badge--hot">热销</span>
-          <span v-else-if="room.room_type==='suite'" class="room-card__badge room-card__badge--suite">套房</span>
+          <span v-else-if="room.room_type=='suite'" class="room-card__badge room-card__badge--suite">套房</span>
         </div>
 
         <div class="room-card__body" @click="goDetail(room.id)">
           <h3 class="room-card__name">{{ room.name }}</h3>
           <div class="room-card__attrs" v-if="room.area || room.bed_type">
-            <span v-if="room.area">📐 {{ room.area }}㎡</span>
-            <span v-if="room.bed_type">🛏 {{ room.bed_type }}</span>
-            <span v-if="room.view_type">🏙 {{ room.view_type }}</span>
+            <span v-if="room.area"><Ruler :size="12" /> {{ room.area }}㎡</span>
+            <span v-if="room.bed_type"><BedSingle :size="12" /> {{ room.bed_type }}</span>
+            <span v-if="room.view_type"><Building2 :size="12" /> {{ room.view_type }}</span>
           </div>
           <div class="room-card__facs" v-if="room.facilityList?.length">
-            <span v-for="(f,i) in room.facilityList.slice(0,4)" :key="i">{{ f }}</span>
+            <span v-for="(f,i) in room.facilityList.slice(0,4)" :key="i"><Check :size="12" /> {{ f }}</span>
           </div>
           <div class="room-card__footer">
             <div class="room-card__price-area">
               <div class="room-card__price">¥{{ room.price }}<sub>/晚</sub></div>
-              <div v-if="room.member_discount" class="room-card__member">💎 会员{{ room.member_discount }}折</div>
+              <div v-if="room.member_discount" class="room-card__member"><Gem :size="11" /> 会员{{ room.member_discount }}折</div>
             </div>
             <div class="room-card__actions">
               <button class="btn btn--outline" @click.stop="goDetail(room.id)">详情</button>
@@ -53,6 +52,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { BedSingle, Ruler, Building2, Check, Gem } from 'lucide-vue-next';
 import api from '../utils/api.js';
 
 const router = useRouter();
@@ -95,58 +95,28 @@ function goBook(id) {
 .rooms__state { padding: 16px; }
 
 .rooms__list { padding: 0 14px 20px; display: flex; flex-direction: column; gap: 12px; }
-.room-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  transition: all var(--dur-normal) var(--ease-out);
-}
+.room-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; transition: all var(--dur-normal) var(--ease-out); }
 .room-card:hover { border-color: var(--border-glow); }
-.room-card__photo {
-  height: 180px; position: relative;
-  background: linear-gradient(135deg, rgba(0,212,255,.05), rgba(168,85,247,.05));
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
-}
+.room-card__photo { height: 180px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .room-card__photo-img { width: 100%; height: 100%; object-fit: cover; }
-.room-card__photo--ph { font-size: 48px; }
-.room-card__badge {
-  position: absolute; top: 12px; right: 12px;
-  font-size: 11px; padding: 3px 10px; border-radius: var(--radius-full);
-  color: #fff; font-weight: 600;
-}
+.room-card__photo--ph { background: linear-gradient(135deg, rgba(0,212,255,.05), rgba(168,85,247,.05)); color: var(--neon-cyan); }
+.room-card__badge { position: absolute; top: 12px; right: 12px; font-size: 11px; padding: 3px 10px; border-radius: var(--radius-full); color: #fff; font-weight: 600; }
 .room-card__badge--hot { background: var(--neon-pink); }
 .room-card__badge--suite { background: var(--neon-purple); }
 .room-card__body { padding: 14px 16px; cursor: pointer; }
 .room-card__name { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
 .room-card__attrs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.room-card__attrs span {
-  font-size: 11px; color: var(--text-secondary);
-  padding: 4px 10px; border-radius: 6px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--border-subtle);
-}
+.room-card__attrs span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; background: rgba(255,255,255,.03); border: 1px solid var(--border-subtle); }
 .room-card__facs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-.room-card__facs span { font-size: 11px; color: var(--neon-cyan); }
-.room-card__footer {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  border-top: 1px solid var(--border-subtle); padding-top: 14px;
-}
+.room-card__facs span { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--neon-cyan); }
+.room-card__footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 14px; }
 .room-card__price { font-size: 22px; font-weight: 700; color: var(--neon-cyan); }
 .room-card__price sub { font-size: 12px; font-weight: 400; color: var(--text-muted); }
-.room-card__member { font-size: 10px; color: var(--neon-gold); margin-top: 4px; }
+.room-card__member { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: var(--neon-gold); margin-top: 4px; }
 .room-card__actions { display: flex; gap: 8px; }
-
-.btn {
-  padding: 8px 16px; border-radius: var(--radius-full);
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all var(--dur-normal) var(--ease-out);
-}
-.btn--outline {
-  border: 1px solid var(--text-muted); color: var(--text-secondary); background: transparent;
-}
+.btn { padding: 8px 16px; border-radius: var(--radius-full); font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
+.btn--outline { border: 1px solid var(--text-muted); color: var(--text-secondary); background: transparent; }
 .btn--outline:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
-.btn--neon {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff;
-}
+.btn--neon { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; }
 .btn--neon:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow-cyan); }
 </style>

@@ -15,7 +15,7 @@
     <template v-else-if="order.id">
       <!-- 订单详情 -->
       <div class="ocf__card">
-        <div class="ocf__card-title">📋 订单详情</div>
+        <div class="ocf__card-title"><ClipboardList :size="16" /> 订单详情</div>
         <div class="ocf__card-body">
           <div class="ocf__row"><span>房型</span><span class="ocf__row-val">{{ order.room_name }}</span></div>
           <div class="ocf__row"><span>入住</span><span class="ocf__row-val">{{ order.check_in }}</span></div>
@@ -27,7 +27,7 @@
 
       <!-- 费用明细 -->
       <div class="ocf__card">
-        <div class="ocf__card-title">💰 费用明细</div>
+        <div class="ocf__card-title"><Wallet :size="16" /> 费用明细</div>
         <div class="ocf__card-body">
           <div class="ocf__row"><span>房费 × {{ order.nights || 1 }}晚</span><span>¥{{ order.total_price }}</span></div>
           <div class="ocf__row ocf__row--total"><span>应付金额</span><span class="ocf__total-price">¥{{ order.total_price }}</span></div>
@@ -36,11 +36,11 @@
 
       <!-- 支付方式 + 支付按钮 -->
       <div class="ocf__card">
-        <div class="ocf__card-title">💳 支付方式</div>
+        <div class="ocf__card-title"><CreditCard :size="16" /> 支付方式</div>
         <div class="ocf__card-body ocf__pay">
-          <span class="ocf__pay-icon">💰</span>
+          <Wallet :size="20" class="ocf__pay-icon" />
           <span class="ocf__pay-text">钱包余额支付</span>
-          <span class="ocf__pay-check">●</span>
+          <CircleCheck :size="16" class="ocf__pay-check" />
         </div>
         <div class="ocf__card-body" v-if="order.status === 'pending'">
           <button class="ocf__pay-btn" @click="payNow" :disabled="paying">
@@ -58,6 +58,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { ClipboardList, Wallet, CreditCard, CircleCheck } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 

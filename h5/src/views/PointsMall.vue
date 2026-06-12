@@ -1,17 +1,16 @@
 <template>
   <div class="mall">
     <NavBar title="积分商城" />
-    <header class="mall__header"><h2 class="mall__title">积分商城</h2></header>
-    <div v-if="loading" class="mall__loading">加载中...</div>
-    <div v-else-if="!products.length" class="mall__empty">暂无商品</div>
+    <div v-if="loading" class="mall__state"><div v-for="i in 3" :key="i" class="skeleton" style="height:180px;margin-bottom:10px;border-radius:14px"></div></div>
+    <div v-else-if="!products.length" class="mall__state"><Gift :size="40" :stroke-width="1" /><p>暂无商品</p></div>
     <div v-else class="mall__grid">
       <div v-for="p in products" :key="p.id" class="mall__card">
-        <img :src="p.image_url || '/placeholder.jpg'" :alt="p.name" class="mall__img" />
-        <div class="mall__info">
-          <h3 class="mall__name">{{ p.name }}</h3>
-          <div class="mall__bottom">
-            <span class="mall__points">{{ p.points }} 积分</span>
-            <button class="mall__btn" @click="exchange(p)">兑换</button>
+        <img :src="p.image_url||'/placeholder.jpg'" :alt="p.name" class="mall__img" />
+        <div class="mall__body">
+          <h3>{{ p.name }}</h3>
+          <div class="mall__footer">
+            <span class="mall__points"><Zap :size="12" /> {{ p.points }}积分</span>
+            <button @click="exchange(p)">兑换</button>
           </div>
         </div>
       </div>
@@ -21,44 +20,25 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { Gift, Zap } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
-const products = ref([]);
-const loading = ref(true);
-
-onMounted(async () => {
-  try {
-    const res = await api.getMallProducts();
-    products.value = res.data || [];
-  } catch {
-    // ignore
-  } finally {
-    loading.value = false;
-  }
-});
-
-async function exchange(product) {
-  if (!confirm(`确认使用 ${product.points} 积分兑换 "${product.name}"？`)) return;
-  try {
-    await api.exchangeProduct({ productId: product.id });
-    alert('兑换成功！');
-  } catch {
-    // error handled by api
-  }
-}
+const products=ref([]),loading=ref(true);
+onMounted(async()=>{try{const r=await api.getMallProducts();products.value=r.data||[];}catch{}finally{loading.value=false;}});
+async function exchange(p){if(!confirm(`确认使用${p.points}积分兑换"${p.name}"?`))return;try{await api.exchangeProduct({productId:p.id});alert('兑换成功!');}catch{}}
 </script>
 
 <style scoped>
-.mall__header { padding: 16px; }
-.mall__title { font-size: 18px; font-weight: 700; }
-.mall__loading, .mall__empty { text-align: center; color: #999; padding: 60px 0; }
-.mall__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 12px 20px; }
-.mall__card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 6px rgba(0, 0, 0, .06); }
-.mall__img { width: 100%; height: 130px; object-fit: cover; background: #eee; }
-.mall__info { padding: 10px 12px 12px; }
-.mall__name { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-.mall__bottom { display: flex; justify-content: space-between; align-items: center; }
-.mall__points { font-size: 14px; font-weight: 600; color: #f59e0b; }
-.mall__btn { font-size: 12px; padding: 4px 12px; border-radius: 4px; background: #f59e0b; color: #fff; border: none; }
+.mall{padding:0 14px}
+.mall__state{text-align:center;color:var(--text-muted);padding:60px 0;display:flex;flex-direction:column;align-items:center;gap:12px}
+.mall__grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:12px}
+.mall__card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden;transition:all var(--dur-normal) var(--ease-out)}
+.mall__card:hover{border-color:var(--border-glow)}
+.mall__img{width:100%;height:130px;object-fit:cover;background:rgba(255,255,255,.02)}
+.mall__body{padding:10px 12px 12px}
+.mall__body h3{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px}
+.mall__footer{display:flex;justify-content:space-between;align-items:center}
+.mall__points{display:inline-flex;align-items:center;gap:3px;font-size:13px;font-weight:600;color:var(--neon-gold)}
+.mall__footer button{padding:4px 12px;border-radius:var(--radius-full);font-size:12px;background:var(--neon-gold);color:#000;font-weight:600}
 </style>
