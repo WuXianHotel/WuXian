@@ -36,9 +36,7 @@
     <!-- 快捷入口 -->
     <div class="quick">
       <div v-for="item in quickItems" :key="item.path" class="quick__item" @click="$router.push(item.path)">
-        <div class="quick__icon" :style="{ background: item.bg }">
-          <component :is="item.icon" :size="22" :stroke-width="1.8" />
-        </div>
+        <component :is="item.icon" :size="30" :stroke-width="1.5" class="quick__icon" />
         <span class="quick__label">{{ item.label }}</span>
       </div>
     </div>
@@ -91,10 +89,10 @@ const rooms = ref([]);
 const loading = ref(true);
 const hotel = reactive({ address: '', phone: '', latitude: 0, longitude: 0 });
 const quickItems = [
-  { path: '/rooms', icon: BedSingle, label: '客房预订', bg: 'rgba(0,212,255,.12)' },
-  { path: '/orders', icon: ClipboardList, label: '我的订单', bg: 'rgba(0,255,136,.12)' },
-  { path: '/member', icon: Gem, label: '会员中心', bg: 'rgba(168,85,247,.12)' },
-  { path: '/mall', icon: Gift, label: '积分商城', bg: 'rgba(255,51,102,.12)' },
+  { path: '/rooms', icon: BedSingle, label: '客房预订' },
+  { path: '/orders', icon: ClipboardList, label: '我的订单' },
+  { path: '/member', icon: Gem, label: '会员中心' },
+  { path: '/mall', icon: Gift, label: '积分商城' },
 ];
 
 const facilityMap = [
@@ -182,9 +180,9 @@ function callPhone(e) {
 .contact__divider { height: 1px; background: var(--border-subtle); margin: 0 14px; }
 
 .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 14px; margin-bottom: 8px; }
-.quick__item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
+.quick__item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
 .quick__item:hover { border-color: var(--border-glow); transform: translateY(-2px); }
-.quick__icon { width: 46px; height: 46px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
+.quick__icon { color: var(--neon-cyan); }
 .quick__label { font-size: 11px; color: var(--text-secondary); }
 
 .section { padding: 6px 14px 20px; }
