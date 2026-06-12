@@ -209,15 +209,17 @@ async function submitOrder() {
 
 /* 底部固定栏 + 留白防遮挡 */
 .oc {
-  padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
 .oc__bar {
   position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(64px + env(safe-area-inset-bottom));
+  padding: 12px 16px 0; padding-bottom: env(safe-area-inset-bottom);
   background: rgba(10,14,26,.95); backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-subtle);
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   display: flex; align-items: center; justify-content: space-between;
-  z-index: 20;
+  z-index: 20; box-sizing: border-box;
 }
 .oc__bar-price { font-size: 12px; color: var(--text-muted); }
 .oc__bar-price strong { font-size: 20px; color: var(--neon-cyan); }
