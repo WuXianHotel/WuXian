@@ -32,6 +32,12 @@ Page({
   },
 
   onLoad(options) {
+    // 审核模式：跳回首页
+    const app = getApp()
+    if (app.globalData.appVersion === '0.0.1') {
+      wx.switchTab({ url: '/pages/index/index' })
+      return
+    }
     const checkIn = options.checkIn || util.today()
     const checkOut = options.checkOut || util.addDays(checkIn, 1)
     this.setData({

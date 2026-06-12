@@ -6,6 +6,7 @@ const app = getApp()
 
 Page({
   data: {
+    appVersion: '',
     userInfo: {},
     memberInfo: {},
     maskedPhone: '',
@@ -15,6 +16,8 @@ Page({
   },
 
   onShow() {
+    const version = app.globalData.appVersion || ''
+    this.setData({ appVersion: version })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 3 })
     }
@@ -25,7 +28,7 @@ Page({
       maskedPhone: util.maskPhone(userInfo.phone)
     })
     this.loadHotelConfig()
-    if (app.globalData.token) {
+    if (app.globalData.token && version !== '0.0.1') {
       this.loadMemberInfo()
     }
   },

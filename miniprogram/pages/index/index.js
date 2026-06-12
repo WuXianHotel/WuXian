@@ -5,6 +5,7 @@ const app = getApp()
 
 Page({
   data: {
+    appVersion: '', // 服务端版本号，'0.0.1' 为审核模式
     checkIn: '',
     checkOut: '',
     checkInLabel: '',
@@ -30,17 +31,28 @@ Page({
     const today = util.today()
     const tomorrow = util.addDays(today, 1)
     this.setData({
+      appVersion: app.globalData.appVersion || '',
       checkIn: today,
       checkOut: tomorrow,
       checkInLabel: util.formatDate(today),
       checkOutLabel: util.formatDate(tomorrow),
       nights: 1
     })
-    this.loadRooms()
+    if (app.globalData.appVersion !== '0.0.1') {
+      this.loadRooms()
+    }
     this.loadHotelConfig()
   },
 
   onShow() {
+    // 审核模式下隐藏 tabBar，显示 tabBar
+    const version = app.globalData.appVersion
+    this.setData({ appVersion: version })
+    if (version === '0.0.1') {
+      wx.hideTabBar()
+    } else {
+      wx.showTabBar()
+    }
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 })
     }
@@ -59,18 +71,22 @@ Page({
   },
 
   goRooms() {
+    if (app.globalData.appVersion === '0.0.1') return
     wx.switchTab({ url: '/pages/rooms/rooms' })
   },
 
   goOrders() {
+    if (app.globalData.appVersion === '0.0.1') return
     wx.switchTab({ url: '/pages/orders/orders' })
   },
 
   goMember() {
+    if (app.globalData.appVersion === '0.0.1') return
     wx.navigateTo({ url: '/pages/member/member' })
   },
 
   goRoomDetail(e) {
+    if (app.globalData.appVersion === '0.0.1') return
     const id = e.currentTarget.dataset.id
     wx.navigateTo({
       url: `/pages/room_detail/room_detail?id=${id}&checkIn=${this.data.checkIn}&checkOut=${this.data.checkOut}`
@@ -78,6 +94,7 @@ Page({
   },
 
   goBook(e) {
+    if (app.globalData.appVersion === '0.0.1') return
     const id = e.currentTarget.dataset.id
     console.log('ensureLogin')
     app.ensureLogin().then(() => {

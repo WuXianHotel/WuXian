@@ -5,7 +5,8 @@ App({
   globalData: {
     userInfo: null,
     token: '',
-    apiBase: 'https://wuxian-hotel.online'
+    apiBase: 'https://wuxian-hotel.online',
+    appVersion: '' // 服务端版本号，'0.0.1' 为审核模式（仅展示位置信息）
   },
 
   onLaunch() {
@@ -26,10 +27,34 @@ App({
     if (userInfo) {
       this.globalData.userInfo = userInfo
     }
+    // 获取服务端版本控制配置
+    this.fetchAppVersion()
     // 静默登录：无 token 时自动用 wx.login code 换取 JWT
     if (!token) {
       this.login().catch(() => {})
     }
+  },
+
+  // 获取服务端版本号，控制小程序功能展示
+  fetchAppVersion() {
+    wx.request({
+      url: `${this.globalData.apiBase}/api/mp/config`,
+      method: 'GET',
+      success: (res) => {
+        const data = res.data?.data || {}
+        const version = data.app_version || '0.0.1'
+        this.globalData.appVersion = version
+        console.log('[app] 服务端版本:', version)
+        // 审核模式：隐藏 tabBar
+        if (version === '0.0.1') {
+          wx.hideTabBar()
+        }
+      },
+      fail: () => {
+        this.globalData.appVersion = '0.0.1'
+        console.log('[app] 获取版本失败，默认审核模式')
+      }
+    })
   },
 
   // 全局登录（静默登录）

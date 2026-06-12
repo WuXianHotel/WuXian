@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>酒店小程序及后台管理系统 - 项目报价单</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 13px; color: #333; background: #f5f5f5; }
+    .page { max-width: 960px; margin: 30px auto; background: #fff; padding: 50px; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+
+    /* 头部 */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 2px solid #1a56db; }
+    .header-left .company { font-size: 22px; font-weight: 700; color: #1a56db; margin-bottom: 6px; }
+    .header-left .subtitle { font-size: 13px; color: #666; }
+    .header-right { text-align: right; }
+    .header-right .doc-title { font-size: 20px; font-weight: 700; color: #222; margin-bottom: 8px; }
+    .header-right .doc-meta { font-size: 12px; color: #888; line-height: 1.8; }
+
+    /* 项目信息 */
+    .project-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 40px; background: #f8faff; border: 1px solid #dce8ff; border-radius: 6px; padding: 20px 24px; margin-bottom: 36px; }
+    .info-item { display: flex; gap: 8px; font-size: 13px; }
+    .info-label { color: #666; white-space: nowrap; }
+    .info-value { font-weight: 600; color: #222; }
+
+    /* 模块标题 */
+    .section-title { font-size: 15px; font-weight: 700; color: #1a56db; margin: 28px 0 10px; padding-left: 10px; border-left: 4px solid #1a56db; }
+
+    /* 表格 */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 4px; font-size: 12.5px; }
+    thead tr { background: #1a56db; color: #fff; }
+    thead th { padding: 10px 10px; text-align: center; font-weight: 600; white-space: nowrap; }
+    thead th:first-child { text-align: left; padding-left: 14px; }
+    tbody tr:nth-child(even) { background: #f7f9ff; }
+    tbody tr:hover { background: #eef3ff; }
+    tbody td { padding: 9px 10px; text-align: center; border-bottom: 1px solid #e8edf5; line-height: 1.5; }
+    tbody td:first-child { text-align: left; padding-left: 14px; }
+    tbody td:nth-child(2) { text-align: left; color: #555; }
+    .tag-c { display: inline-block; background: #e0f0ff; color: #1565c0; border-radius: 3px; padding: 1px 6px; font-size: 11px; margin-right: 4px; }
+    .tag-b { display: inline-block; background: #e8f5e9; color: #2e7d32; border-radius: 3px; padding: 1px 6px; font-size: 11px; margin-right: 4px; }
+    .subtotal-row td { background: #f0f4ff; font-weight: 600; color: #1a56db; border-top: 1px solid #c5d5f5; }
+
+    /* 附加项 */
+    .extra-section { margin-top: 28px; }
+
+    /* 汇总 */
+    .summary-box { margin-top: 36px; border: 1px solid #dce8ff; border-radius: 8px; overflow: hidden; }
+    .summary-box table thead tr { background: #1a56db; }
+    .summary-box table tbody tr:last-child td { background: #fff3e0; font-size: 14px; font-weight: 700; color: #e65100; border-top: 2px solid #ffb300; }
+    .grand-total { font-size: 18px !important; }
+
+    /* 说明 */
+    .notes { margin-top: 36px; background: #fffbf0; border: 1px solid #ffe082; border-radius: 6px; padding: 18px 22px; }
+    .notes h4 { font-size: 14px; color: #e65100; margin-bottom: 10px; }
+    .notes ol { padding-left: 18px; }
+    .notes li { line-height: 2; font-size: 12.5px; color: #555; }
+
+    /* 签署 */
+    .sign-area { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px; padding-top: 30px; border-top: 1px dashed #ccc; }
+    .sign-block p { font-size: 13px; color: #444; margin-bottom: 10px; }
+    .sign-line { border-bottom: 1px solid #999; margin-top: 30px; }
+    .sign-date { margin-top: 10px; font-size: 12px; color: #999; }
+
+    /* 页脚 */
+    .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #bbb; border-top: 1px solid #eee; padding-top: 16px; }
+
+    @media print {
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; padding: 30px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 头部 -->
+  <!-- <div class="header">
+    <div class="header-left">
+      <div class="company">【乙方公司名称】</div>
+      <div class="subtitle">专业微信小程序 · 企业软件定制开发</div>
+    </div>
+    <div class="header-right">
+      <div class="doc-title">项 目 报 价 单</div>
+      <div class="doc-meta">
+        报价编号：QT-2026-001<br/>
+        报价日期：2026年04月25日<br/>
+        有效期：30天
+      </div>
+    </div>
+  </div> -->
+
+  <!-- 项目信息 -->
+  <div class="project-info">
+    <div class="info-item"><span class="info-label">项目名称：</span><span class="info-value">无限电竞酒店小程序及后台管理系统</span></div>
+    <div class="info-item"><span class="info-label">开发范围：</span><span class="info-value">微信小程序（C端）+ Web后台管理系统（B端）</span></div>
+    <div class="info-item"><span class="info-label">技术栈：</span><span class="info-value">微信小程序 / Node.js / Vue3 / MySQL</span></div>
+    <div class="info-item"><span class="info-label">功能模块：</span><span class="info-value">6大模块，共64个功能点</span></div>
+    <div class="info-item"><span class="info-label">预计工期：</span><span class="info-value">约 30 个工作日（含测试上线）</span></div>
+  </div>
+
+
+  <!-- ============ 一、预订模块 ============ -->
+  <div class="section-title">一、酒店预订模块</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">编号</th>
+        <th style="width:12%">功能点</th>
+        <th style="width:32%">功能描述</th>
+        <th style="width:8%">端</th>
+        <th style="width:8%">人天</th>
+        <th style="width:10%">单价(元/天)</th>
+        <th style="width:10%">小计(元)</th>
+        <th style="width:14%">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1.1</td><td>首页展示</td><td>酒店特色、Banner轮播、公告展示</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>63</td><td></td></tr>
+      <tr><td>1.2</td><td>房型列表</td><td>价格/房型/床型/面积多维筛选、排序、搜索</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>94</td><td></td></tr>
+      <tr><td>1.3</td><td>房型详情</td><td>图片展示、设施配置、房价日历、用户评价</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>94</td><td></td></tr>
+      <tr><td>1.4</td><td>入住日期选择</td><td>日历组件、入住/退房日期、自动计算天数</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>63</td><td></td></tr>
+      <tr><td>1.5</td><td>订单填写</td><td>入住人信息、特殊要求、房间数量选择</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>63</td><td></td></tr>
+      <tr><td>1.6</td><td>订单确认</td><td>费用明细（房费/服务费）、优惠券选择</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>1.7</td><td>在线预订</td><td>立即预订 & 预约预订双模式</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>94</td><td></td></tr>
+      <tr><td>1.8</td><td>房型管理</td><td>新增/编辑/删除，名称/面积/床型/价格设置</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>94</td><td></td></tr>
+      <tr><td>1.9</td><td>房间状态管理</td><td>空闲/已预订/入住/维修/清洁中实时状态</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>1.10</td><td>价格日历</td><td>节假日调价、淡旺季价格策略</td><td><span class="tag-b">B端</span></td><td>1.5</td><td>—</td><td>125</td><td>交互复杂</td></tr>
+      <tr><td>1.11</td><td>房源库存</td><td>各房型每日可预订数量设置</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>1.12</td><td>楼层/区域管理</td><td>楼层分布、房间编号规则管理</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>1.13</td><td>房间图片管理</td><td>上传/删除实景图、效果图</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>62</td><td></td></tr>
+      <tr class="subtotal-row"><td colspan="4">模块小计</td><td>12</td><td>—</td><td>1,000</td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ============ 二、微信支付模块 ============ -->
+  <div class="section-title">二、微信支付模块</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">编号</th><th style="width:12%">功能点</th><th style="width:32%">功能描述</th>
+        <th style="width:8%">端</th><th style="width:8%">人天</th><th style="width:10%">单价(元/天)</th>
+        <th style="width:10%">小计(元)</th><th style="width:14%">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>2.1</td><td>微信支付</td><td>调用微信支付 API，完成订单支付</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>82</td><td>需微信支付资质</td></tr>
+      <tr><td>2.2</td><td>支付状态查询</td><td>实时查询支付成功/失败/待支付</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>27</td><td></td></tr>
+      <tr><td>2.3</td><td>支付超时处理</td><td>默认30分钟未付自动取消订单</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>27</td><td></td></tr>
+      <tr><td>2.4</td><td>支付成功通知</td><td>支付成功后推送模板消息</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>27</td><td></td></tr>
+      <tr><td>2.5</td><td>订单退款申请</td><td>用户申请退款，填写退款原因</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>55</td><td></td></tr>
+      <tr><td>2.6</td><td>退款进度查看</td><td>审核状态、退款到账进度展示</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>27</td><td></td></tr>
+      <tr><td>2.7</td><td>发票申请</td><td>电子发票申请，填写抬头信息</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>55</td><td></td></tr>
+      <tr><td>2.8</td><td>支付记录查询</td><td>多条件筛选所有交易记录</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>55</td><td></td></tr>
+      <tr><td>2.9</td><td>退款审核</td><td>审核/拒绝用户退款申请</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>55</td><td></td></tr>
+      <tr><td>2.10</td><td>退款处理</td><td>执行原路退款操作</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>55</td><td></td></tr>
+      <tr><td>2.11</td><td>对账管理</td><td>与微信支付平台账目核对</td><td><span class="tag-b">B端</span></td><td>1.5</td><td>—</td><td>55</td><td>对接微信账单API</td></tr>
+      <tr class="subtotal-row"><td colspan="4">模块小计</td><td>7</td><td>—</td><td>600</td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ============ 三、会员体系模块 ============ -->
+  <div class="section-title">三、会员体系模块</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">编号</th><th style="width:12%">功能点</th><th style="width:32%">功能描述</th>
+        <th style="width:8%">端</th><th style="width:8%">人天</th><th style="width:10%">单价(元/天)</th>
+        <th style="width:10%">小计(元)</th><th style="width:14%">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>3.1</td><td>会员中心</td><td>等级、积分余额、权益概览展示</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.2</td><td>会员等级展示</td><td>当前等级、升级条件、等级特权说明</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.3</td><td>积分明细</td><td>获取/消耗记录列表，按时间筛选</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.4</td><td>积分规则说明</td><td>各渠道积分规则、有效期说明页</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.5</td><td>会员折扣</td><td>预订时自动显示会员专属折扣价</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.8</td><td>会员等级配置</td><td>等级名称、升级条件、有效期设置</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.9</td><td>权益配置</td><td>为每等级配置折扣比例等特权</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.10</td><td>积分规则配置</td><td>消费积分等获取规则配置</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.11</td><td>积分消耗规则</td><td>积分折扣门槛配置</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.12</td><td>会员列表</td><td>查看/筛选/搜索/导出全部会员</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.13</td><td>会员详情</td><td>消费记录、积分流水、等级变化历史</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>58</td><td></td></tr>
+      <tr><td>3.14</td><td>手动调整积分</td><td>管理员手动增减积分并记录原因</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>18</td><td></td></tr>
+      <tr><td>3.15</td><td>等级调整</td><td>特殊情况下手动调整会员等级</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>18</td><td></td></tr>
+      <tr class="subtotal-row"><td colspan="4">模块小计</td><td>8</td><td>—</td><td>750</td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ============ 四、用户认证模块 ============ -->
+  <div class="section-title">四、用户认证模块</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">编号</th><th style="width:12%">功能点</th><th style="width:32%">功能描述</th>
+        <th style="width:8%">端</th><th style="width:8%">人天</th><th style="width:10%">单价(元/天)</th>
+        <th style="width:10%">小计(元)</th><th style="width:14%">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>4.1</td><td>微信授权登录</td><td>一键微信授权快速登录注册</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>4.2</td><td>手机号绑定</td><td>微信绑定手机号或手动验证码绑定</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>4.3</td><td>短信验证码</td><td>发送/接收，倒计时防刷机制</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>50</td><td>需短信服务商</td></tr>
+      <tr><td>4.4</td><td>个人资料完善</td><td>头像、昵称、性别、生日信息设置</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>50</td><td></td></tr>
+      <tr><td>4.5</td><td>实名认证</td><td>上传身份证照片实名认证（可选功能）</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>62</td><td>含OCR识别</td></tr>
+      <tr><td>4.6</td><td>账号安全</td><td>修改密码、注销账号、登录设备管理</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>4.7</td><td>用户列表</td><td>多维度筛选搜索所有注册用户</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>62</td><td></td></tr>
+      <tr><td>4.8</td><td>用户详情</td><td>完整信息、关联订单、行为日志</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>25</td><td></td></tr>
+      <tr><td>4.9</td><td>用户状态管理</td><td>启用/禁用账号、黑名单设置</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>25</td><td></td></tr>
+      <tr><td>4.10</td><td>实名审核</td><td>审核用户提交的实名认证材料</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>40</td><td></td></tr>
+      <tr class="subtotal-row"><td colspan="4">模块小计</td><td>6</td><td>—</td><td>500</td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ============ 五、订单管理模块 ============ -->
+  <div class="section-title">五、订单管理模块</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">编号</th><th style="width:12%">功能点</th><th style="width:32%">功能描述</th>
+        <th style="width:8%">端</th><th style="width:8%">人天</th><th style="width:10%">单价(元/天)</th>
+        <th style="width:10%">小计(元)</th><th style="width:14%">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>6.1</td><td>我的订单</td><td>全部/待支付/待入住/已完成/已取消/退款中</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>64</td><td></td></tr>
+      <tr><td>6.2</td><td>订单详情</td><td>完整信息展示、入住凭证二维码</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>64</td><td></td></tr>
+      <tr><td>6.3</td><td>取消订单</td><td>符合条件的订单自助取消</td><td><span class="tag-c">C端</span></td><td>0.5</td><td>—</td><td>64</td><td></td></tr>
+      <tr><td>6.4</td><td>订单评价</td><td>入住完成后评分+文字评价</td><td><span class="tag-c">C端</span></td><td>1</td><td>—</td><td>64</td><td></td></tr>
+      <tr><td>6.7</td><td>订单列表</td><td>全部订单查看，多条件筛选排序</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>64</td><td></td></tr>
+      <tr><td>6.8</td><td>订单详情(后台)</td><td>全貌查看、操作日志追踪</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>32</td><td></td></tr>
+      <tr><td>6.9</td><td>入住办理</td><td>办理入住、分配房间号、录入押金</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>96</td><td>前台核心流程</td></tr>
+      <tr><td>6.10</td><td>退房办理</td><td>办理退房、结算费用、扣减/退还押金</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>96</td><td>前台核心流程</td></tr>
+      <tr><td>6.11</td><td>订单修改</td><td>修改入住日期/房型（需补差价）</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>64</td><td></td></tr>
+      <tr><td>6.12</td><td>订单取消</td><td>后台取消订单、释放房源</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>32</td><td></td></tr>
+      <tr><td>6.13</td><td>评价管理</td><td>查看/回复评价、隐藏不当评论</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>60</td><td></td></tr>
+      <tr class="subtotal-row"><td colspan="4">模块小计</td><td>8</td><td>—</td><td>700</td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ============ 六、系统管理模块 ============ -->
+  <div class="section-title">六、系统管理模块</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">编号</th><th style="width:12%">功能点</th><th style="width:32%">功能描述</th>
+        <th style="width:8%">端</th><th style="width:8%">人天</th><th style="width:10%">单价(元/天)</th>
+        <th style="width:10%">小计(元)</th><th style="width:14%">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>8.1</td><td>管理员角色</td><td>超级管理员/前台/财务/运营权限管理</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>108</td><td>RBAC权限模型</td></tr>
+      <tr><td>8.2</td><td>操作日志</td><td>管理员操作行为记录与审计</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>72</td><td></td></tr>
+      <tr><td>8.4</td><td>财务报表</td><td>日/月/季度收入统计与图表</td><td><span class="tag-b">B端</span></td><td>1.5</td><td>—</td><td>112</td><td>图表可视化</td></tr>
+      <tr><td>8.5</td><td>酒店信息设置</td><td>基本信息、联系方式、服务时间配置</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>36</td><td></td></tr>
+      <tr><td>8.6</td><td>公告管理</td><td>小程序首页公告发布与管理</td><td><span class="tag-b">B端</span></td><td>0.5</td><td>—</td><td>36</td><td></td></tr>
+      <tr><td>8.7</td><td>系统参数</td><td>取消政策、入住时间等参数配置</td><td><span class="tag-b">B端</span></td><td>1</td><td>—</td><td>36</td><td></td></tr>
+      <tr class="subtotal-row"><td colspan="4">模块小计</td><td>5</td><td>—</td><td>400</td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ============ 附加项 ============ -->
+  <div class="section-title extra-section">七、项目附加费用</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">编号</th><th style="width:18%">项目</th><th style="width:38%">说明</th>
+        <th style="width:8%">人天</th><th style="width:10%">单价(元/天)</th>
+        <th style="width:10%">小计(元)</th><th style="width:10%">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>A1</td><td>UI/UX 设计</td><td>小程序端视觉设计、交互原型、后台界面设计</td><td>5</td><td>—</td><td>400</td><td></td></tr>
+      <tr><td>A2</td><td>项目架构搭建</td><td>技术选型、数据库设计、接口规范制定、CI/CD</td><td>2</td><td>—</td><td>150</td><td></td></tr>
+      <tr><td>A3</td><td>测试（QA）</td><td>功能测试、兼容性测试、性能测试、Bug修复</td><td>4</td><td>—</td><td>300</td><td></td></tr>
+      <tr><td>A4</td><td>部署上线</td><td>服务器配置、小程序审核提交、域名SSL配置</td><td>1</td><td>—</td><td>100</td><td></td></tr>
+      <tr><td>A5</td><td>项目管理</td><td>需求沟通、进度把控、文档交付、验收支持</td><td>2</td><td>—</td><td>100</td><td></td></tr>
+      <tr class="subtotal-row"><td colspan="3">附加小计</td><td>14</td><td>—</td><td>1,050</td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ============ 汇总 ============ -->
+  <div class="summary-box" style="margin-top:36px">
+    <div class="section-title" style="margin:0;padding:14px 16px;background:#f0f4ff;border-left:none;border-bottom:1px solid #dce8ff;font-size:14px">费用汇总</div>
+    <table>
+      <thead>
+        <tr><th>模块</th><th>人天数</th><th>金额（元）</th><th>占比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>一、酒店预订模块</td><td>12</td><td>1,000</td><td>20.0%</td></tr>
+        <tr><td>二、微信支付模块</td><td>7</td><td>600</td><td>12.0%</td></tr>
+        <tr><td>三、会员体系模块</td><td>8</td><td>750</td><td>15.0%</td></tr>
+        <tr><td>四、用户认证模块</td><td>6</td><td>500</td><td>10.0%</td></tr>
+        <tr><td>五、订单管理模块</td><td>8</td><td>700</td><td>14.0%</td></tr>
+        <tr><td>六、系统管理模块</td><td>5</td><td>400</td><td>8.0%</td></tr>
+        <tr><td>七、项目附加费用（设计/测试/部署等）</td><td>14</td><td>1,050</td><td>21.0%</td></tr>
+        <tr>
+          <td style="font-weight:700;font-size:14px">合计</td>
+          <td style="font-weight:700;font-size:14px">60 人天</td>
+          <td class="grand-total" style="color:#e65100;font-weight:700;font-size:16px">￥5,000</td>
+          <td style="font-weight:700">100%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+
+  <!-- ============ 报价说明 ============ -->
+  <div class="notes">
+    <h4>📋 报价说明与条款</h4>
+    <ol>
+      <li><strong>报价范围：</strong>本报价包含微信小程序（C端）+ 本报价包含微信小程序（C端）+ Web后台管理系统（B端）的设计、开发、测试及部署全流程。</li>
+      <li><strong>不含费用：</strong>服务器费用（建议阿里云/服务器费用（建议阿里云/腾讯云，约200~500元/年）、短信服务费（按条计费）、微信支付资质申请费（约 300元）、身份证OCR第三方接口费用等第三方服务费用均由甲方自行承担。</li>
+      <li><strong>付款方式：</strong>建议按里程碑付款：签约预付 30%（¥1,500）→ 完成设计与架构付 20%（¥1,000）→ 完成开发付 30%（¥1,500）→ 验收上线付 20%（¥1,000）。</li>
+      <li><strong>工期说明：</strong>预计开发周期约 30 个工作日（约 1 个月），具体以双方签订的合同为准，需求变更可能影响工期。</li>
+      <li><strong>售后保障：</strong>售后保障：系统上线后提供 12个月免费质保，质保期内因开发原因产生的 Bug 免费修复，支持模块内小功能改动；质保期后可签署年度运维协议。</li>
+      <li><strong>知识产权：</strong>知识产权：项目验收并付清尾款后，源代码及相关文档知识产权归甲方所有。</li>
+      <li><strong>报价有效期：</strong>报价有效期：本报价自出具之日起 30天 内有效。</li>
+    </ol>
+  </div>
+
+
+  <!-- ============ 签署区 ============ -->
+  <div class="sign-area">
+    <div class="sign-block">
+      <p><strong>甲方确认（需求方）</strong></p>
+      <p>公司名称：___________________________</p>
+      <p>授权代表：___________________________</p>
+      <div class="sign-line"></div>
+      <div class="sign-date">签字盖章 / 日期：_______________</div>
+    </div>
+    <div class="sign-block">
+      <p><strong>乙方确认（开发方）</strong></p>
+      <p>名称：___________________________</p>
+      <p>授权代表：___________________________</p>
+      <div class="sign-line"></div>
+      <div class="sign-date">签字盖章 / 日期：_______________</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    本报价单由乙方出具，仅供参考，最终以双方签订的正式合同为准。<br/>
+    如有疑问请联系：【联系人】 / 【电话】 / 【邮箱】
+  </div>
+
+</div>
+</body>
+</html>

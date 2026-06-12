@@ -43,7 +43,7 @@
           bindgetphonenumber="onGetPhoneNumber"
         >未绑定手机号 · 一键绑定</button>
       </view>
-      <view class="hero-badges">
+      <view class="hero-badges" wx:if="{{appVersion !== '0.0.1'}}">
         <view class="hero-badge level-badge" bindtap="goMember">
           <text class="iconfont icon-crown"></text>
           <text>{{memberInfo.levelName || '普通会员'}}</text>
@@ -55,14 +55,14 @@
       </view>
     </view>
     <!-- 右侧：编辑资料 -->
-    <view class="hero-edit" bindtap="goPersonalInfo" wx:if="{{globalToken}}">
+    <view class="hero-edit" bindtap="goPersonalInfo" wx:if="{{globalToken && appVersion !== '0.0.1'}}">
       <text class="iconfont icon-edit"></text>
     </view>
   </view>
 
   <scroll-view scroll-y class="content safe-bottom">
-    <!-- 菜单组1 -->
-    <view class="menu-group">
+    <!-- 菜单组1（非审核模式显示） -->
+    <view class="menu-group" wx:if="{{appVersion !== '0.0.1'}}">
       <view class="menu-item" bindtap="goOrders" data-tab="">
         <view class="menu-icon" style="background:#e8f0fe"><text class="iconfont icon-file-text"></text></view>
         <text class="menu-label">我的订单</text>
@@ -81,8 +81,8 @@
       </view>
     </view>
 
-    <!-- 菜单组2 -->
-    <view class="menu-group">
+    <!-- 菜单组2（非审核模式显示） -->
+    <view class="menu-group" wx:if="{{appVersion !== '0.0.1'}}">
       <view class="menu-item" bindtap="goPersonalInfo">
         <view class="menu-icon" style="background:#f3e5f5"><text class="iconfont icon-user"></text></view>
         <text class="menu-label">个人资料</text>
@@ -101,20 +101,8 @@
       </view>
     </view>
 
-    <!-- 菜单组3 -->
+    <!-- 菜单组3（审核模式下也显示联系客服） -->
     <view class="menu-group">
-      <!--
-      <view class="menu-item" bindtap="goNotifications">
-        <view class="menu-icon" style="background:#fff3e0"><text class="iconfont icon-notification"></text></view>
-        <text class="menu-label">消息通知</text>
-        <text class="menu-arrow">›</text>
-      </view>
-      <view class="menu-item" bindtap="goHelp">
-        <view class="menu-icon" style="background:#f3e5f5"><text class="iconfont icon-question-circle"></text></view>
-        <text class="menu-label">帮助与反馈</text>
-        <text class="menu-arrow">›</text>
-      </view>
-      -->
       <view class="menu-item" bindtap="callHotel">
         <view class="menu-icon" style="background:#e8f0fe"><text class="iconfont icon-phone"></text></view>
         <text class="menu-label">联系客服</text>
@@ -122,8 +110,8 @@
       </view>
     </view>
 
-    <!-- 未登录时的一键登录引导 -->
-    <view class="login-cta" wx:if="{{!globalToken}}">
+    <!-- 未登录时的一键登录引导（非审核模式显示） -->
+    <view class="login-cta" wx:if="{{!globalToken && appVersion !== '0.0.1'}}">
       <view class="login-cta-title">登录以解锁全部会员权益</view>
       <view class="login-cta-desc">积分、折扣、订单记录、会员等级…</view>
       <view class="login-btn" bindtap="doLogin">一键登录</view>
