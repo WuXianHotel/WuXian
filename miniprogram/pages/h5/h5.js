@@ -46,31 +46,30 @@ Page({
     }
   },
 
-  // 根据小程序入口构造 H5 地址
+  // 根据小程序入口构造 H5 地址（history 路由模式，无 #）
   buildUrl(apiBase, token) {
-    // H5 SPA 地址
+    // H5 SPA 地址（history 模式，base: /h5/）
     const baseUrl = `${apiBase}/h5/`;
 
-    // 构造 H5 内的路由 path（hash 模式）
+    // 构造 H5 内的路由 path
     let h5Path = '';
     const opts = this.entryOptions || {};
-
-    // 根据小程序原页面路径映射到 H5 路由
     const scene = opts.scene || '';
 
     if (scene) {
       h5Path = this.parseScene(scene);
     }
 
-    // 如果不是分享场景，默认首页
-    if (!h5Path) {
-      h5Path = '/';
+    // 默认首页
+    if (!h5Path || h5Path === '/') {
+      // 首页：/h5/?token=xxx
+      return `${baseUrl}?token=${encodeURIComponent(token)}`;
     }
 
-    // 关键：token 必须放在 # 之前，否则 window.location.search 拿不到
-    // 正确：https://域名/h5/?token=xxx#/路由
-    // 错误：https://域名/h5/#/路由?token=xxx
-    return `${baseUrl}?token=${encodeURIComponent(token)}#${h5Path}`;
+    // 子页面：/h5/rooms?token=xxx
+    // 去掉 h5Path 开头的 /
+    const path = h5Path.replace(/^\//, '');
+    return `${baseUrl}${path}?token=${encodeURIComponent(token)}`;
   },
 
   // 解析小程序 scene 参数到 H5 路由

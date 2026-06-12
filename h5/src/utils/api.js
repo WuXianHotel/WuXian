@@ -6,35 +6,52 @@ const API_BASE = '/api/mp';
 
 async function request({ url, method = 'GET', data, silent = false }) {
   const token = getToken();
+  const fullUrl = `${API_BASE}${url}`;
 
-  const res = await fetch(`${API_BASE}${url}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: method !== 'GET' && data ? JSON.stringify(data) : undefined,
-  });
+  console.log(`[api] ${method} ${fullUrl}`, data || '');
 
-  if (res.status === 401) {
-    clearToken();
-    if (!silent) {
-      alert('登录已过期，请重新进入小程序');
+  try {
+    const res = await fetch(fullUrl, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: method !== 'GET' && data ? JSON.stringify(data) : undefined,
+    });
+
+    console.log(`[api] ${method} ${fullUrl} → ${res.status}`);
+
+    if (res.status === 401) {
+      clearToken();
+      console.warn('[api] 401 Unauthorized — token 已清除');
+      if (!silent) {
+        alert('登录已过期，请重新进入小程序');
+      }
+      throw new Error('401');
     }
-    throw new Error('401');
-  }
 
-  const result = await res.json();
+    const result = await res.json();
 
-  if (result.code === 0) {
-    return result;
-  }
+    if (result.code === 0) {
+      return result;
+    }
 
-  const msg = result.errors?.[0]?.msg || result.msg || '请求失败';
-  if (!silent) {
-    alert(msg);
+    const msg = result.errors?.[0]?.msg || result.msg || '请求失败';
+    console.warn(`[api] 业务错误: ${msg}`, result);
+    if (!silent) {
+      alert(msg);
+    }
+    throw Object.assign(new Error(msg), { code: result.code, data: result });
+  } catch (err) {
+    if (err.message !== '401' && !err.code) {
+      console.error(`[api] 网络错误: ${fullUrl}`, err);
+      if (!silent) {
+        alert('网络错误，请检查连接');
+      }
+    }
+    throw err;
   }
-  throw Object.assign(new Error(msg), { code: result.code, data: result });
 }
 
 function clearToken() {

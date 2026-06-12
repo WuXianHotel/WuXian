@@ -5,36 +5,39 @@ const TOKEN_KEY = 'hotel_h5_token';
 const USER_KEY = 'hotel_h5_user';
 
 export function getToken() {
-  // 1. 优先从 URL query string 取（小程序传入: /h5/?token=xxx#/）
+  // 1. 优先从 URL query string 取（/h5/?token=xxx 或 /h5/rooms?token=xxx）
   const urlParams = new URLSearchParams(window.location.search);
   const urlToken = urlParams.get('token');
   if (urlToken) {
     localStorage.setItem(TOKEN_KEY, urlToken);
-    // 清理 URL 中的 token 参数，保留 pathname + hash
+    // 清理 URL 中的 token 参数，避免暴露
     const url = new URL(window.location.href);
     url.searchParams.delete('token');
     window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    console.log('[auth] Token 已从 URL 提取并保存到 localStorage');
     return urlToken;
   }
 
-  // 2. 兼容旧格式：token 在 hash 中（#/路由?token=xxx）
+  // 2. 兼容旧格式：token 在 hash 中
   const hash = window.location.hash;
   if (hash && hash.includes('token=')) {
     const hashParams = new URLSearchParams(hash.split('?')[1] || '');
     const hashToken = hashParams.get('token');
     if (hashToken) {
       localStorage.setItem(TOKEN_KEY, hashToken);
-      // 清理 hash 中的 token，保留路由路径
       const cleanHash = hash.split('?')[0];
       const url = new URL(window.location.href);
       url.hash = cleanHash;
       window.history.replaceState({}, '', url.toString());
+      console.log('[auth] Token 已从 hash 提取并保存到 localStorage');
       return hashToken;
     }
   }
 
-  // 3. 从 localStorage 取（后续页面跳转时）
-  return localStorage.getItem(TOKEN_KEY) || '';
+  // 3. 从 localStorage 取
+  const stored = localStorage.getItem(TOKEN_KEY);
+  if (stored) console.log('[auth] 从 localStorage 读取 token，长度:', stored.length);
+  return stored || '';
 }
 
 export function setToken(token) {

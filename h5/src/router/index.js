@@ -1,5 +1,5 @@
 // 路由配置 —— 与 miniprogram/app.json 页面一一对应
-import { createRouter, createWebHashHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 import { getToken } from '../utils/auth.js';
 
 function requireAuth(to, from, next) {
@@ -111,7 +111,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory('/h5/'),
   routes,
 });
 
