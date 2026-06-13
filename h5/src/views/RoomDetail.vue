@@ -87,6 +87,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { BedSingle, Star, Ruler, Users, Building2, ArrowRight, Tv, Wind, Wifi, Waves, Coffee, Droplets, Shirt, Car, User } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
+import { showToast } from '../utils/toast.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -139,7 +140,7 @@ function buildCalendar(){
   calendarDays.value=days;
 }
 function selectDate(day){if(!day.date||day.type==='past')return;if(!checkIn.value||(checkIn.value&&checkOut.value)){checkIn.value=day.date;checkOut.value='';checkInLabel.value=fmtDate(day.date);checkOutLabel.value='';}else{if(day.date<=checkIn.value){checkIn.value=day.date;checkInLabel.value=fmtDate(day.date);}else{checkOut.value=day.date;checkOutLabel.value=fmtDate(day.date);nights.value=calcNights(checkIn.value,day.date);}}buildCalendar();}
-function goBook(){if(!checkIn.value||!checkOut.value){alert('请先选择日期');return;}router.push(`/order/create?roomId=${route.params.id}&checkIn=${checkIn.value}&checkOut=${checkOut.value}`);}
+function goBook(){if(!checkIn.value||!checkOut.value){showToast('请先选择日期','warning');return;}router.push(`/order/create?roomId=${route.params.id}&checkIn=${checkIn.value}&checkOut=${checkOut.value}`);}
 </script>
 
 <style scoped>

@@ -31,6 +31,8 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirm } from '../utils/confirm.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -61,10 +63,11 @@ function getFirstImg(images) {
   return '/placeholder.jpg';
 }
 async function cancelOrder() {
-  if (!confirm('确认取消该订单？')) return;
+  const ok = await showConfirm('取消订单', '确认取消该订单？');
+  if (!ok) return;
   try {
     await api.cancelOrder(order.value.order_no);
-    alert('订单已取消');
+    showToast('订单已取消', 'success');
     router.back();
   } catch {
     // error handled by api

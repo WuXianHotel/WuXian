@@ -60,6 +60,7 @@ import { useRoute } from 'vue-router';
 import { ClipboardList, Wallet, CreditCard, CircleCheck } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
+import { showToast } from '../utils/toast.js';
 
 const route = useRoute();
 const order = ref({});
@@ -81,7 +82,7 @@ async function payNow() {
   paying.value = true;
   try {
     await api.walletPay(order.value.order_no);
-    alert('支付成功！');
+    showToast('支付成功！', 'success');
     const res = await api.getOrderDetail(order.value.order_no);
     order.value = res.data || {};
   } catch { /* error handled by api */ }

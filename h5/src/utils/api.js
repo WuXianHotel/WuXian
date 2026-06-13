@@ -1,5 +1,6 @@
 // API 封装 —— 与小程序 api.js 接口签名完全一致
 import { getToken } from './auth.js';
+import { showToast } from './toast.js';
 
 // 生产环境用同源路径（Express 托管），开发环境通过 vite proxy 代理
 const API_BASE = '/api/mp';
@@ -26,7 +27,7 @@ async function request({ url, method = 'GET', data, silent = false }) {
       clearToken();
       console.warn('[api] 401 Unauthorized — token 已清除');
       if (!silent) {
-        alert('登录已过期，请重新进入小程序');
+        showToast('登录已过期，请重新进入小程序', 'error', 3000);
       }
       throw new Error('401');
     }
@@ -40,14 +41,14 @@ async function request({ url, method = 'GET', data, silent = false }) {
     const msg = result.errors?.[0]?.msg || result.msg || '请求失败';
     console.warn(`[api] 业务错误: ${msg}`, result);
     if (!silent) {
-      alert(msg);
+      showToast(msg, 'warning');
     }
     throw Object.assign(new Error(msg), { code: result.code, data: result });
   } catch (err) {
     if (err.message !== '401' && !err.code) {
       console.error(`[api] 网络错误: ${fullUrl}`, err);
       if (!silent) {
-        alert('网络错误，请检查连接');
+        showToast('网络错误，请检查连接', 'error');
       }
     }
     throw err;

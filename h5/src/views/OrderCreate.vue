@@ -96,6 +96,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { BedSingle, User, FileText, ArrowRight } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
+import { showToast } from '../utils/toast.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -125,8 +126,8 @@ onMounted(async () => {
 });
 
 async function submitOrder() {
-  if (!form.guestName.trim()) { alert('请输入入住人姓名'); return; }
-  if (form.guestPhone && !/^1[3-9]\d{9}$/.test(form.guestPhone)) { alert('请输入正确的手机号'); return; }
+  if (!form.guestName.trim()) { showToast('请输入入住人姓名', 'warning'); return; }
+  if (form.guestPhone && !/^1[3-9]\d{9}$/.test(form.guestPhone)) { showToast('请输入正确的手机号', 'warning'); return; }
 
   submitting.value = true;
   try {

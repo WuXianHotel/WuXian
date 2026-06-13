@@ -31,6 +31,7 @@ import { ref, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
+import { showToast } from '../utils/toast.js';
 
 const router = useRouter();
 const submitting = ref(false);
@@ -57,7 +58,7 @@ async function submit() {
   submitting.value = true;
   try {
     await api.updateProfile({ nickname: form.nickname, realName: form.realName, gender: form.gender });
-    alert('保存成功');
+    showToast('保存成功', 'success');
     router.back();
   } catch {
     // error handled by api

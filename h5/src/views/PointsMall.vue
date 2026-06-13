@@ -23,10 +23,16 @@ import { ref, onMounted } from 'vue';
 import { Gift, Zap } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirm } from '../utils/confirm.js';
 
 const products=ref([]),loading=ref(true);
 onMounted(async()=>{try{const r=await api.getMallProducts();products.value=r.data?.list||r.data||[];}catch{}finally{loading.value=false;}});
-async function exchange(p){if(!confirm(`确认使用${p.points}积分兑换"${p.name}"?`))return;try{await api.exchangeProduct({productId:p.id});alert('兑换成功!');}catch{}}
+async function exchange(p){
+  const ok = await showConfirm('确认兑换', `使用 ${p.points} 积分兑换「${p.name}」？`);
+  if(!ok) return;
+  try{await api.exchangeProduct({productId:p.id});showToast('兑换成功!','success');}catch{}
+}
 </script>
 
 <style scoped>
