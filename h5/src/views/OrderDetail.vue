@@ -9,7 +9,7 @@
       </div>
       <div class="od__section">
         <div class="od__room">
-          <img :src="(order.room_images && order.room_images[0]) || '/placeholder.jpg'" :alt="order.room_name" class="od__room-img" />
+          <img :src="getFirstImg(order.room_images)" :alt="order.room_name" class="od__room-img" />
           <div>
             <h3 class="od__room-name">{{ order.room_name }}</h3>
             <p class="od__dates">{{ order.check_in_date }} ~ {{ order.check_out_date }} · {{ order.nights || 1 }}晚</p>
@@ -51,6 +51,11 @@ onMounted(async () => {
   }
 });
 
+function getFirstImg(images) {
+  if (!images) return '/placeholder.jpg';
+  if (Array.isArray(images)) return images[0] || '/placeholder.jpg';
+  try { const arr = JSON.parse(images); return arr[0] || '/placeholder.jpg'; } catch { return '/placeholder.jpg'; }
+}
 async function cancelOrder() {
   if (!confirm('确认取消该订单？')) return;
   try {

@@ -12,7 +12,7 @@
     <div v-else-if="!list.length" class="orders__empty">暂无订单</div>
     <div v-else class="orders__list">
       <div v-for="(item,idx) in list" :key="item.id||item.order_no" class="order-card fade-in-up" :style="{animationDelay:idx*.07+'s'}" @click="go(item.order_no)">
-        <img :src="(item.room_images && item.room_images[0]) || '/placeholder.jpg'" :alt="item.room_name" class="order-card__img" />
+        <img :src="getFirstImg(item.room_images)" :alt="item.room_name" class="order-card__img" />
         <div class="order-card__info">
           <h3>{{ item.room_name }}</h3>
           <p class="order-card__date">{{ item.check_in_date }} ~ {{ item.check_out_date }}</p>
@@ -42,6 +42,14 @@ async function loadOrders(){
   loading.value=true;
   try{ const p=activeTab.value!=='all'?{status:activeTab.value}:{}; const r=await api.getOrders(p); list.value=r.data?.list||[]; }catch{}
   finally{loading.value=false;}
+}
+function getFirstImg(images) {
+  if (!images) return '/placeholder.jpg';
+  if (Array.isArray(images)) return images[0] || '/placeholder.jpg';
+  try {
+    const arr = JSON.parse(images);
+    return arr[0] || '/placeholder.jpg';
+  } catch { return '/placeholder.jpg'; }
 }
 function go(orderNo){ router.push(`/order/${orderNo}`); }
 </script>
