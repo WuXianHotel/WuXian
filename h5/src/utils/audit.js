@@ -1,10 +1,10 @@
 /**
  * 审核模式检测工具
  *
- * 触发条件：URL 参数 version=0.0.1（小程序审核版本）
+ * 触发条件：服务端 /api/mp/config 返回 app_version = '0.0.1'（审核版本）
  * 审核模式下隐藏：底部 tabbar、首页搜索栏、首页快捷入口
  *
- * 检测优先级：URL 参数 > localStorage（跨页面导航保持状态）
+ * 检测优先级：API 返回 > localStorage 缓存（避免每次请求）
  */
 import { ref } from 'vue';
 
@@ -12,46 +12,40 @@ const AUDIT_VERSION = '0.0.1';
 const STORAGE_KEY = 'hotel_h5_audit';
 
 const isAudit = ref(false);
+let isFetched = false;
 
 /**
- * 从 URL query 或 hash 中提取 version 参数
- */
-function getVersionFromUrl() {
-  // 优先从 search 读取（如 /h5/?version=0.0.1&token=xxx）
-  const search = new URLSearchParams(window.location.search);
-  const v = search.get('version');
-  if (v) return v;
-
-  // 兼容 hash 中的参数（如 /h5/#/?version=0.0.1）
-  const hash = window.location.hash;
-  if (hash) {
-    const queryIdx = hash.indexOf('?');
-    if (queryIdx > -1) {
-      const hashParams = new URLSearchParams(hash.slice(queryIdx + 1));
-      return hashParams.get('version');
-    }
-  }
-
-  return null;
-}
-
-/**
- * 初始化审核模式检测，应在 main.js 中尽早调用
+ * 从服务端 /api/mp/config 获取 app_version 并判断审核模式
+ * 应在 main.js 中尽早调用
  */
 export function initAuditMode() {
-  const version = getVersionFromUrl();
+  if (isFetched) return;
 
-  if (version === AUDIT_VERSION) {
-    localStorage.setItem(STORAGE_KEY, '1');
-    isAudit.value = true;
-  } else if (version !== null) {
-    // 明确传了非审核版本号，清除审核标记
-    localStorage.removeItem(STORAGE_KEY);
-    isAudit.value = false;
-  } else {
-    // URL 无 version 参数，读取 localStorage 保持跨页面一致性
-    isAudit.value = localStorage.getItem(STORAGE_KEY) === '1';
-  }
+  // 先读 localStorage 缓存快速启动
+  isAudit.value = localStorage.getItem(STORAGE_KEY) === '1';
+
+  // 从 API 获取最新版本号
+  const apiBase = import.meta.env.VITE_API_BASE || window.location.origin;
+  const url = `${apiBase}/api/mp/config`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(body => {
+      const version = (body && body.data && body.data.app_version) || '';
+      const audit = version === AUDIT_VERSION;
+
+      if (audit) {
+        localStorage.setItem(STORAGE_KEY, '1');
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      isAudit.value = audit;
+      isFetched = true;
+    })
+    .catch(() => {
+      // API 不可用时保持 localStorage 缓存值
+      isFetched = true;
+    });
 }
 
 /**
