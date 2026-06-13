@@ -75,7 +75,7 @@ onMounted(async () => {
   }
   try {
     const res = await api.getPointsHistory();
-    pointsHistory.value = res.data || [];
+    pointsHistory.value = res.data?.list || res.data || [];
   } catch {
     // ignore
   } finally {

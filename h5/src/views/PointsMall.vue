@@ -25,7 +25,7 @@ import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const products=ref([]),loading=ref(true);
-onMounted(async()=>{try{const r=await api.getMallProducts();products.value=r.data||[];}catch{}finally{loading.value=false;}});
+onMounted(async()=>{try{const r=await api.getMallProducts();products.value=r.data?.list||r.data||[];}catch{}finally{loading.value=false;}});
 async function exchange(p){if(!confirm(`确认使用${p.points}积分兑换"${p.name}"?`))return;try{await api.exchangeProduct({productId:p.id});alert('兑换成功!');}catch{}}
 </script>
 

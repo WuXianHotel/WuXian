@@ -27,7 +27,7 @@ import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
 const info=ref({}),logs=ref([]),loading=ref(true);
-onMounted(async()=>{try{const r=await api.getWalletInfo();info.value=r.data||{};}catch{};try{const r=await api.getWalletLogs();logs.value=r.data||[];}catch{}finally{loading.value=false;}});
+onMounted(async()=>{try{const r=await api.getWalletInfo();info.value=r.data||{};}catch{};try{const r=await api.getWalletLogs();logs.value=r.data?.list||r.data||[];}catch{}finally{loading.value=false;}});
 </script>
 
 <style scoped>

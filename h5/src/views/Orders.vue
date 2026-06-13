@@ -40,7 +40,7 @@ const statusColor=s=> ({pending:'var(--neon-gold)',paid:'var(--neon-green)',conf
 onMounted(()=>{loadOrders();});
 async function loadOrders(){
   loading.value=true;
-  try{ const p=activeTab.value!=='all'?{status:activeTab.value}:{}; const r=await api.getOrders(p); list.value=r.data||[]; }catch{}
+  try{ const p=activeTab.value!=='all'?{status:activeTab.value}:{}; const r=await api.getOrders(p); list.value=r.data?.list||[]; }catch{}
   finally{loading.value=false;}
 }
 function go(id){ router.push(`/order/${id}`); }

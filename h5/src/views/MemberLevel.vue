@@ -28,7 +28,7 @@ const loading = ref(true);
 onMounted(async () => {
   try {
     const res = await api.getMemberLevels();
-    levels.value = res.data || [];
+    levels.value = res.data?.list || res.data || [];
   } catch {
     // ignore
   } finally {
