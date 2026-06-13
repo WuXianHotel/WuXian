@@ -12,16 +12,15 @@
     </div>
 
     <div v-if="loading" class="ocf__state">加载中...</div>
-    <template v-else-if="order.id">
+    <template v-else-if="order.order_no">
       <!-- 订单详情 -->
       <div class="ocf__card">
         <div class="ocf__card-title"><ClipboardList :size="16" /> 订单详情</div>
         <div class="ocf__card-body">
           <div class="ocf__row"><span>房型</span><span class="ocf__row-val">{{ order.room_name }}</span></div>
-          <div class="ocf__row"><span>入住</span><span class="ocf__row-val">{{ order.check_in }}</span></div>
-          <div class="ocf__row"><span>退房</span><span class="ocf__row-val">{{ order.check_out }}</span></div>
-          <div class="ocf__row"><span>入住人</span><span class="ocf__row-val">{{ order.guest_name || '-' }}</span></div>
-          <div class="ocf__row" v-if="order.remark"><span>备注</span><span class="ocf__row-val" style="max-width:180px;text-align:right;font-size:12px;color:#888">{{ order.remark }}</span></div>
+          <div class="ocf__row"><span>入住</span><span class="ocf__row-val">{{ order.check_in_date }}</span></div>
+          <div class="ocf__row"><span>退房</span><span class="ocf__row-val">{{ order.check_out_date }}</span></div>
+          <div class="ocf__row"><span>入住人</span><span class="ocf__row-val">{{ order.guestName || order.guest_name || '-' }}</span></div>
         </div>
       </div>
 
@@ -29,8 +28,8 @@
       <div class="ocf__card">
         <div class="ocf__card-title"><Wallet :size="16" /> 费用明细</div>
         <div class="ocf__card-body">
-          <div class="ocf__row"><span>房费 × {{ order.nights || 1 }}晚</span><span>¥{{ order.total_price }}</span></div>
-          <div class="ocf__row ocf__row--total"><span>应付金额</span><span class="ocf__total-price">¥{{ order.total_price }}</span></div>
+          <div class="ocf__row"><span>房费 × {{ order.nights || 1 }}晚</span><span>¥{{ order.pay_amount }}</span></div>
+          <div class="ocf__row ocf__row--total"><span>应付金额</span><span class="ocf__total-price">¥{{ order.pay_amount }}</span></div>
         </div>
       </div>
 
@@ -42,9 +41,9 @@
           <span class="ocf__pay-text">钱包余额支付</span>
           <CircleCheck :size="16" class="ocf__pay-check" />
         </div>
-        <div class="ocf__card-body" v-if="order.status === 'pending'">
+        <div class="ocf__card-body" v-if="order.status === 0">
           <button class="ocf__pay-btn" @click="payNow" :disabled="paying">
-            {{ paying ? '支付中...' : `立即支付 ¥${order.total_price}` }}
+            {{ paying ? '支付中...' : `立即支付 ¥${order.pay_amount}` }}
           </button>
         </div>
         <div class="ocf__card-body" v-else>
@@ -67,7 +66,7 @@ const order = ref({});
 const loading = ref(true);
 const paying = ref(false);
 
-const statusMap = { pending: '待支付', paid: '已支付', confirmed: '已确认' };
+const statusMap = { 0: '待支付', 1: '待入住', 2: '入住中', 3: '已退房', 4: '已取消', 5: '退款中', 6: '已退款' };
 
 onMounted(async () => {
   const id = route.params.id;
@@ -83,7 +82,7 @@ async function payNow() {
   try {
     await api.walletPay(order.value.order_no);
     alert('支付成功！');
-    const res = await api.getOrderDetail(order.value.id);
+    const res = await api.getOrderDetail(order.value.order_no);
     order.value = res.data || {};
   } catch { /* error handled by api */ }
   finally { paying.value = false; }

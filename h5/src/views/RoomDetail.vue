@@ -96,7 +96,7 @@ const checkInLabel = ref(''); const checkOutLabel = ref('');
 const calendarDays = ref([]);
 const weekDays = ['日','一','二','三','四','五','六'];
 const reviews = ref([]);
-const ratingDist = [{star:5,pct:85},{star:4,pct:12},{star:3,pct:3},{star:2,pct:0}];
+const ratingDist = ref([{star:5,pct:85},{star:4,pct:12},{star:3,pct:3},{star:2,pct:0}]);
 const facilities = ref([]);
 
 const facilityMeta = [
@@ -115,8 +115,18 @@ onMounted(async()=>{
   const id=route.params.id;
   const ci=todayStr(),co=addDays(ci,1);
   checkIn.value=ci;checkOut.value=co;checkInLabel.value=fmtDate(ci);checkOutLabel.value=fmtDate(co);
-  try{const{default:api}=await import('../utils/api.js');const res=await api.getRoomDetail(id);const r=res.data||{};room.value=r;facilities.value=facilityMeta.filter(f=>r[f.key]);buildCalendar();}catch{}
-  reviews.value=[{id:1,nickname:'王**',date:'2026-04-20',content:'房间超大，设施非常齐全，浴缸是我见过最舒适的！'},{id:2,nickname:'李**',date:'2026-04-15',content:'城市景观很棒，早上起来看日出太美了。性价比高！'}];
+  try{const{default:api}=await import('../utils/api.js');const res=await api.getRoomDetail(id);const r=res.data||{};room.value=r;facilities.value=facilityMeta.filter(f=>r[f.key]);buildCalendar();
+    // 使用后端返回的评价数据
+    if(r.latestReviews?.length){
+      reviews.value=r.latestReviews.map(rv=>({id:rv.id,nickname:rv.nickname||'用户',date:(rv.created_at||'').slice(0,10),content:rv.content}));
+    } else {
+      reviews.value=[{id:1,nickname:'暂无评价',date:'',content:'成为第一个评价的用户吧！'}];
+    }
+    if(r.scoreDist?.length){
+      const total=r.scoreDist.reduce((s,i)=>s+i.cnt,0)||1;
+      ratingDist.value = r.scoreDist.map(d=>({star:d.score,pct:Math.round(d.cnt/total*100)}));
+    }
+  }catch{}
 });
 
 function buildCalendar(){

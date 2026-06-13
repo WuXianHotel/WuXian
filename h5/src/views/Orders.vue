@@ -11,13 +11,13 @@
     </div>
     <div v-else-if="!list.length" class="orders__empty">暂无订单</div>
     <div v-else class="orders__list">
-      <div v-for="(item,idx) in list" :key="item.id" class="order-card fade-in-up" :style="{animationDelay:idx*.07+'s'}" @click="go(item.id)">
-        <img :src="item.room_image||'/placeholder.jpg'" :alt="item.room_name" class="order-card__img" />
+      <div v-for="(item,idx) in list" :key="item.id||item.order_no" class="order-card fade-in-up" :style="{animationDelay:idx*.07+'s'}" @click="go(item.order_no)">
+        <img :src="(item.room_images && item.room_images[0]) || '/placeholder.jpg'" :alt="item.room_name" class="order-card__img" />
         <div class="order-card__info">
           <h3>{{ item.room_name }}</h3>
-          <p class="order-card__date">{{ item.check_in }} ~ {{ item.check_out }}</p>
+          <p class="order-card__date">{{ item.check_in_date }} ~ {{ item.check_out_date }}</p>
           <div class="order-card__footer">
-            <span class="order-card__price">¥{{ item.total_price }}</span>
+            <span class="order-card__price">¥{{ item.pay_amount }}</span>
             <span class="order-card__status" :style="{color:statusColor(item.status)}">{{ statusMap[item.status]||item.status }}</span>
           </div>
         </div>
@@ -33,9 +33,9 @@ import api from '../utils/api.js';
 
 const router = useRouter();
 const loading=ref(true), activeTab=ref('all'), list=ref([]);
-const tabs=[{key:'all',label:'全部'},{key:'pending',label:'待支付'},{key:'confirmed',label:'已确认'},{key:'completed',label:'已完成'}];
-const statusMap={pending:'待支付',paid:'已支付',confirmed:'已确认',checked_in:'已入住',completed:'已完成',cancelled:'已取消'};
-const statusColor=s=> ({pending:'var(--neon-gold)',paid:'var(--neon-green)',confirmed:'var(--neon-cyan)',completed:'var(--text-muted)',cancelled:'var(--neon-pink)'}[s]||'var(--text-muted)');
+const tabs=[{key:'all',label:'全部'},{key:'pending_payment',label:'待支付'},{key:'pending_checkin',label:'待入住'},{key:'completed',label:'已完成'}];
+const statusMap={0:'待支付',1:'待入住',2:'入住中',3:'已退房',4:'已取消',5:'退款中',6:'已退款'};
+const statusColor=s=> ({0:'var(--neon-gold)',1:'var(--neon-cyan)',2:'var(--neon-purple)',3:'var(--text-muted)',4:'var(--text-muted)',5:'var(--neon-gold)',6:'var(--text-muted)'}[s]||'var(--text-muted)');
 
 onMounted(()=>{loadOrders();});
 async function loadOrders(){
@@ -43,7 +43,7 @@ async function loadOrders(){
   try{ const p=activeTab.value!=='all'?{status:activeTab.value}:{}; const r=await api.getOrders(p); list.value=r.data?.list||[]; }catch{}
   finally{loading.value=false;}
 }
-function go(id){ router.push(`/order/${id}`); }
+function go(orderNo){ router.push(`/order/${orderNo}`); }
 </script>
 
 <style scoped>

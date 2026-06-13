@@ -2,30 +2,24 @@
   <div class="order-detail">
     <NavBar title="订单详情" />
     <div v-if="loading" class="od__loading">加载中...</div>
-    <template v-else-if="order.id">
-      <div class="od__status" :style="{ background: statusBg }">
+    <template v-else-if="order.order_no">
+      <div class="od__status">
         <span class="od__status-text">{{ statusMap[order.status] || order.status }}</span>
         <p class="od__order-no">订单号：{{ order.order_no }}</p>
       </div>
       <div class="od__section">
         <div class="od__room">
-          <img :src="order.room_image || '/placeholder.jpg'" :alt="order.room_name" class="od__room-img" />
+          <img :src="(order.room_images && order.room_images[0]) || '/placeholder.jpg'" :alt="order.room_name" class="od__room-img" />
           <div>
             <h3 class="od__room-name">{{ order.room_name }}</h3>
-            <p class="od__dates">{{ order.check_in }} ~ {{ order.check_out }} · {{ order.nights || 1 }}晚</p>
+            <p class="od__dates">{{ order.check_in_date }} ~ {{ order.check_out_date }} · {{ order.nights || 1 }}晚</p>
           </div>
         </div>
       </div>
       <div class="od__section">
-        <div class="od__row"><span>房费</span><span>¥{{ order.room_price }}</span></div>
-        <div class="od__row" v-if="order.discount_amount"><span>会员折扣</span><span class="od__discount">-¥{{ order.discount_amount }}</span></div>
-        <div class="od__row" v-if="order.points_deduct"><span>积分抵扣</span><span class="od__discount">-¥{{ order.points_deduct }}</span></div>
-        <div class="od__row od__row--total"><span>实付</span><span class="od__total-price">¥{{ order.total_price }}</span></div>
+        <div class="od__row"><span>应付金额</span><span class="od__total-price">¥{{ order.pay_amount }}</span></div>
       </div>
-      <div class="od__section" v-if="order.payment_method">
-        <div class="od__row"><span>支付方式</span><span>{{ order.payment_method === 'wallet' ? '钱包余额' : order.payment_method }}</span></div>
-      </div>
-      <div class="od__actions" v-if="order.status === 'pending'">
+      <div class="od__actions" v-if="order.status === 0 || order.status === 1">
         <button class="od__btn od__btn--danger" @click="cancelOrder">取消订单</button>
       </div>
     </template>
@@ -43,17 +37,13 @@ const router = useRouter();
 const order = ref({});
 const loading = ref(true);
 
-const statusMap = { pending: '待支付', paid: '已支付', confirmed: '已确认', checked_in: '已入住', completed: '已完成', cancelled: '已取消' };
-const statusBgMap = { pending: '#fef3c7', paid: '#d1fae5', confirmed: '#dbeafe', checked_in: '#ede9fe', completed: '#f3f4f6', cancelled: '#fee2e2' };
-
-const statusBg = ref('#f3f4f6');
+const statusMap = { 0: '待支付', 1: '待入住', 2: '入住中', 3: '已退房', 4: '已取消', 5: '退款中', 6: '已退款' };
 
 onMounted(async () => {
   const id = route.params.id;
   try {
     const res = await api.getOrderDetail(id);
     order.value = res.data || {};
-    statusBg.value = statusBgMap[order.value.status] || '#f3f4f6';
   } catch {
     // ignore
   } finally {
@@ -64,7 +54,7 @@ onMounted(async () => {
 async function cancelOrder() {
   if (!confirm('确认取消该订单？')) return;
   try {
-    await api.cancelOrder(order.value.id);
+    await api.cancelOrder(order.value.order_no);
     alert('订单已取消');
     router.back();
   } catch {

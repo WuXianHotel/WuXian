@@ -139,7 +139,7 @@ async function submitOrder() {
       remark: form.remark,
     });
     const order = res.data || {};
-    router.push(`/order/confirm/${order.id || order.orderId}`);
+    router.push(`/order/confirm/${order.orderNo}`);
   } catch { /* handled by api */ }
   finally { submitting.value = false; }
 }
