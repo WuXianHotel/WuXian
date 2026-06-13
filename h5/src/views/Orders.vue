@@ -64,9 +64,10 @@ function go(orderNo){ router.push(`/order/${orderNo}`); }
 
 <style scoped>
 .orders__title { padding: 20px 16px 8px; font-size: 22px; font-weight: 800; color: var(--text-primary); }
-.orders__tabs { display: flex; gap: 8px; padding: 0 16px 14px; }
+.orders__tabs { display: flex; gap: 8px; padding: 0 16px 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.orders__tabs::-webkit-scrollbar { display: none; }
 .orders__tab {
-  font-size: 13px; padding: 6px 16px; border-radius: var(--radius-full);
+  font-size: 12px; padding: 6px 14px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
   background: var(--bg-card); color: var(--text-muted); cursor: pointer; border: 1px solid var(--border-subtle);
   transition: all var(--dur-fast);
 }
