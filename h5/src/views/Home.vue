@@ -45,7 +45,7 @@
     <div class="section">
       <div class="section__head">
         <h3 class="section__title">热门房型</h3>
-        <span class="section__more" @click="$router.push('/rooms')">查看全部 <ArrowRight :size="14" class="section__more-icon" /></span>
+        <span v-if="!isAudit" class="section__more" @click="$router.push('/rooms')">查看全部 <ArrowRight :size="14" class="section__more-icon" /></span>
       </div>
 
       <div v-if="loading" class="home__skeleton">
@@ -56,8 +56,9 @@
         <div
           v-for="(room, idx) in rooms" :key="room.id"
           class="room-card fade-in-up"
+          :class="{ 'room-card--static': isAudit }"
           :style="{ animationDelay: idx * .1 + 's' }"
-          @click="$router.push(`/room/${room.id}`)"
+          @click="!isAudit && $router.push(`/room/${room.id}`)"
         >
           <div class="room-card__img-wrap">
             <img v-if="room.imageUrl" :src="room.imageUrl" :alt="room.name" class="room-card__img" />
@@ -72,7 +73,7 @@
             </div>
             <div class="room-card__footer">
               <span class="room-card__price">¥{{ room.price }}<sub>/晚</sub></span>
-              <span class="room-card__btn">预订 <ChevronRight :size="14" /></span>
+              <span v-if="!isAudit" class="room-card__btn">预订 <ChevronRight :size="14" /></span>
             </div>
           </div>
         </div>
@@ -189,6 +190,8 @@ function callPhone(e) {
 
 .room-list { display: flex; flex-direction: column; gap: 10px; }
 .room-card { display: flex; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
+.room-card--static { cursor: default; }
+.room-card--static:hover { border-color: var(--border-subtle); transform: none; }
 .room-card:hover { border-color: var(--border-glow); transform: translateX(4px); }
 .room-card__img-wrap { width: 110px; flex-shrink: 0; }
 .room-card__img { width: 100%; height: 100%; min-height: 100px; object-fit: cover; }
