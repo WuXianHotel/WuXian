@@ -45,11 +45,19 @@ async function loadOrders(){
 }
 function getFirstImg(images) {
   if (!images) return '/placeholder.jpg';
+  // 已是数组
   if (Array.isArray(images)) return images[0] || '/placeholder.jpg';
-  try {
-    const arr = JSON.parse(images);
-    return arr[0] || '/placeholder.jpg';
-  } catch { return '/placeholder.jpg'; }
+  // 是 JSON 字符串（数据库直接存）
+  if (typeof images === 'string') {
+    try {
+      const arr = JSON.parse(images);
+      if (Array.isArray(arr) && arr.length) return arr[0];
+    } catch { /* not valid JSON, try as plain URL */ }
+    // 可能是纯 URL 字符串
+    if (images.startsWith('http')) return images;
+  }
+  console.warn('[Orders] getFirstImg 无法解析:', typeof images, String(images).slice(0, 100));
+  return '/placeholder.jpg';
 }
 function go(orderNo){ router.push(`/order/${orderNo}`); }
 </script>

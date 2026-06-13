@@ -54,7 +54,11 @@ onMounted(async () => {
 function getFirstImg(images) {
   if (!images) return '/placeholder.jpg';
   if (Array.isArray(images)) return images[0] || '/placeholder.jpg';
-  try { const arr = JSON.parse(images); return arr[0] || '/placeholder.jpg'; } catch { return '/placeholder.jpg'; }
+  if (typeof images === 'string') {
+    try { const arr = JSON.parse(images); if (Array.isArray(arr) && arr.length) return arr[0]; } catch {}
+    if (images.startsWith('http')) return images;
+  }
+  return '/placeholder.jpg';
 }
 async function cancelOrder() {
   if (!confirm('确认取消该订单？')) return;
