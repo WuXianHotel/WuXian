@@ -6,6 +6,7 @@ App({
     userInfo: null,
     token: '',
     apiBase: 'https://wuxian-hotel.online', // 生产环境域名，开发时可按需修改
+    version: '1.0.0', // 提交审核时改为 '0.0.1' 以隐藏 tabbar/搜索/快捷入口
   },
 
   onLaunch() {

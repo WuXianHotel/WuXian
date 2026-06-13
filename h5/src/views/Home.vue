@@ -6,7 +6,7 @@
       <div class="hero__grid"></div>
       <p class="hero__tag">WELCOME TO WUXIAN HOTEL</p>
       <h1 class="hero__title">寻找你的专属住所</h1>
-      <div class="hero__search" @click="$router.push('/rooms')">
+      <div class="hero__search" v-if="!isAudit" @click="$router.push('/rooms')">
         <Search class="hero__search-icon" :size="16" :stroke-width="2" />
         <span>搜索房型、设施...</span>
       </div>
@@ -34,7 +34,7 @@
     </div>
 
     <!-- 快捷入口 -->
-    <div class="quick">
+    <div class="quick" v-if="!isAudit">
       <div v-for="item in quickItems" :key="item.path" class="quick__item" @click="$router.push(item.path)">
         <component :is="item.icon" :size="30" :stroke-width="1.5" class="quick__icon" />
         <span class="quick__label">{{ item.label }}</span>
@@ -84,6 +84,9 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone } from 'lucide-vue-next';
+import { useAuditMode } from '../utils/audit.js';
+
+const { isAudit } = useAuditMode();
 
 const rooms = ref([]);
 const loading = ref(true);

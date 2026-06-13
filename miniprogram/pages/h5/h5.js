@@ -39,7 +39,10 @@ Page({
       const webviewUrl = this.buildUrl(apiBase, token);
       console.log('[h5] webview URL:', webviewUrl);
 
-      this.setData({ webviewUrl, loading: false });
+      // 将版本号注入 WebView URL（H5 据此判断审核模式）
+      const finalUrl = this.appendVersion(webviewUrl);
+
+      this.setData({ webviewUrl: finalUrl, loading: false });
     } catch (err) {
       console.error('[h5] 初始化鉴权失败:', err);
       this.setData({ errorMsg: '初始化失败，请重新进入', loading: false });
@@ -158,6 +161,15 @@ Page({
       default:
         break;
     }
+  },
+
+  // 将小程序版本号追加到 WebView URL（H5 据此判断是否审核模式）
+  appendVersion(url) {
+    const version = app.globalData.version || '';
+    if (!version) return url;
+
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}version=${encodeURIComponent(version)}`;
   },
 
   // 页面分享

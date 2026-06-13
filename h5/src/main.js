@@ -4,6 +4,10 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router/index.js';
 import { getToken } from './utils/auth.js';
+import { initAuditMode } from './utils/audit.js';
+
+// 审核模式检测（必须在鉴权之前，确保审核版隐藏 UI）
+initAuditMode();
 
 // vConsole 调试面板
 // 启用方式（任一即可）：
