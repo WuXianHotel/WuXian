@@ -5,7 +5,8 @@
     <div v-if="loading" class="ml__loading">加载中...</div>
     <div v-else class="ml__list">
       <div v-for="level in levels" :key="level.level" class="ml__card" :class="{ 'ml__card--current': level.is_current }">
-        <span class="ml__icon">{{ level.icon || '⭐' }}</span>
+        <img v-if="level.icon && level.icon.startsWith('http')" :src="level.icon" class="ml__icon" />
+        <Crown v-else :size="32" :stroke-width="1.5" class="ml__icon" />
         <div class="ml__info">
           <h3 class="ml__name">{{ level.name }}</h3>
           <p class="ml__desc">消费 {{ level.min_nights || 0 }} 间夜后升级</p>
@@ -19,6 +20,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { Crown } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 
@@ -53,7 +55,7 @@ onMounted(async () => {
   position: relative;
 }
 .ml__card--current { border: 2px solid var(--neon-cyan); }
-.ml__icon { font-size: 36px; }
+.ml__icon { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; color: var(--neon-gold); }
 .ml__info { flex: 1; }
 .ml__name { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
 .ml__desc, .ml__discount { font-size: 12px; color: var(--text-muted); }

@@ -3,7 +3,8 @@
     <NavBar title="会员中心" />
     <header class="member__header">
       <div class="member__card">
-        <span class="member__level-icon">{{ info.level_icon || '⭐' }}</span>
+        <img v-if="info.icon && info.icon.startsWith('http')" :src="info.icon" class="member__level-icon" />
+        <Crown v-else :size="28" :stroke-width="1.5" class="member__level-icon" />
         <div>
           <h2 class="member__level-name">{{ info.level_name || '普通会员' }}</h2>
           <p class="member__member-no">{{ info.member_no || '' }}</p>
@@ -56,6 +57,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { Crown } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 

@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS `member_levels` (
   `discount`      DECIMAL(4,2)     NOT NULL DEFAULT 1.00 COMMENT '折扣率 0.95=九五折',
   `points_rate`   DECIMAL(4,2)     NOT NULL DEFAULT 1.00 COMMENT '积分倍率',
   `deduct_rate`   DECIMAL(4,2)     NOT NULL DEFAULT 1.00 COMMENT '积分抵扣倍率（乘以基础汇率）',
-  `icon`          VARCHAR(10)      DEFAULT '🥉',
+  `icon`          VARCHAR(500)     DEFAULT '🥉',
   `color`         VARCHAR(20)      DEFAULT '#cd7f32',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB COMMENT='会员等级配置';

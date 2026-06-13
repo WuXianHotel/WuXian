@@ -33,7 +33,7 @@ import api from '../utils/api.js';
 
 const router = useRouter();
 const loading=ref(true), activeTab=ref('all'), list=ref([]);
-const tabs=[{key:'all',label:'全部'},{key:'pending_payment',label:'待支付'},{key:'pending_checkin',label:'待入住'},{key:'completed',label:'已完成'}];
+const tabs=[{key:'all',label:'全部'},{key:'pending_payment',label:'待支付'},{key:'pending_checkin',label:'待入住'},{key:'completed',label:'已完成'},{key:'cancelled',label:'已取消'}];
 const statusMap={0:'待支付',1:'待入住',2:'入住中',3:'已退房',4:'已取消',5:'退款中',6:'已退款'};
 const statusColor=s=> ({0:'var(--neon-gold)',1:'var(--neon-cyan)',2:'var(--neon-purple)',3:'var(--text-muted)',4:'var(--text-muted)',5:'var(--neon-gold)',6:'var(--text-muted)'}[s]||'var(--text-muted)');
 

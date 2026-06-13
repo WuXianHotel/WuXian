@@ -268,9 +268,10 @@
               <span style="font-weight:700;font-size:16px">{{ row.level }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="图标" width="60" align="center">
+          <el-table-column label="图标" width="70" align="center">
             <template #default="{ row }">
-              <span style="font-size:20px">{{ row.icon }}</span>
+              <img v-if="row.icon && /^https?:\/\//.test(row.icon)" :src="row.icon" style="width:28px;height:28px;border-radius:50%;object-fit:cover" />
+              <span v-else style="font-size:20px">{{ row.icon || '⭐' }}</span>
             </template>
           </el-table-column>
           <el-table-column label="等级名称" width="120">
@@ -346,7 +347,17 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="图标">
-              <el-input v-model="levelForm.icon" placeholder="如 💎" />
+              <div style="display:flex;align-items:center;gap:10px">
+                <img v-if="levelForm.icon && /^https?:\/\//.test(levelForm.icon)" :src="levelForm.icon" style="width:36px;height:36px;border-radius:50%;object-fit:cover" />
+                <el-upload
+                  :show-file-list="false"
+                  :before-upload="handleIconUpload"
+                  accept="image/*"
+                >
+                  <el-button size="small" type="primary" plain>上传图标</el-button>
+                </el-upload>
+                <el-input v-model="levelForm.icon" placeholder="或粘贴图片URL" style="flex:1" />
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -532,6 +543,7 @@ import {
   getWalletStats, getAllWalletLogs, adjustWallet, getMemberWalletLogs
 } from '@/api/member'
 import { getSettings, saveSettings } from '@/api/system'
+import { uploadToCos } from '@/api/upload'
 
 const toast   = inject('toast')
 const activeTab = ref('members')
@@ -816,6 +828,16 @@ async function loadLevelsData() {
   } catch {}
 }
 
+async function handleIconUpload(file) {
+  try {
+    const url = await uploadToCos(file, 'icons/', (p) => console.log('上传进度:', p + '%'))
+    levelForm.value.icon = url
+    toast?.success('图标上传成功')
+  } catch (e) {
+    toast?.error('图标上传失败: ' + (e.message || e))
+  }
+  return false // 阻止 el-upload 默认上传
+}
 function openCreateLevel() {
   editingLevel.value = null
   levelForm.value = {
