@@ -5,11 +5,11 @@
     <div v-else-if="!products.length" class="mall__state"><Gift :size="40" :stroke-width="1" /><p>暂无商品</p></div>
     <div v-else class="mall__grid">
       <div v-for="p in products" :key="p.id" class="mall__card">
-        <img :src="p.imageUrl||'/placeholder.jpg'" :alt="p.name" class="mall__img" />
+        <img :src="p.image||'/placeholder.jpg'" :alt="p.name" class="mall__img" />
         <div class="mall__body">
           <h3>{{ p.name }}</h3>
           <div class="mall__footer">
-            <span class="mall__points"><Zap :size="12" /> {{ p.points }}积分</span>
+            <span class="mall__points"><Zap :size="12" /> {{ p.points_cost }}积分</span>
             <button @click="exchange(p)">兑换</button>
           </div>
         </div>

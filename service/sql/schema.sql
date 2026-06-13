@@ -349,6 +349,7 @@ CREATE TABLE IF NOT EXISTS `points_products` (
   `stock`               INT          NOT NULL DEFAULT 999,
   `status`              TINYINT      NOT NULL DEFAULT 1,
   `sort_order`          INT          DEFAULT 0,
+  `type`                TINYINT      NOT NULL DEFAULT 0 COMMENT '0虚拟 1实物',
   `created_at`          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB COMMENT='积分商城商品（仅实物兑换）';
