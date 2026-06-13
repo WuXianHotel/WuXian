@@ -43,8 +43,9 @@ export async function uploadToCos(file, prefix = 'room-images/', onProgress) {
     xhr.send(file)
   })
 
-  // 4. 返回 CDN 域名 URL
-  return `${cdnDomain}/${key}`
+  // 4. 返回 CDN 域名 URL（确保带协议前缀）
+  const domain = cdnDomain.startsWith('http') ? cdnDomain : `https://${cdnDomain}`
+  return `${domain}/${key}`
 }
 
 /**

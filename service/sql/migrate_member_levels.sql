@@ -2,6 +2,10 @@
 ALTER TABLE `member_levels`
   ADD COLUMN `deduct_rate` DECIMAL(4,2) NOT NULL DEFAULT 1.00 COMMENT '积分抵扣倍率（乘以基础汇率）' AFTER `points_rate`;
 
+-- 扩展图标字段为 VARCHAR(500) 以支持 CDN 图片 URL
+ALTER TABLE `member_levels`
+  MODIFY COLUMN `icon` VARCHAR(500) NOT NULL DEFAULT '⭐' COMMENT '等级图标（emoji 或图片 URL）';
+
 -- 清空旧数据，插入 5 级会员体系
 DELETE FROM `member_levels`;
 INSERT INTO `member_levels` (`id`, `level`, `name`, `min_nights`, `min_points`, `discount`, `points_rate`, `deduct_rate`, `icon`, `color`) VALUES

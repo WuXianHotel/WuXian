@@ -271,7 +271,8 @@
           <el-table-column label="图标" width="70" align="center">
             <template #default="{ row }">
               <img v-if="row.icon && /^https?:\/\//.test(row.icon)" :src="row.icon" style="width:28px;height:28px;border-radius:50%;object-fit:cover" />
-              <span v-else style="font-size:20px">{{ row.icon || '⭐' }}</span>
+              <span v-else-if="row.icon" style="font-size:20px">{{ row.icon }}</span>
+              <span v-else style="font-size:20px">⭐</span>
             </template>
           </el-table-column>
           <el-table-column label="等级名称" width="120">
@@ -348,7 +349,7 @@
           <el-col :span="12">
             <el-form-item label="图标">
               <div style="display:flex;align-items:center;gap:10px">
-                <img v-if="levelForm.icon && /^https?:\/\//.test(levelForm.icon)" :src="levelForm.icon" style="width:36px;height:36px;border-radius:50%;object-fit:cover" />
+                <img v-if="levelForm.icon && isImageUrl(levelForm.icon)" :src="ensureProtocol(levelForm.icon)" style="width:36px;height:36px;border-radius:50%;object-fit:cover" />
                 <el-upload
                   :show-file-list="false"
                   :before-upload="handleIconUpload"
@@ -828,10 +829,17 @@ async function loadLevelsData() {
   } catch {}
 }
 
+function isImageUrl(str) {
+  return /^https?:\/\//.test(str) || /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(str)
+}
+function ensureProtocol(url) {
+  if (!url) return url
+  return /^https?:\/\//.test(url) ? url : `https://${url}`
+}
 async function handleIconUpload(file) {
   try {
     const url = await uploadToCos(file, 'icons/', (p) => console.log('上传进度:', p + '%'))
-    levelForm.value.icon = url
+    levelForm.value.icon = ensureProtocol(url)
     toast?.success('图标上传成功')
   } catch (e) {
     toast?.error('图标上传失败: ' + (e.message || e))
