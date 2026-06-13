@@ -7,7 +7,17 @@ const API_BASE = '/api/mp';
 
 async function request({ url, method = 'GET', data, silent = false }) {
   const token = getToken();
-  const fullUrl = `${API_BASE}${url}`;
+  let fullUrl = `${API_BASE}${url}`;
+
+  // GET 请求：将 data 转为 query string 拼到 URL
+  if (method === 'GET' && data) {
+    const params = new URLSearchParams();
+    Object.entries(data).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params.append(k, v);
+    });
+    const qs = params.toString();
+    if (qs) fullUrl += `?${qs}`;
+  }
 
   console.log(`[api] ${method} ${fullUrl}`, data || '');
 
