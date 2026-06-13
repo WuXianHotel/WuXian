@@ -14,6 +14,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query, transaction } = require('../../config/db');
 const { mpAuth } = require('../../middleware/auth');
 const { validate, parsePager, ok, page } = require('../../middleware/helper');
+const { signUrls } = require('../../config/cos');
 
 // ── 生成订单号 ────────────────────────────────────────────────────────────────
 function genOrderNo() {
@@ -186,7 +187,15 @@ router.get('/', mpAuth, async (req, res, next) => {
         [...params, pageSize, offset],
       ),
     ]);
-    return page(res, { list, total, page: p, pageSize });
+    // 签名房型图片（列表版）
+    const signedList = list.map(item => {
+      let images = [];
+      if (item.room_images) {
+        try { images = JSON.parse(item.room_images); } catch { images = [item.room_images]; }
+      }
+      return { ...item, room_images: JSON.stringify(signUrls(images)) };
+    });
+    return page(res, { list: signedList, total, page: p, pageSize });
   } catch (err) { next(err); }
 });
 
@@ -211,11 +220,17 @@ router.get('/:orderNo', mpAuth, async (req, res, next) => {
       try { order.guests_info = JSON.parse(order.guests_info); } catch { order.guests_info = []; }
     }
     if (!Array.isArray(order.guests_info)) order.guests_info = [];
-    // 向下兼容：注入首位入住人到顶层字段
     if (order.guests_info.length > 0) {
       order.guestName  = order.guests_info[0].name  || '';
       order.guestPhone = order.guests_info[0].phone || '';
     }
+
+    // 签名房型图片
+    let images = [];
+    if (order.room_images) {
+      try { images = JSON.parse(order.room_images); } catch { images = [order.room_images]; }
+    }
+    order.room_images = JSON.stringify(signUrls(images));
 
     return ok(res, order);
   } catch (err) { next(err); }
