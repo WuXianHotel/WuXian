@@ -42,17 +42,17 @@
     </div>
 
     <!-- 热门房型 -->
-    <div class="section">
+    <div class="section" v-if="!isAudit">
       <div class="section__head">
         <h3 class="section__title">热门房型</h3>
-        <span v-if="!isAudit" class="section__more" @click="$router.push('/rooms')">查看全部 <ArrowRight :size="14" class="section__more-icon" /></span>
+        <span class="section__more" @click="$router.push('/rooms')">查看全部 <ArrowRight :size="14" class="section__more-icon" /></span>
       </div>
 
       <div v-if="loading" class="home__skeleton">
         <div v-for="i in 3" :key="i" class="skeleton" style="height:100px;margin-bottom:10px;border-radius:14px"></div>
       </div>
 
-      <div v-else class="room-list" v-if="!isAudit">
+      <div v-else class="room-list">
         <div
           v-for="(room, idx) in rooms" :key="room.id"
           class="room-card fade-in-up"
