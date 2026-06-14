@@ -100,7 +100,7 @@
 import { ref, onMounted, inject } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { getBanners, createBanner, updateBanner, deleteBanner } from '@/api/banner'
-import { uploadToCos } from '@/api/upload'
+import { uploadToCos, signUrls } from '@/api/upload'
 
 const toast = inject('toast')
 const loading = ref(true)
@@ -142,7 +142,9 @@ async function handleImageUpload(file) {
   uploading.value = true
   try {
     const url = await uploadToCos(file, 'banners/')
-    form.value.image = url
+    // 签名 URL 以确保上传后即可预览（COS 私有 Bucket 需要签名）
+    const res = await signUrls([url])
+    form.value.image = (res.data && res.data[0]) || url
     toast?.success('图片上传成功')
   } catch (e) {
     toast?.error('上传失败: ' + (e.message || e))
@@ -155,11 +157,13 @@ async function saveBanner() {
   if (!form.value.image) { toast?.error('请上传图片或填写图片地址'); return }
   saving.value = true
   try {
+    // 剥离签名参数，存入数据库的应为原始 CDN URL
+    const payload = { ...form.value, image: String(form.value.image).split('?')[0] }
     if (editingId.value) {
-      await updateBanner(editingId.value, form.value)
+      await updateBanner(editingId.value, payload)
       toast?.success('更新成功')
     } else {
-      await createBanner(form.value)
+      await createBanner(payload)
       toast?.success('创建成功')
     }
     showModal.value = false

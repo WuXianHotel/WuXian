@@ -8,6 +8,13 @@ export const getCosSign = (prefix = 'room-images/') =>
   http.post('/upload/cos-sign', { prefix })
 
 /**
+ * 批量签名图片 URL（用于预览）
+ * @param {string[]} urls - 需要签名的 URL 列表
+ */
+export const signUrls = (urls) =>
+  http.post('/upload/sign-urls', { urls })
+
+/**
  * 上传文件到腾讯云 COS（直传，不经过 Node 服务器）
  * @param {File} file - 文件对象
  * @param {string} prefix - COS 路径前缀

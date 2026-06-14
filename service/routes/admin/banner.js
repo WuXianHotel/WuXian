@@ -11,6 +11,7 @@ const { body } = require('express-validator');
 const { query } = require('../../config/db');
 const { adminAuth } = require('../../middleware/auth');
 const { validate, ok } = require('../../middleware/helper');
+const { signUrls } = require('../../config/cos');
 
 // ── GET /  列表 ────────────────────────────────────────────────────────────────
 router.get('/', adminAuth(), async (req, res, next) => {
@@ -18,7 +19,12 @@ router.get('/', adminAuth(), async (req, res, next) => {
     const list = await query(
       'SELECT * FROM banners ORDER BY sort_order ASC, id DESC',
     );
-    return ok(res, list);
+    // 签名图片 URL，确保 COS 图片可在管理后台预览
+    const signed = list.map(item => ({
+      ...item,
+      image: signUrls([item.image])[0],
+    }));
+    return ok(res, signed);
   } catch (err) { next(err); }
 });
 
