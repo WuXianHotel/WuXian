@@ -120,11 +120,6 @@ onMounted(async () => {
     hotel.phone = cfg.phone || '';
     hotel.latitude = parseFloat(cfg.latitude) || 0;
     hotel.longitude = parseFloat(cfg.longitude) || 0;
-    // 兜底：如果接口没返回，用默认值保证显示
-    if (!hotel.address) {
-      hotel.address = '柳州市城中区';
-      hotel.phone = '0772-8888888';
-    }
   } catch { /* ignore */ }
   finally { loading.value = false; }
 });
