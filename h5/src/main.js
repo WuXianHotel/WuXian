@@ -6,7 +6,6 @@ import router from './router/index.js';
 import { getToken } from './utils/auth.js';
 import { initAuditMode } from './utils/audit.js';
 
-// 审核模式检测（必须在鉴权之前，确保审核版隐藏 UI）
 initAuditMode();
 
 // vConsole 调试面板开关（需要时改为 true）

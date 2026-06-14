@@ -36,7 +36,6 @@ watch(() => route.path, (to, from) => {
   z-index: 1;
 }
 
-/* 审核模式下移除底部导航栏留白 */
 .app--audit {
   padding-bottom: 0;
 }
