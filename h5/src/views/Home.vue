@@ -169,24 +169,42 @@ function onBannerClick(b) {
   }
 }
 
-// 导航：微信内置浏览器不支持 postMessage 即时通信，改用地图 URL 跳转
-// 系统会自动唤起高德/百度/腾讯地图或微信内置地图
+// 小程序通信辅助：发送 postMessage 并刷新消息队列
+function postToMini(data) {
+  if (typeof wx !== 'undefined' && wx.miniProgram) {
+    wx.miniProgram.postMessage({ data });
+    // pushState 触发页面状态变化，促使 WebView 消息投递到小程序
+    try { history.pushState({ _mp: +new Date() }, '', location.href); } catch {}
+    return true;
+  }
+  return false;
+}
+
+// 导航：优先走小程序原生 wx.openLocation，不跳转不丢失页面状态
 function openNav() {
   const { latitude, longitude, address } = hotel;
   const lat = latitude || 24.315;
   const lng = longitude || 109.413;
   const name = '柳州无限电竞酒店';
-  // 腾讯地图 URI（微信环境兼容性最好）
+
+  if (postToMini({ action: 'openLocation', latitude: lat, longitude: lng, name, address })) {
+    return;
+  }
+  // 兜底：浏览器环境用 window.open 避免替换当前页面
   const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title:${encodeURIComponent(name)};addr:${encodeURIComponent(address || '')}&referer=wxhotel`;
-  window.location.href = url;
+  const w = window.open(url, '_blank');
+  if (!w) window.location.href = url;
 }
 
-// 电话：tel: 链接在微信 WebView 中可直接唤起拨号
+// 电话：优先走小程序原生 wx.makePhoneCall
 function callPhone(e) {
   e?.preventDefault?.();
-  if (hotel.phone) {
-    window.location.href = `tel:${hotel.phone}`;
+  if (!hotel.phone) return;
+
+  if (postToMini({ action: 'makePhoneCall', phoneNumber: hotel.phone })) {
+    return;
   }
+  window.location.href = `tel:${hotel.phone}`;
 }
 </script>
 
