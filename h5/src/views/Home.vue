@@ -169,41 +169,45 @@ function onBannerClick(b) {
   }
 }
 
-// 小程序通信辅助：发送 postMessage 并刷新消息队列
-function postToMini(data) {
-  if (typeof wx !== 'undefined' && wx.miniProgram) {
-    wx.miniProgram.postMessage({ data });
-    // pushState 触发页面状态变化，促使 WebView 消息投递到小程序
-    try { history.pushState({ _mp: +new Date() }, '', location.href); } catch {}
-    return true;
-  }
-  return false;
+// 检测是否在小程序 WebView 中
+function isInMiniProgram() {
+  return typeof wx !== 'undefined' && wx.miniProgram;
 }
 
-// 导航：优先走小程序原生 wx.openLocation，不跳转不丢失页面状态
+// 导航：小程序走原生 wx.openLocation，浏览器用 window.open 避免替换页面
 function openNav() {
   const { latitude, longitude, address } = hotel;
   const lat = latitude || 24.315;
   const lng = longitude || 109.413;
   const name = '柳州无限电竞酒店';
 
-  if (postToMini({ action: 'openLocation', latitude: lat, longitude: lng, name, address })) {
+  // 小程序环境：通过 postMessage 调用原生地图
+  if (isInMiniProgram()) {
+    wx.miniProgram.postMessage({
+      data: { action: 'openLocation', latitude: lat, longitude: lng, name, address },
+    });
+    // 手动刷新后页面状态变化会触发消息投递
     return;
   }
-  // 兜底：浏览器环境用 window.open 避免替换当前页面
+
+  // 浏览器环境：window.open 在新窗口打开，不会替换当前页面
   const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title:${encodeURIComponent(name)};addr:${encodeURIComponent(address || '')}&referer=wxhotel`;
   const w = window.open(url, '_blank');
   if (!w) window.location.href = url;
 }
 
-// 电话：优先走小程序原生 wx.makePhoneCall
+// 电话：小程序走原生拨号，浏览器走 tel: 协议
 function callPhone(e) {
   e?.preventDefault?.();
   if (!hotel.phone) return;
 
-  if (postToMini({ action: 'makePhoneCall', phoneNumber: hotel.phone })) {
+  if (isInMiniProgram()) {
+    wx.miniProgram.postMessage({
+      data: { action: 'makePhoneCall', phoneNumber: hotel.phone },
+    });
     return;
   }
+
   window.location.href = `tel:${hotel.phone}`;
 }
 </script>
