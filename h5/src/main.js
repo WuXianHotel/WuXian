@@ -9,7 +9,7 @@ import { initAuditMode } from './utils/audit.js';
 initAuditMode();
 
 // vConsole 调试面板开关（需要时改为 true）
-const ENABLE_VCONSOLE = true;
+const ENABLE_VCONSOLE = false;
 
 if (ENABLE_VCONSOLE) {
   // 启用方式（任一即可）：
