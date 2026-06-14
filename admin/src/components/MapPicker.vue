@@ -52,8 +52,11 @@ function loadAMapScript() {
       scriptLoaded = true;
       return resolve();
     }
-    // 高德地图 JS API 2.0（key 需替换为用户申请的 key）
-    const key = 'YOUR_AMAP_KEY';
+    // 高德地图 JS API 2.0 安全密钥（必须在加载 script 前设置）
+    window._AMapSecurityConfig = {
+      securityJsCode: '6cdeb4d9f4349e120981661822d98e45',
+    };
+    const key = '8061c1eacdcbc43c9323446963de754b';
     const script = document.createElement('script');
     script.src = `https://webapi.amap.com/maps?v=2.0&key=${key}&plugin=AMap.Geocoder,AMap.AutoComplete`;
     script.onload = () => { scriptLoaded = true; resolve(); };
