@@ -15,7 +15,7 @@
     <!-- 公告 -->
     <div class="notice">
       <Megaphone :size="16" :stroke-width="1.5" />
-      <span>酒店正在试业中，欢迎您的入住！</span>
+      <span>欢迎来到无限电竞酒店！</span>
     </div>
 
     <!-- 地址 & 电话 -->
