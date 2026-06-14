@@ -18,6 +18,27 @@
       <span>欢迎来到无限电竞酒店！</span>
     </div>
 
+    <!-- Banner 轮播 -->
+    <div class="banner" v-if="banners.length">
+      <div class="banner__track" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
+        <div
+          v-for="b in banners" :key="b.id"
+          class="banner__slide"
+          @click="onBannerClick(b)"
+        >
+          <img :src="b.image" :alt="b.title || 'Banner'" class="banner__img" />
+        </div>
+      </div>
+      <div class="banner__dots" v-if="banners.length > 1">
+        <span
+          v-for="(b, i) in banners" :key="b.id"
+          class="banner__dot"
+          :class="{ 'banner__dot--active': i === currentBanner }"
+          @click="currentBanner = i"
+        ></span>
+      </div>
+    </div>
+
     <!-- 地址 & 电话 -->
     <div class="contact" v-if="hotel.address">
       <div class="contact__item contact__address" @click="openNav">
@@ -83,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone } from 'lucide-vue-next';
 import { useAuditMode } from '../utils/audit.js';
 
@@ -91,6 +112,8 @@ const { isAudit } = useAuditMode();
 
 const rooms = ref([]);
 const loading = ref(true);
+const banners = ref([]);
+const currentBanner = ref(0);
 const hotel = reactive({ address: '', phone: '', latitude: 0, longitude: 0 });
 const quickItems = [
   { path: '/rooms', icon: BedSingle, label: '客房预订' },
@@ -107,9 +130,10 @@ const facilityMap = [
 onMounted(async () => {
   try {
     const { default: api } = await import('../utils/api.js');
-    const [roomRes, configRes] = await Promise.all([
+    const [roomRes, configRes, bannerRes] = await Promise.all([
       api.getRooms().catch(() => ({ data: { list: [] } })),
       api.getHotelConfig().catch(() => ({ data: {} })),
+      api.getBanners().catch(() => ({ data: [] })),
     ]);
     rooms.value = ((roomRes.data?.list || [])).slice(0, 4).map(r => ({
       ...r,
@@ -120,9 +144,30 @@ onMounted(async () => {
     hotel.phone = cfg.hotel_phone || '';
     hotel.latitude = parseFloat(cfg.hotel_latitude) || 0;
     hotel.longitude = parseFloat(cfg.hotel_longitude) || 0;
+    banners.value = bannerRes.data || [];
   } catch { /* ignore */ }
   finally { loading.value = false; }
 });
+
+// Banner 自动轮播
+let bannerTimer = 0;
+function startAutoPlay() {
+  if (banners.value.length <= 1) return;
+  clearInterval(bannerTimer);
+  bannerTimer = setInterval(() => {
+    currentBanner.value = (currentBanner.value + 1) % banners.value.length;
+  }, 3000);
+}
+watch(banners, (val) => {
+  if (val.length > 1) startAutoPlay();
+}, { immediate: true });
+onUnmounted(() => clearInterval(bannerTimer));
+
+function onBannerClick(b) {
+  if (b.link_url) {
+    window.location.href = b.link_url;
+  }
+}
 
 // 导航：微信内置浏览器不支持 postMessage 即时通信，改用地图 URL 跳转
 // 系统会自动唤起高德/百度/腾讯地图或微信内置地图
@@ -160,6 +205,15 @@ function callPhone(e) {
 
 .notice { display: flex; align-items: center; gap: 10px; margin: 14px; padding: 12px 14px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.15); border-radius: var(--radius-md); font-size: 12px; color: var(--neon-gold); }
 .notice :deep(svg) { flex-shrink: 0; }
+
+/* Banner */
+.banner { margin: 6px 14px; border-radius: var(--radius-md); overflow: hidden; position: relative; }
+.banner__track { display: flex; transition: transform .5s cubic-bezier(.25,.1,.25,1); }
+.banner__slide { flex: 0 0 100%; cursor: pointer; }
+.banner__img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.banner__dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+.banner__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.4); cursor: pointer; transition: all var(--dur-fast); }
+.banner__dot--active { width: 16px; border-radius: 3px; background: var(--neon-cyan); }
 
 .contact { margin: 0 14px 6px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
 .contact__item { display: flex; align-items: center; gap: 10px; padding: 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-fast); text-decoration: none; }

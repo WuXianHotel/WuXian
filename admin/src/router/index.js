@@ -19,6 +19,7 @@ const routes = [
       { path: 'reports',   component: () => import('@/views/Reports.vue'),   meta: { title: '财务报表' } },
       { path: 'system',    component: () => import('@/views/System.vue'),    meta: { title: '系统设置' } },
       { path: 'mall',      component: () => import('@/views/Mall.vue'),      meta: { title: '积分商城' } },
+      { path: 'banners',   component: () => import('@/views/Banners.vue'),   meta: { title: 'Banner管理' } },
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }

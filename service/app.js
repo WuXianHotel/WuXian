@@ -20,6 +20,7 @@ const mpConfigRouter    = require('./routes/mp/config');
 const mpWalletRouter    = require('./routes/mp/wallet');
 const mpMallRouter      = require('./routes/mp/mall');
 const mpUploadRouter    = require('./routes/mp/upload');
+const mpBannerRouter    = require('./routes/mp/banner');
 
 // 后台管理端
 const adminAuthRouter   = require('./routes/admin/auth');
@@ -31,6 +32,7 @@ const adminReportRouter = require('./routes/admin/report');
 const adminSystemRouter = require('./routes/admin/system');
 const adminMallRouter  = require('./routes/admin/mall');
 const adminUploadRouter = require('./routes/admin/upload');
+const adminBannerRouter  = require('./routes/admin/banner');
 
 const app = express();
 
@@ -71,6 +73,7 @@ app.use('/api/mp/config',  mpConfigRouter);
 app.use('/api/mp/wallet',  mpWalletRouter);
 app.use('/api/mp/mall',    mpMallRouter);
 app.use('/api/mp/upload',  mpUploadRouter);
+app.use('/api/mp/banners', mpBannerRouter);
 
 // 管理后台
 const adminLogger = require('./middleware/adminLogger');
@@ -84,6 +87,7 @@ app.use('/api/admin/reports', adminReportRouter);
 app.use('/api/admin/system',  adminSystemRouter);
 app.use('/api/admin/mall',    adminMallRouter);
 app.use('/api/admin/upload',  adminUploadRouter);
+app.use('/api/admin/banners', adminBannerRouter);
 
 // ── 错误处理 ──────────────────────────────────────────────────────────────────
 app.use(notFound);

@@ -56,7 +56,7 @@ import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 import {
   SwitchButton, OfficeBuilding, DataAnalysis, House,
-  Document, User, ShoppingCart, DataLine, Setting
+  Document, User, ShoppingCart, DataLine, Setting, Picture
 } from '@element-plus/icons-vue'
 
 const auth   = useAuthStore()
@@ -71,6 +71,7 @@ const navItems = [
   { to: '/orders',    icon: markRaw(Document),       label: '订单管理' },
   { to: '/members',   icon: markRaw(User),           label: '会员管理' },
   { to: '/mall',      icon: markRaw(ShoppingCart),   label: '积分商城' },
+  { to: '/banners',   icon: markRaw(Picture),        label: 'Banner管理' },
   { to: '/reports',   icon: markRaw(DataLine),    label: '财务报表' },
   { to: '/system',    icon: markRaw(Setting),        label: '系统设置' },
 ]

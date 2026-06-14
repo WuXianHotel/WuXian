@@ -38,6 +38,9 @@ const ACTION_MAP = [
   [/\/mall\/products\/\d+$/,  'PUT',    '编辑积分商品'],
   [/\/mall\/products\/\d+$/,  'DELETE', '删除积分商品'],
   [/\/mall\/exchanges\/\d+$/, 'PATCH',  '处理兑换订单'],
+  [/\/banners$/,               'POST',   '新增Banner'],
+  [/\/banners\/\d+$/,          'PUT',    '编辑Banner'],
+  [/\/banners\/\d+$/,          'DELETE', '删除Banner'],
 ];
 
 function getAction(path, method) {

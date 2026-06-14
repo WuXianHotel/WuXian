@@ -112,6 +112,9 @@ const api = {
 
   // ─── 公开配置 ───
   getHotelConfig: () => request({ url: '/config' }),
+
+  // ─── Banner ───
+  getBanners: () => request({ url: '/banners' }),
 };
 
 export default api;
