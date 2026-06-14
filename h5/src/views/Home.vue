@@ -52,7 +52,7 @@
         <div v-for="i in 3" :key="i" class="skeleton" style="height:100px;margin-bottom:10px;border-radius:14px"></div>
       </div>
 
-      <div v-else class="room-list">
+      <div v-else class="room-list" v-if="!isAudit">
         <div
           v-for="(room, idx) in rooms" :key="room.id"
           class="room-card fade-in-up"
