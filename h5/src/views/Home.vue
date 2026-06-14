@@ -169,20 +169,34 @@ function onBannerClick(b) {
   }
 }
 
-// 导航：window.open 在新视图打开，不替换当前页面
+// 检测是否在小程序 WebView 中
+function isInMiniProgram() {
+  if (typeof wx !== 'undefined' && wx.miniProgram) return true;
+  return /miniProgram/i.test(navigator.userAgent);
+}
+
+// 导航：小程序跳转到中转页→打开原生地图→关闭自动返回H5
+// 浏览器用 window.open 避免替换当前页
 function openNav() {
   const { latitude, longitude, address } = hotel;
   const lat = latitude || 24.315;
   const lng = longitude || 109.413;
   const name = '柳州无限电竞酒店';
-  const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title:${encodeURIComponent(name)};addr:${encodeURIComponent(address || '')}&referer=wxhotel`;
 
-  // 优先新窗口打开，失败则替换当前页
+  if (isInMiniProgram()) {
+    const addr = encodeURIComponent(address || '');
+    wx.miniProgram.navigateTo({
+      url: `/pages/location/location?lat=${lat}&lng=${lng}&name=${encodeURIComponent(name)}&addr=${addr}`,
+    });
+    return;
+  }
+
+  const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title:${encodeURIComponent(name)};addr:${encodeURIComponent(address || '')}&referer=wxhotel`;
   const w = window.open(url, '_blank');
   if (!w) window.location.href = url;
 }
 
-// 电话：小程序/浏览器均可用 tel: 协议，不会跳出 WebView
+// 电话：小程序/浏览器均可用 tel: 协议
 function callPhone(e) {
   e?.preventDefault?.();
   if (!hotel.phone) return;
