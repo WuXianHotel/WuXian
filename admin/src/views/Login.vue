@@ -33,8 +33,6 @@
             {{ loading ? '登录中…' : '登 录' }}
           </el-button>
         </el-form>
-
-        <p class="hint">默认账号：admin / Admin@123</p>
       </el-card>
     </div>
   </div>
@@ -92,5 +90,4 @@ async function handleLogin() {
 .login-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
 .sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 28px; }
 .login-btn { width: 100%; font-size: 15px; }
-.hint { margin-top: 16px; text-align: center; font-size: 12px; color: var(--text-muted); }
 </style>

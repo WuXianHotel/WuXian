@@ -125,10 +125,11 @@
           <el-table-column label="创建时间" width="140">
             <template #default="{ row }">{{ fmtDate(row.created_at) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="180">
+          <el-table-column label="操作" width="240">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="openEditAdmin(row)">编辑</el-button>
               <el-button type="warning" link size="small" @click="toggleAdminStatus(row)">{{ row.status===1?'禁用':'启用' }}</el-button>
+              <el-button type="success" link size="small" @click="openResetPwd(row)">重置密码</el-button>
               <el-button type="danger" link size="small" @click="delAdmin(row)">删除</el-button>
             </template>
           </el-table-column>
@@ -180,6 +181,18 @@
     <template #footer>
       <el-button @click="showAdminModal=false">取消</el-button>
       <el-button type="primary" @click="saveAdmin" :loading="savingAdmin">保存</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- Reset Password Dialog -->
+  <el-dialog v-model="showPwdModal" title="重置密码" width="360px" destroy-on-close>
+    <p style="margin-bottom:12px;font-size:13px;color:var(--text-secondary)">
+      为管理员 <b>{{ resetTarget?.username }}</b> 设置新密码
+    </p>
+    <el-input v-model="resetPwd" type="password" show-password placeholder="请输入新密码（至少6位）" />
+    <template #footer>
+      <el-button @click="showPwdModal=false">取消</el-button>
+      <el-button type="primary" @click="doResetPwd" :loading="resetting">确认</el-button>
     </template>
   </el-dialog>
 </template>
@@ -266,6 +279,10 @@ const editingAdmin = ref(null)
 const adminForm = ref({ username:'', password:'', role:'front_desk' })
 const adminFormErr = ref('')
 const savingAdmin = ref(false)
+const showPwdModal = ref(false)
+const resetTarget = ref(null)
+const resetPwd = ref('')
+const resetting = ref(false)
 const roleMap = { super:'超级管理员', front_desk:'前台', finance:'财务', operation:'运营' }
 const roleLabel = (r) => roleMap[r] || r
 const fmtDate = (d) => d ? new Date(d).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '-'
@@ -300,6 +317,26 @@ async function saveAdmin() {
     showAdminModal.value = false; loadAdmins()
   } catch (e) { adminFormErr.value = e?.msg || '操作失败' }
   savingAdmin.value = false
+}
+
+function openResetPwd(a) {
+  resetTarget.value = a;
+  resetPwd.value = '';
+  showPwdModal.value = true;
+}
+
+async function doResetPwd() {
+  if (!resetPwd.value || resetPwd.value.length < 6) {
+    toast?.error('密码至少6位');
+    return;
+  }
+  resetting.value = true;
+  try {
+    await updateAdmin(resetTarget.value.id, { password: resetPwd.value });
+    toast?.success(`${resetTarget.value.username} 的密码已重置`);
+    showPwdModal.value = false;
+  } catch (e) { toast?.error(e?.msg || '重置失败'); }
+  resetting.value = false;
 }
 
 async function toggleAdminStatus(a) {
