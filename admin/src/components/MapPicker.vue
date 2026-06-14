@@ -1,12 +1,25 @@
 <template>
   <div class="map-picker">
     <div class="map-picker__coords">
-      <span>经度: {{ lat }}</span>
-      <span>纬度: {{ lng }}</span>
-      <span v-if="addr">地址: {{ addr }}</span>
+      <el-tag size="small" type="info">经度: {{ lat }}</el-tag>
+      <el-tag size="small" type="info">纬度: {{ lng }}</el-tag>
+      <span v-if="addr" class="map-picker__addr">{{ addr }}</span>
     </div>
     <div ref="mapEl" class="map-picker__map"></div>
-    <p class="map-picker__hint">点击地图选择位置，或拖动标记调整经纬度</p>
+    <p class="map-picker__hint">点击地图选择位置，拖动标记微调坐标</p>
+    <div class="map-picker__search">
+      <el-input
+        v-model="searchKeyword"
+        placeholder="搜索地址..."
+        clearable
+        @keyup.enter="searchPlace"
+        style="width:240px"
+      >
+        <template #append>
+          <el-button @click="searchPlace" :loading="searching">搜索</el-button>
+        </template>
+      </el-input>
+    </div>
   </div>
 </template>
 
@@ -24,72 +37,70 @@ const mapEl = ref(null);
 const lat = ref(props.latitude);
 const lng = ref(props.longitude);
 const addr = ref('');
+const searchKeyword = ref('');
+const searching = ref(false);
 
 let map = null;
 let marker = null;
+let geocoder = null;
+let autocomplete = null;
+let scriptLoaded = false;
 
-async function reverseGeocode(latVal, lngVal) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latVal}&lon=${lngVal}&zoom=18&addressdetails=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'zh-CN' } });
-    const data = await res.json();
-    if (data && data.display_name) {
-      addr.value = data.display_name;
-      emit('update:address', data.display_name);
+function loadAMapScript() {
+  return new Promise((resolve, reject) => {
+    if (window.AMap) {
+      scriptLoaded = true;
+      return resolve();
     }
-  } catch { /* ignore */ }
-}
-
-function initMap() {
-  // 动态加载 Leaflet CSS
-  if (!document.querySelector('#leaflet-css')) {
-    const link = document.createElement('link');
-    link.id = 'leaflet-css';
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
-  }
-
-  // 动态加载 Leaflet JS
-  const loadScript = () => new Promise((resolve) => {
-    if (window.L) return resolve();
+    // 高德地图 JS API 2.0（key 需替换为用户申请的 key）
+    const key = 'YOUR_AMAP_KEY';
     const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.onload = () => resolve();
+    script.src = `https://webapi.amap.com/maps?v=2.0&key=${key}&plugin=AMap.Geocoder,AMap.AutoComplete`;
+    script.onload = () => { scriptLoaded = true; resolve(); };
+    script.onerror = () => reject(new Error('高德地图加载失败'));
     document.head.appendChild(script);
   });
+}
 
-  loadScript().then(() => {
+function reverseGeocode(latVal, lngVal) {
+  if (!geocoder) return;
+  geocoder.getAddress([lngVal, latVal], (status, result) => {
+    if (status === 'complete' && result.info === 'OK') {
+      addr.value = result.recomp.formattedAddress;
+      emit('update:address', addr.value);
+    }
+  });
+}
+
+async function initMap() {
+  try {
+    await loadAMapScript();
+
     if (!mapEl.value) return;
-    const L = window.L;
 
-    map = L.map(mapEl.value, {
-      center: [props.latitude, props.longitude],
+    map = new window.AMap.Map(mapEl.value, {
+      center: [props.longitude, props.latitude],
       zoom: 16,
-      attributionControl: false,
+      resizeEnable: true,
     });
 
-    // 使用 CartoDB 浅色主题（国内访问顺畅，免 API Key）
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    // 添加可拖动标记
-    const icon = L.divIcon({
-      className: 'map-picker__marker',
-      html: '<div style="width:28px;height:28px;background:#e74c3c;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
+    // 地理编码
+    window.AMap.plugin('AMap.Geocoder', () => {
+      geocoder = new window.AMap.Geocoder({});
+      reverseGeocode(props.latitude, props.longitude);
     });
 
-    marker = L.marker([props.latitude, props.longitude], {
-      icon,
+    // 标记
+    marker = new window.AMap.Marker({
+      position: [props.longitude, props.latitude],
       draggable: true,
-    }).addTo(map);
+      cursor: 'move',
+    });
+    map.add(marker);
 
-    // 拖动结束后更新坐标
+    // 拖动结束后更新
     marker.on('dragend', () => {
-      const pos = marker.getLatLng();
+      const pos = marker.getPosition();
       lat.value = +pos.lat.toFixed(6);
       lng.value = +pos.lng.toFixed(6);
       emit('update:latitude', lat.value);
@@ -99,57 +110,84 @@ function initMap() {
 
     // 点击地图移动标记
     map.on('click', (e) => {
-      marker.setLatLng(e.latlng);
-      lat.value = +e.latlng.lat.toFixed(6);
-      lng.value = +e.latlng.lng.toFixed(6);
+      marker.setPosition(e.lnglat);
+      lat.value = +e.lnglat.lat.toFixed(6);
+      lng.value = +e.lnglat.lng.toFixed(6);
       emit('update:latitude', lat.value);
       emit('update:longitude', lng.value);
       reverseGeocode(lat.value, lng.value);
     });
+  } catch (e) {
+    console.warn('[MapPicker] 地图加载失败:', e.message);
+  }
+}
 
-    // 初次反向地理编码
-    reverseGeocode(props.latitude, props.longitude);
+// 搜索地址
+function searchPlace() {
+  if (!searchKeyword.value.trim() || !window.AMap) return;
+  searching.value = true;
+
+  window.AMap.plugin('AMap.AutoComplete', () => {
+    autocomplete = new window.AMap.AutoComplete({
+      city: '柳州',
+      citylimit: false,
+    });
+    autocomplete.search(searchKeyword.value, (status, result) => {
+      searching.value = false;
+      if (status === 'complete' && result.info === 'OK' && result.tips.length) {
+        const tip = result.tips[0];
+        if (tip.location) {
+          const lngVal = +tip.location.lng.toFixed(6);
+          const latVal = +tip.location.lat.toFixed(6);
+          map.setCenter([lngVal, latVal]);
+          marker.setPosition([lngVal, latVal]);
+          lat.value = latVal;
+          lng.value = lngVal;
+          emit('update:latitude', latVal);
+          emit('update:longitude', lngVal);
+          addr.value = tip.name + (tip.district ? ' ' + tip.district : '');
+          emit('update:address', addr.value);
+        }
+      }
+    });
   });
 }
 
-// 监听外部经纬度变化更新地图
+// 监听外部经纬度变化
 watch(() => [props.latitude, props.longitude], ([newLat, newLng]) => {
   lat.value = newLat;
   lng.value = newLng;
   if (map && marker) {
-    const pos = [newLat, newLng];
-    map.setView(pos, map.getZoom());
-    marker.setLatLng(pos);
+    map.setCenter([newLng, newLat]);
+    marker.setPosition([newLng, newLat]);
+    reverseGeocode(newLat, newLng);
   }
 });
 
-onMounted(() => {
-  initMap();
-});
+onMounted(() => { initMap(); });
 
 onBeforeUnmount(() => {
-  if (map) { map.remove(); map = null; }
+  if (map) { map.destroy(); map = null; }
 });
 </script>
 
 <style scoped>
 .map-picker__coords {
-  display: flex; gap: 16px; font-size: 12px; color: #94a3b8;
+  display: flex; gap: 8px; align-items: center;
   margin-bottom: 8px; flex-wrap: wrap;
 }
+.map-picker__addr {
+  font-size: 12px; color: #94a3b8; max-width: 300px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .map-picker__map {
-  width: 100%; height: 340px; border-radius: 8px;
+  width: 100%; height: 360px; border-radius: 8px;
   border: 1px solid var(--border, #e4e7ed);
 }
 .map-picker__hint {
   font-size: 11px; color: #94a3b8; margin-top: 6px;
 }
-</style>
-
-<style>
-/* 全局样式 - Leaflet 需要 */
-.map-picker__marker {
-  background: transparent !important;
-  border: none !important;
+.map-picker__search {
+  margin-top: 10px;
 }
 </style>
