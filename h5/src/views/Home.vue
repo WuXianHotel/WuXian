@@ -169,9 +169,12 @@ function onBannerClick(b) {
   }
 }
 
-// 检测是否在小程序 WebView 中
+// 检测是否在小程序 WebView 中（JSSDK 加载后 wx.miniProgram 才可用）
 function isInMiniProgram() {
-  return typeof wx !== 'undefined' && wx.miniProgram;
+  // JSSDK 方式
+  if (typeof wx !== 'undefined' && wx.miniProgram) return true;
+  // UA 兜底
+  return /miniProgram/i.test(navigator.userAgent);
 }
 
 // 导航：小程序走原生 wx.openLocation，浏览器用 window.open 避免替换页面
