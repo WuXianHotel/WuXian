@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .map-picker__map {
-  width: 100%; height: 360px; border-radius: 8px;
+  width: 100%; height: 500px; border-radius: 8px;
   border: 1px solid var(--border, #e4e7ed);
 }
 .map-picker__hint {
