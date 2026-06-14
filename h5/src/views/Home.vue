@@ -116,10 +116,10 @@ onMounted(async () => {
       facilities: facilityMap.filter(f => r[f.key]).map(f => f.name),
     }));
     const cfg = configRes.data || {};
-    hotel.address = cfg.address || '';
-    hotel.phone = cfg.phone || '';
-    hotel.latitude = parseFloat(cfg.latitude) || 0;
-    hotel.longitude = parseFloat(cfg.longitude) || 0;
+    hotel.address = cfg.hotel_address || '';
+    hotel.phone = cfg.hotel_phone || '';
+    hotel.latitude = parseFloat(cfg.hotel_latitude) || 0;
+    hotel.longitude = parseFloat(cfg.hotel_longitude) || 0;
   } catch { /* ignore */ }
   finally { loading.value = false; }
 });
