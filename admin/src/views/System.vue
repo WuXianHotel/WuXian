@@ -36,6 +36,27 @@
             <el-col :span="24">
               <el-form-item label="酒店地址"><el-input v-model="settings.hotel_address" /></el-form-item>
             </el-col>
+            <el-col :span="12">
+              <el-form-item label="经度">
+                <el-input-number v-model="settings.hotel_latitude" :precision="6" :step="0.001" style="width:100%" controls-position="right" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="纬度">
+                <el-input-number v-model="settings.hotel_longitude" :precision="6" :step="0.001" style="width:100%" controls-position="right" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="24">
+              <el-form-item label="地图选点">
+                <MapPicker
+                  :latitude="Number(settings.hotel_latitude) || 24.3282"
+                  :longitude="Number(settings.hotel_longitude) || 109.2622"
+                  @update:latitude="(v) => settings.hotel_latitude = String(v)"
+                  @update:longitude="(v) => settings.hotel_longitude = String(v)"
+                  @update:address="(v) => { if (!settings.hotel_address) settings.hotel_address = v }"
+                />
+              </el-form-item>
+            </el-col>
             <el-col :span="24">
               <el-form-item label="取消政策"><el-input v-model="settings.cancel_policy" type="textarea" :rows="3" /></el-form-item>
             </el-col>
@@ -168,6 +189,7 @@ import { ref, computed, onMounted, inject, markRaw } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { OfficeBuilding, User, EditPen, Setting, QuestionFilled } from '@element-plus/icons-vue'
 import { getSettings, saveSettings, getAdmins, createAdmin, updateAdmin, setAdminStatus, deleteAdmin, getLogs } from '@/api/system'
+import MapPicker from '@/components/MapPicker.vue'
 
 const toast = inject('toast')
 const activeTab = ref('hotel')
@@ -209,8 +231,14 @@ onMounted(async () => {
 
 async function saveHotelSettings() {
   saving.value = true
-  try { await saveSettings(settings.value); toast?.success('设置已保存') }
-  catch (e) { toast?.error(e?.msg || '保存失败') }
+  try {
+    const payload = { ...settings.value };
+    // 经纬度统一转为字符串，避免 el-input-number 输出 number 导致类型不一致
+    if (payload.hotel_latitude !== undefined) payload.hotel_latitude = String(payload.hotel_latitude);
+    if (payload.hotel_longitude !== undefined) payload.hotel_longitude = String(payload.hotel_longitude);
+    await saveSettings(payload);
+    toast?.success('设置已保存');
+  } catch (e) { toast?.error(e?.msg || '保存失败') }
   saving.value = false
 }
 
