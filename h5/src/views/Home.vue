@@ -169,48 +169,23 @@ function onBannerClick(b) {
   }
 }
 
-// 检测是否在小程序 WebView 中（JSSDK 加载后 wx.miniProgram 才可用）
-function isInMiniProgram() {
-  // JSSDK 方式
-  if (typeof wx !== 'undefined' && wx.miniProgram) return true;
-  // UA 兜底
-  return /miniProgram/i.test(navigator.userAgent);
-}
-
-// 导航：小程序走原生 wx.openLocation，浏览器用 window.open 避免替换页面
+// 导航：window.open 在新视图打开，不替换当前页面
 function openNav() {
   const { latitude, longitude, address } = hotel;
   const lat = latitude || 24.315;
   const lng = longitude || 109.413;
   const name = '柳州无限电竞酒店';
-
-  // 小程序环境：通过 postMessage 调用原生地图
-  if (isInMiniProgram()) {
-    wx.miniProgram.postMessage({
-      data: { action: 'openLocation', latitude: lat, longitude: lng, name, address },
-    });
-    // 手动刷新后页面状态变化会触发消息投递
-    return;
-  }
-
-  // 浏览器环境：window.open 在新窗口打开，不会替换当前页面
   const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title:${encodeURIComponent(name)};addr:${encodeURIComponent(address || '')}&referer=wxhotel`;
+
+  // 优先新窗口打开，失败则替换当前页
   const w = window.open(url, '_blank');
   if (!w) window.location.href = url;
 }
 
-// 电话：小程序走原生拨号，浏览器走 tel: 协议
+// 电话：小程序/浏览器均可用 tel: 协议，不会跳出 WebView
 function callPhone(e) {
   e?.preventDefault?.();
   if (!hotel.phone) return;
-
-  if (isInMiniProgram()) {
-    wx.miniProgram.postMessage({
-      data: { action: 'makePhoneCall', phoneNumber: hotel.phone },
-    });
-    return;
-  }
-
   window.location.href = `tel:${hotel.phone}`;
 }
 </script>
