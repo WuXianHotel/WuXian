@@ -100,12 +100,53 @@
         </div>
       </div>
     </div>
+
+    <!-- 酒店特色 -->
+    <div class="section">
+      <div class="section__head"><h3 class="section__title">酒店特色</h3></div>
+      <div class="features">
+        <div v-for="f in featureList" :key="f.label" class="features__item">
+          <component :is="f.icon" :size="28" :stroke-width="1.5" class="features__icon" />
+          <span class="features__label">{{ f.label }}</span>
+          <span class="features__desc">{{ f.desc }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 住客好评 -->
+    <div class="section" v-if="reviews.length">
+      <div class="section__head"><h3 class="section__title">住客好评</h3></div>
+      <div class="reviews">
+        <div v-for="r in reviews" :key="r.id" class="reviews__item">
+          <div class="reviews__header">
+            <span class="reviews__user">{{ r.nickname }}</span>
+            <span class="reviews__stars">{{ '★'.repeat(r.score) }}{{ '☆'.repeat(5 - r.score) }}</span>
+          </div>
+          <p class="reviews__text">"{{ r.content }}"</p>
+          <span class="reviews__date">{{ fmtReviewDate(r.created_at) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 周边推荐 -->
+    <div class="section">
+      <div class="section__head"><h3 class="section__title">周边推荐</h3></div>
+      <div class="nearby">
+        <div v-for="n in nearbyList" :key="n.name" class="nearby__item">
+          <span class="nearby__icon">{{ n.emoji }}</span>
+          <div class="nearby__info">
+            <span class="nearby__name">{{ n.name }}</span>
+            <span class="nearby__dist">{{ n.dist }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
-import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone } from 'lucide-vue-next';
+import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, Wifi, Monitor, Car, Shield, Sparkles, Clock } from 'lucide-vue-next';
 import { useAuditMode } from '../utils/audit.js';
 
 const { isAudit } = useAuditMode();
@@ -127,13 +168,41 @@ const facilityMap = [
   { key: 'wifi', name: '免费WiFi' }, { key: 'bathtub', name: '独立浴缸' },
 ];
 
+// 酒店特色
+const featureList = [
+  { icon: Monitor, label: '高端电竞设备', desc: 'RTX 4060 + 165Hz 高刷屏' },
+  { icon: Wifi, label: '千兆光钎网络', desc: '游戏延迟 < 20ms' },
+  { icon: Sparkles, label: '舒适电竞房', desc: '人体工学椅 + 独立卫浴' },
+  { icon: Car, label: '免费停车', desc: '酒店专属停车场' },
+  { icon: Shield, label: '24h 安保', desc: '全天候监控保障安全' },
+  { icon: Clock, label: '灵活退房', desc: '会员延迟退房至 14:00' },
+];
+
+// 周边推荐
+const nearbyList = [
+  { name: '窑埠古镇', dist: '步行 2 分钟', emoji: '🏛️' },
+  { name: '柳州工业博物馆', dist: '步行 5 分钟', emoji: '🏭' },
+  { name: '柳江夜景', dist: '步行 8 分钟', emoji: '🌃' },
+  { name: '五星步行街', dist: '驾车 10 分钟', emoji: '🛍️' },
+];
+
+// 最新评价
+const reviews = ref([]);
+
+function fmtReviewDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return `${dt.getMonth() + 1}月${dt.getDate()}日`;
+}
+
 onMounted(async () => {
   try {
     const { default: api } = await import('../utils/api.js');
-    const [roomRes, configRes, bannerRes] = await Promise.all([
+    const [roomRes, configRes, bannerRes, reviewRes] = await Promise.all([
       api.getRooms().catch(() => ({ data: { list: [] } })),
       api.getHotelConfig().catch(() => ({ data: {} })),
       api.getBanners().catch(() => ({ data: [] })),
+      api.getLatestReviews().catch(() => ({ data: [] })),
     ]);
     rooms.value = ((roomRes.data?.list || [])).slice(0, 4).map(r => ({
       ...r,
@@ -145,6 +214,7 @@ onMounted(async () => {
     hotel.latitude = parseFloat(cfg.hotel_latitude) || 0;
     hotel.longitude = parseFloat(cfg.hotel_longitude) || 0;
     banners.value = bannerRes.data || [];
+    reviews.value = reviewRes.data || [];
   } catch { /* ignore */ }
   finally { loading.value = false; }
 });
@@ -268,4 +338,39 @@ function callPhone(e) {
 .room-card__price sub { font-size: 11px; font-weight: 400; color: var(--text-muted); }
 .room-card__btn { font-size: 12px; color: var(--neon-purple); font-weight: 600; display: flex; align-items: center; gap: 1px; transition: color var(--dur-fast); }
 .room-card:hover .room-card__btn { color: var(--neon-cyan); }
+
+/* 酒店特色 */
+.features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 14px; }
+.features__item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 8px; background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); text-align: center;
+}
+.features__icon { color: var(--neon-cyan); }
+.features__label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.features__desc { font-size: 11px; color: var(--text-muted); }
+
+/* 住客好评 */
+.reviews { padding: 0 14px; display: flex; flex-direction: column; gap: 10px; }
+.reviews__item {
+  padding: 14px; background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.reviews__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.reviews__user { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.reviews__stars { font-size: 12px; color: var(--neon-gold); letter-spacing: 1px; }
+.reviews__text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+.reviews__date { font-size: 11px; color: var(--text-muted); }
+
+/* 周边推荐 */
+.nearby { padding: 0 14px; display: flex; flex-direction: column; gap: 8px; }
+.nearby__item {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.nearby__icon { font-size: 24px; flex-shrink: 0; }
+.nearby__info { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+.nearby__name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+.nearby__dist { font-size: 11px; color: var(--text-muted); }
 </style>

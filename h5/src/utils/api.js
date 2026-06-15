@@ -115,6 +115,9 @@ const api = {
 
   // ─── Banner ───
   getBanners: () => request({ url: '/banners' }),
+
+  // ─── 评价（公开） ───
+  getLatestReviews: (limit = 6) => request({ url: '/reviews/latest', data: { limit } }),
 };
 
 export default api;

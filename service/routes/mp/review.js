@@ -54,6 +54,23 @@ router.post('/',
   },
 );
 
+// ── GET /latest  首页最新评价（公开，无需登录）─────────────────────────────────
+router.get('/latest', async (req, res, next) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit || '6', 10), 20);
+    const list = await query(
+      `SELECT rv.id, rv.score, rv.content, rv.images, rv.created_at,
+              IF(rv.is_anonymous,'匿名住客',COALESCE(NULLIF(u.nickname,''),'住客')) AS nickname
+       FROM reviews rv
+       LEFT JOIN users u ON u.id = rv.user_id
+       WHERE rv.status = 1 AND rv.content IS NOT NULL AND rv.content != ''
+       ORDER BY rv.created_at DESC LIMIT ?`,
+      [limit],
+    );
+    return ok(res, list);
+  } catch (err) { next(err); }
+});
+
 // ── GET /:roomTypeId  房型评价列表 ────────────────────────────────────────────
 router.get('/:roomTypeId', async (req, res, next) => {
   try {
