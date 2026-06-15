@@ -134,11 +134,9 @@
       <div class="nearby">
         <div v-for="n in nearbyList" :key="n.name" class="nearby__item" @click="openNearby(n)">
           <span class="nearby__icon">{{ n.emoji }}</span>
-          <div class="nearby__info">
-            <span class="nearby__name">{{ n.name }}</span>
-            <span class="nearby__dist">{{ n.dist }}</span>
-            <ChevronRight :size="14" class="nearby__arrow" />
-          </div>
+          <span class="nearby__name">{{ n.name }}</span>
+          <span class="nearby__dist">{{ n.dist }}</span>
+          <ChevronRight :size="14" class="nearby__arrow" />
         </div>
       </div>
     </div>
@@ -391,8 +389,7 @@ function openNearby(n) {
 }
 .nearby__item:hover { border-color: var(--border-glow); }
 .nearby__icon { font-size: 24px; flex-shrink: 0; }
-.nearby__info { flex: 1; display: flex; justify-content: space-between; align-items: center; }
 .nearby__name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
-.nearby__dist { font-size: 11px; color: var(--text-muted); }
-.nearby__arrow { color: var(--text-muted); flex-shrink: 0; }
+.nearby__dist { font-size: 11px; color: var(--text-muted); margin-left: auto; flex-shrink: 0; }
+.nearby__arrow { color: var(--text-muted); flex-shrink: 0; margin-left: 8px; }
 </style>
