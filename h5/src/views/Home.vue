@@ -132,11 +132,12 @@
     <div class="section">
       <div class="section__head"><h3 class="section__title">周边推荐</h3></div>
       <div class="nearby">
-        <div v-for="n in nearbyList" :key="n.name" class="nearby__item">
+        <div v-for="n in nearbyList" :key="n.name" class="nearby__item" @click="openNearby(n)">
           <span class="nearby__icon">{{ n.emoji }}</span>
           <div class="nearby__info">
             <span class="nearby__name">{{ n.name }}</span>
             <span class="nearby__dist">{{ n.dist }}</span>
+            <ChevronRight :size="14" class="nearby__arrow" />
           </div>
         </div>
       </div>
@@ -180,10 +181,10 @@ const featureList = [
 
 // 周边推荐
 const nearbyList = [
-  { name: '窑埠古镇', dist: '步行 2 分钟', emoji: '🏛️' },
-  { name: '柳州工业博物馆', dist: '步行 5 分钟', emoji: '🏭' },
-  { name: '柳江夜景', dist: '步行 8 分钟', emoji: '🌃' },
-  { name: '五星步行街', dist: '驾车 10 分钟', emoji: '🛍️' },
+  { name: '窑埠古镇', dist: '步行 2 分钟', emoji: '🏛️', lat: 24.327, lng: 109.264 },
+  { name: '柳州工业博物馆', dist: '步行 5 分钟', emoji: '🏭', lat: 24.330, lng: 109.265 },
+  { name: '柳江夜景', dist: '步行 8 分钟', emoji: '🌃', lat: 24.322, lng: 109.268 },
+  { name: '五星步行街', dist: '驾车 10 分钟', emoji: '🛍️', lat: 24.317, lng: 109.410 },
 ];
 
 // 最新评价
@@ -271,6 +272,25 @@ function callPhone(e) {
   e?.preventDefault?.();
   if (!hotel.phone) return;
   window.location.href = `tel:${hotel.phone}`;
+}
+
+// 周边导航：复用酒店导航逻辑
+function openNearby(n) {
+  const isMini = typeof wx !== 'undefined' && wx.miniProgram;
+  const name = encodeURIComponent(n.name);
+  const lat = n.lat || 24.3282;
+  const lng = n.lng || 109.2622;
+
+  if (isMini) {
+    wx.miniProgram.navigateTo({
+      url: `/pages/location/location?lat=${lat}&lng=${lng}&name=${name}&addr=${name}`,
+    });
+    return;
+  }
+
+  const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title=${name}&referer=wxhotel`;
+  const w = window.open(url, '_blank');
+  if (!w) window.location.href = url;
 }
 </script>
 
@@ -367,10 +387,12 @@ function callPhone(e) {
 .nearby__item {
   display: flex; align-items: center; gap: 12px; padding: 12px;
   background: var(--bg-card); border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md); cursor: pointer; transition: border-color var(--dur-fast);
 }
+.nearby__item:hover { border-color: var(--border-glow); }
 .nearby__icon { font-size: 24px; flex-shrink: 0; }
 .nearby__info { flex: 1; display: flex; justify-content: space-between; align-items: center; }
 .nearby__name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
 .nearby__dist { font-size: 11px; color: var(--text-muted); }
+.nearby__arrow { color: var(--text-muted); flex-shrink: 0; }
 </style>
