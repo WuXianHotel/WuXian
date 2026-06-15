@@ -32,8 +32,10 @@ const tabs = [
   right: 0;
   z-index: 100;
   display: flex;
-  height: calc(52px + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  height: calc(52px + constant(safe-area-inset-bottom));
+  height: calc(52px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: rgba(12, 16, 28, .92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

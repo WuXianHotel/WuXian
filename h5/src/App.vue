@@ -31,7 +31,8 @@ watch(() => route.path, (to, from) => {
 <style>
 .app {
   min-height: 100vh;
-  padding-bottom: calc(52px + env(safe-area-inset-bottom));
+  padding-bottom: calc(52px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
   position: relative;
   z-index: 1;
 }
