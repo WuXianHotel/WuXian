@@ -4,6 +4,7 @@
       v-for="tab in tabs"
       :key="tab.path"
       :to="tab.path"
+      replace
       class="bn__item"
       active-class="bn__item--active"
     >
