@@ -145,7 +145,7 @@
     </el-tabs>
 
     <!-- Create / Edit Dialog -->
-    <el-dialog v-model="showModal" :title="editing ? '编辑房型' : '新增房型'" width="640px" destroy-on-close>
+    <el-dialog v-model="showModal" :title="editing ? '编辑房型' : '新增房型'" width="800px" destroy-on-close>
       <el-form :model="form" label-width="100px">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -176,10 +176,12 @@
                 <el-button size="small" type="primary" @click="addPcConfig" :icon="Plus">新增</el-button>
                 <span style="font-size:12px;color:#94a3b8" v-if="pcConfigList.length">共 {{ pcConfigList.length }} 台</span>
               </div>
-              <div v-for="(_, i) in pcConfigList" :key="i" style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
-                <el-tag size="small" type="info">PC{{ i + 1 }}</el-tag>
-                <el-input v-model="pcConfigList[i]" placeholder="如：i7-13700 / RTX4060 / 32G / 240Hz" style="flex:1" />
-                <el-button size="small" type="danger" :icon="Delete" circle @click="removePcConfig(i)" />
+              <div v-for="(_, i) in pcConfigList" :key="i" style="margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                  <el-tag size="small" type="info">PC{{ i + 1 }}</el-tag>
+                  <el-button size="small" type="danger" :icon="Delete" circle @click="removePcConfig(i)" />
+                </div>
+                <el-input v-model="pcConfigList[i]" placeholder="例如：i7-13700 / RTX4060 / 32G / 240Hz" />
               </div>
             </el-form-item>
           </el-col>
