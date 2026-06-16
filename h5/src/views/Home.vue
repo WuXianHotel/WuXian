@@ -235,14 +235,14 @@ function callPhone(e) {
 
 <style scoped>
 .hero {
-  position: relative; padding: 36px 20px 28px; overflow: hidden;
+  position: relative; padding: 20px 20px 18px; overflow: hidden;
   background: linear-gradient(160deg, #0a1628 0%, #131e3a 40%, #1a0a2e 100%);
 }
-.hero__glow { position: absolute; top: -40%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(0,212,255,.12), transparent 70%); pointer-events: none; }
+.hero__glow { position: absolute; top: -40%; right: -20%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0,212,255,.1), transparent 70%); pointer-events: none; }
 .hero__grid { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,212,255,.03) 1px, transparent 1px), linear-gradient(rgba(0,212,255,.03) 1px, transparent 1px); background-size: 30px 30px; pointer-events: none; }
-.hero__tag { font-family: var(--font-display); font-size: 10px; letter-spacing: 3px; color: var(--neon-cyan); margin-bottom: 8px; opacity: .8; }
-.hero__title { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 20px; letter-spacing: 1px; }
-.hero__search { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-md); padding: 13px 16px; color: var(--text-muted); font-size: 14px; cursor: pointer; transition: border-color var(--dur-normal); }
+.hero__tag { font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: 4px; opacity: .8; }
+.hero__title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 12px; letter-spacing: 1px; }
+.hero__search { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-md); padding: 10px 14px; color: var(--text-muted); font-size: 13px; cursor: pointer; transition: border-color var(--dur-normal); }
 .hero__search:hover { border-color: var(--border-glow); }
 .hero__search-icon { color: var(--text-muted); flex-shrink: 0; }
 
@@ -253,7 +253,7 @@ function callPhone(e) {
 .banner { margin: 6px 14px; border-radius: var(--radius-md); overflow: hidden; position: relative; }
 .banner__track { display: flex; transition: transform .5s cubic-bezier(.25,.1,.25,1); }
 .banner__slide { flex: 0 0 100%; cursor: pointer; }
-.banner__img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.banner__img { width: 100%; height: 130px; object-fit: cover; display: block; }
 .banner__dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
 .banner__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.4); cursor: pointer; transition: all var(--dur-fast); }
 .banner__dot--active { width: 16px; border-radius: 3px; background: var(--neon-cyan); }
