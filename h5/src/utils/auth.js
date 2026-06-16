@@ -14,7 +14,7 @@ export function getToken() {
     const url = new URL(window.location.href);
     url.searchParams.delete('token');
     window.history.replaceState({}, '', url.pathname + url.search + url.hash);
-    console.log('[auth] Token 已从 URL 提取并保存到 localStorage');
+    console.log('[auth] 从URL提取token(len=' + urlToken.length + '), 已保存到localStorage');
     return urlToken;
   }
 
@@ -29,14 +29,18 @@ export function getToken() {
       const url = new URL(window.location.href);
       url.hash = cleanHash;
       window.history.replaceState({}, '', url.toString());
-      console.log('[auth] Token 已从 hash 提取并保存到 localStorage');
+      console.log('[auth] 从hash提取token(len=' + hashToken.length + '), 已保存到localStorage');
       return hashToken;
     }
   }
 
   // 3. 从 localStorage 取
   const stored = localStorage.getItem(TOKEN_KEY);
-  if (stored) console.log('[auth] 从 localStorage 读取 token，长度:', stored.length);
+  if (stored) {
+    console.log('[auth] 从localStorage读取token, len=' + stored.length);
+  } else {
+    console.log('[auth] localStorage 中无 token!');
+  }
   return stored || '';
 }
 

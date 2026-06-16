@@ -4,14 +4,16 @@ import { getToken } from '../utils/auth.js';
 
 function requireAuth(to, from, next) {
   const token = getToken();
+  console.log('[router] requireAuth to=' + to.path + ', token=' + (token ? '有(len=' + token.length + ')' : '无'));
   if (!token) {
     // 无 token：尝试通知小程序重新登录
     if (typeof wx !== 'undefined' && wx.miniProgram) {
+      console.log('[router] 通知小程序重新登录');
       wx.miniProgram.postMessage({ data: { action: 'reAuth' } });
-      // 延迟跳转，让用户看到授权提示
       setTimeout(() => next('/auth-fail'), 500);
       return;
     }
+    console.log('[router] 跳转 auth-fail');
     next('/auth-fail');
     return;
   }
