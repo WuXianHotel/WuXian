@@ -19,6 +19,13 @@
         <div v-if="room.bed_type" class="rd__attr"><BedSingle :size="16" /><span>{{ room.bed_type }}</span></div>
         <div v-if="room.max_guests" class="rd__attr"><Users :size="16" /><span>最多{{ room.max_guests }}人</span></div>
         <div v-if="room.view_type" class="rd__attr"><Building2 :size="16" /><span>{{ room.view_type }}</span></div>
+        <div v-if="room.pcCount" class="rd__attr pc-attr"><Monitor :size="16" /><span>{{ room.pcCount }}台电脑</span></div>
+      </div>
+      <div v-if="room.pcConfigs && room.pcConfigs.length" class="rd__pc-list">
+        <div v-for="(cfg, i) in room.pcConfigs" :key="i" class="rd__pc-item">
+          <span class="rd__pc-tag">PC{{ i + 1 }}</span>
+          <span class="rd__pc-cfg">{{ cfg }}</span>
+        </div>
       </div>
     </div>
 
@@ -85,7 +92,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { BedSingle, Star, Ruler, Users, Building2, ArrowRight, Tv, Wind, Wifi, Waves, Coffee, Droplets, Shirt, Car, User } from 'lucide-vue-next';
+import { BedSingle, Star, Ruler, Users, Building2, Monitor, ArrowRight, Tv, Wind, Wifi, Waves, Coffee, Droplets, Shirt, Car, User } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import { showToast } from '../utils/toast.js';
 
@@ -152,6 +159,11 @@ function goBook(){if(!checkIn.value||!checkOut.value){showToast('请先选择日
 .rd__rating span{font-size:12px;color:var(--text-muted);margin-left:4px}
 .rd__attrs{display:flex;gap:8px;flex-wrap:wrap}
 .rd__attr{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:var(--radius-sm);background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);font-size:11px;color:var(--text-secondary)}
+.pc-attr{border-color:rgba(0,212,255,.2)}
+.rd__pc-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.rd__pc-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.1);font-size:12px}
+.rd__pc-tag{padding:1px 6px;border-radius:4px;background:var(--neon-cyan);color:#000;font-size:10px;font-weight:600}
+.rd__pc-cfg{color:var(--text-secondary)}
 .rd__section-title{font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:12px}
 .rd__date-pick{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);background:rgba(0,212,255,.04);border:1px solid var(--border-subtle);margin-bottom:14px;cursor:pointer}
 .rd__date-item{text-align:center}.rd__date-item span{display:block;font-size:10px;color:var(--text-muted)}.rd__date-item strong{font-size:14px;color:var(--text-primary)}
