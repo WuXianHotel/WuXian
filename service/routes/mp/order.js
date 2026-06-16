@@ -58,15 +58,29 @@ router.post('/',
       const [room] = await query('SELECT * FROM room_types WHERE id = ? AND status = 1 LIMIT 1', [roomTypeId]);
       if (!room) return res.status(400).json({ code: 400, msg: '房型不存在或已下架' });
 
-      // 检查库存（简化：使用 total_rooms 减去该日期段已预订数量）
-      const [{ booked }] = await query(
-        `SELECT COUNT(*) AS booked FROM orders
+      // 检查库存（基于实际房间状态 + 即将空闲判断）
+      // 1. 可用房间数：排除维修/清洁中的房间
+      const [{ totalAvailable }] = await query(
+        `SELECT COUNT(*) AS totalAvailable FROM rooms
+         WHERE room_type_id = ? AND status NOT IN (3,4)`,
+        [roomTypeId],
+      );
+      // 2. 该日期段内已被占用的房间数（待入住 + 入住中，且入住日期早于新订单退房、退房日期晚于新订单入住）
+      const [{ occupied }] = await query(
+        `SELECT COUNT(*) AS occupied FROM orders
          WHERE room_type_id = ? AND status IN (1,2)
            AND check_in_date < ? AND check_out_date > ?`,
         [roomTypeId, checkOutDate, checkInDate],
       );
-      if (room.total_rooms - booked < roomCount) {
-        return res.status(400).json({ code: 400, msg: '所选日期库存不足' });
+      // 3. 即将空闲的房间数：当天退房的订单（退房日 == 新订单入住日，当天可释放）
+      const [{ freeingToday }] = await query(
+        `SELECT COUNT(*) AS freeingToday FROM orders
+         WHERE room_type_id = ? AND status IN (1,2)
+           AND check_out_date = ?`,
+        [roomTypeId, checkInDate],
+      );
+      if (totalAvailable - occupied + freeingToday < roomCount) {
+        return res.status(400).json({ code: 400, msg: '所选日期无可用房间' });
       }
 
       // 计算房费（逐日累加价格日历）

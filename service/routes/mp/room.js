@@ -82,16 +82,20 @@ router.get('/', async (req, res, next) => {
       params.push(Number(maxPrice));
     }
 
-    // 检查日期可用性（有入住/离店日期时过滤已无库存的房型）
+    // 检查日期可用性（基于实际房间状态 + 即将空闲判断）
     if (checkIn && checkOut) {
-      conditions.push(`rt.total_rooms > (
+      conditions.push(`(
+        SELECT COUNT(*) FROM rooms r WHERE r.room_type_id = rt.id AND r.status NOT IN (3,4)
+      ) - (
         SELECT COUNT(*) FROM orders o
-        WHERE o.room_type_id = rt.id
-          AND o.status IN (1,2)
-          AND o.check_in_date  < ?
-          AND o.check_out_date > ?
-      )`);
-      params.push(checkOut, checkIn);
+        WHERE o.room_type_id = rt.id AND o.status IN (1,2)
+          AND o.check_in_date  < ? AND o.check_out_date > ?
+      ) + (
+        SELECT COUNT(*) FROM orders o
+        WHERE o.room_type_id = rt.id AND o.status IN (1,2)
+          AND o.check_out_date = ?
+      ) > 0`);
+      params.push(checkOut, checkIn, checkIn);
     }
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -107,12 +111,19 @@ router.get('/', async (req, res, next) => {
                 rt.base_price, rt.holiday_price,
                 rt.images, rt.facilities,
                 rt.rating, rt.review_count, rt.total_rooms,
-                (rt.total_rooms - COALESCE((
+                ((
+                  SELECT COUNT(*) FROM rooms r WHERE r.room_type_id = rt.id AND r.status NOT IN (3,4)
+                ) - COALESCE((
                   SELECT COUNT(*) FROM orders o
                   WHERE o.room_type_id = rt.id
                     AND o.status IN (1,2)
                     AND o.check_in_date  < CURDATE() + INTERVAL 1 DAY
                     AND o.check_out_date > CURDATE()
+                ), 0) + COALESCE((
+                  SELECT COUNT(*) FROM orders o
+                  WHERE o.room_type_id = rt.id
+                    AND o.status IN (1,2)
+                    AND o.check_out_date = CURDATE()
                 ), 0)) AS available_today
          FROM room_types rt ${where}
          ORDER BY ${orderBy}
