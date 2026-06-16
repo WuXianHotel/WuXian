@@ -1,6 +1,6 @@
 <template>
+  <NavBar title="编辑资料" />
   <div class="profile-edit">
-    <NavBar title="编辑资料" />
     <div class="profile-edit__form">
       <div class="profile-edit__field">
         <label class="profile-edit__label">昵称</label>

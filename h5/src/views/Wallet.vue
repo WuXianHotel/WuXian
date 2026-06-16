@@ -1,6 +1,6 @@
 <template>
+  <NavBar title="我的钱包" />
   <div class="wallet">
-    <NavBar title="我的钱包" />
     <div class="wallet__card">
       <p class="wallet__label">可用余额</p>
       <p class="wallet__balance"><AnimatedNumber :value="info.balance || 0" prefix="¥" :decimals="2" font-size="40px" color="var(--neon-cyan)" /></p>
