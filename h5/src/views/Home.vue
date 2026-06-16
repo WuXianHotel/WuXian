@@ -12,12 +12,6 @@
       </div>
     </div>
 
-    <!-- 公告 -->
-    <div class="notice">
-      <Megaphone :size="16" :stroke-width="1.5" />
-      <span>欢迎来到无限电竞酒店！</span>
-    </div>
-
     <!-- Banner 轮播 -->
     <div class="banner" v-if="banners.length">
       <div class="banner__track" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
