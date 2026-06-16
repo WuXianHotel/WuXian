@@ -45,7 +45,7 @@
         <div v-for="record in pointsHistory" :key="record.id" class="member__points-item">
           <div>
             <span class="member__points-desc">{{ record.description }}</span>
-            <span class="member__points-date">{{ record.created_at }}</span>
+            <span class="member__points-date">{{ fmtDate(record.created_at) }}</span>
           </div>
           <span class="member__points-val" :class="{ 'member__points-val--plus': record.amount > 0 }">{{ record.amount > 0 ? '+' : '' }}{{ record.amount }}</span>
         </div>
@@ -68,6 +68,16 @@ const pointsHistory = ref([]);
 const pointsLoading = ref(true);
 
 const privileges = ['会员专享折扣', '积分抵现', '延迟退房', '生日礼遇'];
+
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  const m = dt.getMonth() + 1;
+  const day = dt.getDate();
+  const h = String(dt.getHours()).padStart(2, '0');
+  const min = String(dt.getMinutes()).padStart(2, '0');
+  return `${m}月${day}日 ${h}:${min}`;
+}
 
 // DB 存的是倍率（1.00=原价/0.95=九五折），*10 转换为 折
 function fmtDiscount(val) {
@@ -125,10 +135,10 @@ function goTo(path) { router.push(path); }
   font-size: 14px;
 }
 .member__loading, .member__empty { text-align: center; color: #999; padding: 20px 0; font-size: 13px; }
-.member__points-list { display: flex; flex-direction: column; gap: 12px; }
-.member__points-item { display: flex; justify-content: space-between; align-items: center; }
+.member__points-list { display: flex; flex-direction: column; gap: 14px; }
+.member__points-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
 .member__points-desc { font-size: 14px; display: block; }
-.member__points-date { font-size: 11px; color: #ccc; }
+.member__points-date { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .member__points-val { font-size: 16px; font-weight: 600; color: #ef4444; }
 .member__points-val--plus { color: #10b981; }
 </style>

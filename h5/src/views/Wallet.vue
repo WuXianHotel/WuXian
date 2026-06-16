@@ -12,7 +12,7 @@
       <div v-else-if="!logs.length" class="wallet__empty">暂无交易记录</div>
       <div v-else class="wallet__list">
         <div v-for="log in logs" :key="log.id" class="wallet__item">
-          <div><span class="wallet__item-desc">{{ log.description }}</span><span class="wallet__item-date">{{ log.created_at }}</span></div>
+          <div><span class="wallet__item-desc">{{ log.description }}</span><span class="wallet__item-date">{{ fmtDate(log.created_at) }}</span></div>
           <span class="wallet__item-amount" :class="{'wallet__item-amount--plus':log.amount>0}">{{ log.amount>0?'+':'' }}¥{{ Math.abs(log.amount).toFixed(2) }}</span>
         </div>
       </div>
@@ -28,6 +28,17 @@ import AnimatedNumber from '../components/AnimatedNumber.vue';
 import api from '../utils/api.js';
 
 const info=ref({}),logs=ref([]),loading=ref(true);
+
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  const m = dt.getMonth() + 1;
+  const day = dt.getDate();
+  const h = String(dt.getHours()).padStart(2, '0');
+  const min = String(dt.getMinutes()).padStart(2, '0');
+  return `${m}月${day}日 ${h}:${min}`;
+}
+
 onMounted(async()=>{try{const r=await api.getWalletInfo();info.value=r.data||{};}catch{};try{const r=await api.getWalletLogs();logs.value=r.data?.list||r.data||[];}catch{}finally{loading.value=false;}});
 </script>
 
@@ -40,8 +51,8 @@ onMounted(async()=>{try{const r=await api.getWalletInfo();info.value=r.data||{};
 .wallet__section{margin-top:16px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:16px}
 .wallet__section-title{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:14px}
 .wallet__state,.wallet__empty{text-align:center;color:var(--text-muted);padding:20px 0;font-size:13px}
-.wallet__list{display:flex;flex-direction:column;gap:12px}
-.wallet__item{display:flex;justify-content:space-between;align-items:center;font-size:14px}
-.wallet__item-desc{display:block;color:var(--text-primary)}.wallet__item-date{display:block;font-size:11px;color:var(--text-muted);margin-top:2px}
+.wallet__list{display:flex;flex-direction:column;gap:14px}
+.wallet__item{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:4px 0}
+.wallet__item-desc{display:block;color:var(--text-primary)}.wallet__item-date{display:block;font-size:12px;color:var(--text-muted);margin-top:4px}
 .wallet__item-amount{font-size:16px;font-weight:600;color:var(--neon-pink)}.wallet__item-amount--plus{color:var(--neon-green)}
 </style>
