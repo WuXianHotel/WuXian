@@ -3,7 +3,7 @@
     <div class="profile__card">
       <div class="profile__card-glow"></div>
       <div class="profile__avatar-wrap">
-        <img v-if="user.avatar_url" :src="user.avatar_url" class="profile__avatar" />
+        <img v-if="user.avatar_url" :src="avatarUrl(user.avatar_url)" class="profile__avatar" />
         <span v-else class="profile__avatar profile__avatar--text">{{ (user.nickname||'用')[0] }}</span>
       </div>
       <h2 class="profile__name">{{ user.nickname || '用户' }}</h2>
@@ -38,6 +38,11 @@ const menuItems = [
   { path: '/profile/edit', label: '编辑资料' },
 ];
 
+function avatarUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//.test(url)) return url;
+  return `https://wuxian-hotel.online${url}`;
+}
 onMounted(async () => { try { const r = await api.getProfile(); user.value = r.data || {}; } catch {} });
 function go(p) { router.push(p); }
 </script>
