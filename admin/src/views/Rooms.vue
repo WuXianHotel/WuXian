@@ -170,14 +170,16 @@
           <el-col :span="12">
             <el-form-item label="最多入住"><el-input-number v-model="form.maxGuests" :min="1" style="width:100%" /></el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="电脑数量"><el-input-number v-model="form.pcCount" :min="0" style="width:100%" /></el-form-item>
-          </el-col>
-          <el-col :span="24" v-if="form.pcCount > 0">
+          <el-col :span="24">
             <el-form-item label="电脑配置">
-              <div v-for="(_, i) in form.pcCount" :key="i" style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <el-button size="small" type="primary" @click="addPcConfig" :icon="Plus">新增</el-button>
+                <span style="font-size:12px;color:#94a3b8" v-if="pcConfigList.length">共 {{ pcConfigList.length }} 台</span>
+              </div>
+              <div v-for="(_, i) in pcConfigList" :key="i" style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
                 <el-tag size="small" type="info">PC{{ i + 1 }}</el-tag>
-                <el-input v-model="pcConfigList[i]" placeholder="如：i7-13700/RTX4060/32G" style="flex:1" />
+                <el-input v-model="pcConfigList[i]" placeholder="如：i7-13700 / RTX4060 / 32G / 240Hz" style="flex:1" />
+                <el-button size="small" type="danger" :icon="Delete" circle @click="removePcConfig(i)" />
               </div>
             </el-form-item>
           </el-col>
@@ -278,7 +280,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, inject } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { Plus, Picture } from '@element-plus/icons-vue'
+import { Plus, Picture, Delete } from '@element-plus/icons-vue'
 import { getRooms, createRoom, updateRoom, setStatus, deleteRoom, getRoomList, addRoom, setRoomStatus, deleteRoomItem, getAllRooms } from '@/api/room'
 import { uploadToCos } from '@/api/upload'
 
@@ -318,12 +320,8 @@ function parsePcConfigs(val) {
   catch { return []; }
 }
 
-// pcCount 变化时自动调整配置列表长度
-watch(() => form.value?.pcCount, (count) => {
-  const list = pcConfigList.value;
-  while (list.length < count) list.push('');
-  if (list.length > count) list.length = count;
-})
+function addPcConfig() { pcConfigList.value.push(''); }
+function removePcConfig(i) { pcConfigList.value.splice(i, 1); }
 
 const firstImage = (r) => {
   try { const imgs = typeof r.images === 'string' ? JSON.parse(r.images) : r.images; return imgs?.[0] || null }
@@ -387,10 +385,10 @@ async function changeRoomStatusFromAll(row, newStatus) {
 
 function openCreate() {
   editing.value = null
-  form.value = { name:'', area:null, bedType:'', floorInfo:'', view:'', maxGuests:2, pcCount:1, pcConfigs:[],
+  form.value = { name:'', area:null, bedType:'', floorInfo:'', view:'', maxGuests:2, pcConfigs:[],
                  smoke:false, breakfast:false, basePrice:null, holidayPrice:null,
                  totalRooms:null, sortOrder:0, description:'', imageList:[] }
-  pcConfigList.value = ['']
+  pcConfigList.value = []
   formErr.value = ''
   showModal.value = true
 }
@@ -405,12 +403,12 @@ function openEdit(r) {
     }
   } catch {}
   form.value = { name:r.name, area:r.area, bedType:r.bed_type, floorInfo:r.floor_info,
-    pcCount:r.pc_count||1, pcConfigs: parsePcConfigs(r.pc_configs) || parsePcConfigs(r.pc_config) || [],
+    pcConfigs: parsePcConfigs(r.pc_configs) || parsePcConfigs(r.pc_config) || [],
                  view:r.view, maxGuests:r.max_guests, smoke:!!r.smoke, breakfast:!!r.breakfast,
                  basePrice:r.base_price, holidayPrice:r.holiday_price, totalRooms:r.total_rooms,
                  sortOrder:r.sort_order, description:r.description, imageList: existingImages }
   const configs = parsePcConfigs(r.pc_configs) || parsePcConfigs(r.pc_config) || []
-  pcConfigList.value = configs.length ? [...configs] : new Array(r.pc_count||1).fill('')
+  pcConfigList.value = configs.length ? [...configs] : []
   formErr.value = ''
   showModal.value = true
 }
@@ -443,7 +441,8 @@ async function saveRoom() {
       }
     }
 
-    const payload = { ...form.value, images: JSON.stringify(imageUrls), pcConfigs: pcConfigList.value.filter(Boolean) }
+    const configs = pcConfigList.value.filter(Boolean)
+    const payload = { ...form.value, images: JSON.stringify(imageUrls), pcCount: configs.length, pcConfigs: configs }
     delete payload.imageList
 
     if (editing.value) {
