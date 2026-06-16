@@ -19,13 +19,6 @@
         <div v-if="room.bed_type" class="rd__attr"><BedSingle :size="16" /><span>{{ room.bed_type }}</span></div>
         <div v-if="room.max_guests" class="rd__attr"><Users :size="16" /><span>最多{{ room.max_guests }}人</span></div>
         <div v-if="room.view_type" class="rd__attr"><Building2 :size="16" /><span>{{ room.view_type }}</span></div>
-        <div v-if="room.pcCount" class="rd__attr pc-attr"><Monitor :size="16" /><span>{{ room.pcCount }}台电脑</span></div>
-      </div>
-      <div v-if="room.pcConfigs && room.pcConfigs.length" class="rd__pc-list">
-        <div v-for="(cfg, i) in room.pcConfigs" :key="i" class="rd__pc-item">
-          <span class="rd__pc-tag">PC{{ i + 1 }}</span>
-          <span class="rd__pc-cfg">{{ cfg }}</span>
-        </div>
       </div>
     </div>
 
@@ -45,12 +38,12 @@
       </div>
     </div>
 
-    <div class="rd__card">
-      <h3 class="rd__section-title">房间设施</h3>
-      <div class="rd__facs">
-        <div v-for="(f,i) in facilities" :key="i" class="rd__fac">
-          <component :is="f.icon" :size="22" :stroke-width="1.5" />
-          <span>{{ f.name }}</span>
+    <div class="rd__card" v-if="room.pcConfigs && room.pcConfigs.length">
+      <h3 class="rd__section-title">电竞配置</h3>
+      <div class="rd__pc-list">
+        <div v-for="(cfg, i) in room.pcConfigs" :key="i" class="rd__pc-item">
+          <span class="rd__pc-tag">PC{{ i + 1 }}</span>
+          <span class="rd__pc-cfg">{{ cfg }}</span>
         </div>
       </div>
     </div>
@@ -92,7 +85,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { BedSingle, Star, Ruler, Users, Building2, Monitor, ArrowRight, Tv, Wind, Wifi, Waves, Coffee, Droplets, Shirt, Car, User } from 'lucide-vue-next';
+import { BedSingle, Star, Ruler, Users, Building2, ArrowRight, User } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import { showToast } from '../utils/toast.js';
 
@@ -105,14 +98,6 @@ const calendarDays = ref([]);
 const weekDays = ['日','一','二','三','四','五','六'];
 const reviews = ref([]);
 const ratingDist = ref([{star:5,pct:85},{star:4,pct:12},{star:3,pct:3},{star:2,pct:0}]);
-const facilities = ref([]);
-
-const facilityMeta = [
-  {key:'tv',name:'智能电视',icon:Tv},{key:'ac',name:'空调',icon:Wind},
-  {key:'wifi',name:'免费WiFi',icon:Wifi},{key:'bathtub',name:'独立浴缸',icon:Waves},
-  {key:'coffee',name:'咖啡机',icon:Coffee},{key:'toiletries',name:'洗漱用品',icon:Droplets},
-  {key:'washer',name:'洗衣机',icon:Shirt},{key:'parking',name:'免费停车',icon:Car},
-];
 
 const todayStr = ()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const addDays=(s,n)=>{const d=new Date(s);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
@@ -123,7 +108,7 @@ onMounted(async()=>{
   const id=route.params.id;
   const ci=todayStr(),co=addDays(ci,1);
   checkIn.value=ci;checkOut.value=co;checkInLabel.value=fmtDate(ci);checkOutLabel.value=fmtDate(co);
-  try{const{default:api}=await import('../utils/api.js');const res=await api.getRoomDetail(id);const r=res.data||{};room.value=r;facilities.value=facilityMeta.filter(f=>r[f.key]);buildCalendar();
+  try{const{default:api}=await import('../utils/api.js');const res=await api.getRoomDetail(id);const r=res.data||{};room.value=r;buildCalendar();
     // 使用后端返回的评价数据
     if(r.latestReviews?.length){
       reviews.value=r.latestReviews.map(rv=>({id:rv.id,nickname:rv.nickname||'用户',date:(rv.created_at||'').slice(0,10),content:rv.content}));
