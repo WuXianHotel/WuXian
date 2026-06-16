@@ -266,7 +266,8 @@ router.get('/', adminAuth(), async (req, res, next) => {
       query(
         `SELECT m.id, m.member_no, m.level, m.points, m.total_nights, m.total_amount, m.created_at,
                 u.id AS user_id, u.nickname, u.phone, u.avatar_url, u.status, u.wallet_balance,
-                ml.name AS level_name, ml.icon, ml.color
+                ml.name AS level_name, ml.icon, ml.color,
+                (SELECT COUNT(*) FROM orders WHERE user_id = u.id) AS order_count
          FROM members m
          JOIN users u ON u.id = m.user_id
          JOIN member_levels ml ON ml.level = m.level
