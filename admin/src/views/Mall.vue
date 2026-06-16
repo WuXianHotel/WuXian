@@ -64,7 +64,18 @@
       <el-form :model="form" label-width="100px">
         <el-form-item label="商品名称"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" /></el-form-item>
-        <el-form-item label="图片URL"><el-input v-model="form.image" placeholder="留空使用默认图标" /></el-form-item>
+        <el-form-item label="商品图片">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <img v-if="form.image && /^https?:\/\//.test(form.image)" :src="form.image" style="width:120px;height:90px;border-radius:6px;object-fit:cover" />
+            <div style="display:flex;align-items:center;gap:8px">
+              <el-upload :show-file-list="false" :before-upload="handleImageUpload" accept="image/*">
+                <el-button size="small" type="primary" plain :loading="uploading">上传图片</el-button>
+              </el-upload>
+              <span style="font-size:12px;color:#94a3b8">或粘贴链接</span>
+            </div>
+            <el-input v-model="form.image" placeholder="图片URL，上传后自动填充" />
+          </div>
+        </el-form-item>
         <el-form-item label="所需积分"><el-input-number v-model="form.pointsCost" :min="1" style="width:100%" /></el-form-item>
         <el-form-item label="库存"><el-input-number v-model="form.stock" :min="0" style="width:100%" /></el-form-item>
         <el-form-item label="状态">
@@ -86,6 +97,7 @@
 import { ref, onMounted, inject } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { getMallProducts, createMallProduct, updateMallProduct, deleteMallProduct, getMallExchanges, updateExchange } from '@/api/mall'
+import { uploadToCos } from '@/api/upload'
 
 const toast = inject('toast')
 const tab = ref('products')
@@ -97,6 +109,7 @@ const exchanges = ref([])
 const showModal = ref(false)
 const editingId = ref(null)
 const saving = ref(false)
+const uploading = ref(false)
 const form = ref({})
 
 const exStatusLabel = (s) => ({ 0: '待处理', 1: '已完成', 2: '已取消' }[s] || s)
@@ -112,6 +125,19 @@ async function loadProducts() {
   try { const res = await getMallProducts({ page: 1, pageSize: 100 }); products.value = res.data?.list || [] }
   catch { toast?.error('加载失败') }
   loading.value = false
+}
+
+async function handleImageUpload(file) {
+  uploading.value = true
+  try {
+    const url = await uploadToCos(file, 'mall-products/')
+    form.value.image = url.split('?')[0]
+    toast?.success('图片上传成功')
+  } catch (e) {
+    toast?.error('上传失败: ' + (e.message || e))
+  }
+  uploading.value = false
+  return false
 }
 
 async function loadExchanges() {
