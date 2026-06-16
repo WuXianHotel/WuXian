@@ -11,11 +11,11 @@
         </div>
         <div class="member__stats">
           <div class="member__stat">
-            <span class="member__stat-val">{{ info.points || 0 }}</span>
+            <AnimatedNumber :value="info.points || 0" class="member__stat-val" />
             <span class="member__stat-label">积分</span>
           </div>
           <div class="member__stat">
-            <span class="member__stat-val">{{ info.total_nights || 0 }}</span>
+            <AnimatedNumber :value="info.total_nights || 0" class="member__stat-val" />
             <span class="member__stat-label">间夜</span>
           </div>
           <div class="member__stat">
@@ -59,6 +59,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Crown } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
+import AnimatedNumber from '../components/AnimatedNumber.vue';
 import api from '../utils/api.js';
 
 const router = useRouter();

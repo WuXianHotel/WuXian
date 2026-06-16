@@ -3,7 +3,7 @@
     <NavBar title="我的钱包" />
     <div class="wallet__card">
       <p class="wallet__label">可用余额</p>
-      <p class="wallet__balance">¥{{ (info.balance || 0).toFixed(2) }}</p>
+      <p class="wallet__balance"><AnimatedNumber :value="info.balance || 0" prefix="¥" :decimals="2" /></p>
       <p v-if="info.frozen_balance" class="wallet__frozen">冻结 ¥{{ info.frozen_balance.toFixed(2) }}</p>
     </div>
     <div class="wallet__section">
@@ -24,6 +24,7 @@
 import { ref, onMounted } from 'vue';
 import { Clock } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
+import AnimatedNumber from '../components/AnimatedNumber.vue';
 import api from '../utils/api.js';
 
 const info=ref({}),logs=ref([]),loading=ref(true);
