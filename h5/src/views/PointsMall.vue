@@ -31,7 +31,7 @@ onMounted(async()=>{try{const r=await api.getMallProducts();products.value=r.dat
 async function exchange(p){
   const ok = await showConfirm('确认兑换', `使用 ${p.points_cost} 积分兑换「${p.name}」？`);
   if(!ok) return;
-  try{await api.exchangeProduct({productId:p.id});showToast('兑换成功!','success');}catch{}
+  try{await api.exchangeProduct({productId:p.id});showToast('兑换成功!','success');}catch{showToast('兑换失败，请重试','error')}
 }
 </script>
 

@@ -79,7 +79,7 @@ router.post('/exchange',
         // 扣积分
         await conn.execute('UPDATE members SET points = points - ? WHERE user_id = ?', [product.points_cost, req.userId]);
         // 减库存
-        await conn.execute('UPDATE points_products SET stock = stock - 1 WHERE id = ?', [productId]);
+        await conn.execute('UPDATE points_products SET stock = stock - 1 WHERE id = ? AND stock > 0', [productId]);
         // 记录积分流水
         const [[{ bal }]] = await conn.execute('SELECT points AS bal FROM members WHERE user_id = ?', [req.userId]);
         await conn.execute(
@@ -89,13 +89,16 @@ router.post('/exchange',
         // 创建兑换记录（实物：待处理）
         const [result] = await conn.execute(
           'INSERT INTO points_exchanges (user_id, product_id, points_spent, address, phone, receiver, status) VALUES (?,?,?,?,?,?,0)',
-          [req.userId, productId, product.points_cost, address, phone, receiver],
+          [req.userId, productId, product.points_cost, address || null, phone || null, receiver || null],
         );
         exchangeId = result.insertId;
       });
 
       return ok(res, { exchangeId }, '兑换成功，请等待发货');
-    } catch (err) { next(err); }
+    } catch (err) {
+      console.error('[mall] exchange error:', err.message, err.stack);
+      next(err);
+    }
   },
 );
 
