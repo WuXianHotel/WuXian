@@ -29,7 +29,7 @@ import { showConfirm } from '../utils/confirm.js';
 const products=ref([]),loading=ref(true);
 onMounted(async()=>{try{const r=await api.getMallProducts();products.value=r.data?.list||r.data||[];}catch{}finally{loading.value=false;}});
 async function exchange(p){
-  const ok = await showConfirm('确认兑换', `使用 ${p.points} 积分兑换「${p.name}」？`);
+  const ok = await showConfirm('确认兑换', `使用 ${p.points_cost} 积分兑换「${p.name}」？`);
   if(!ok) return;
   try{await api.exchangeProduct({productId:p.id});showToast('兑换成功!','success');}catch{}
 }
