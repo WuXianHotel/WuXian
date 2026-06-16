@@ -60,6 +60,7 @@ import { useRouter } from 'vue-router';
 import { Crown } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import AnimatedNumber from '../components/AnimatedNumber.vue';
+import dayjs from 'dayjs';
 import api from '../utils/api.js';
 
 const router = useRouter();
@@ -71,12 +72,7 @@ const privileges = ['会员专享折扣', '积分抵现', '延迟退房', '生�
 
 function fmtDate(d) {
   if (!d) return '';
-  const dt = new Date(d);
-  const m = dt.getMonth() + 1;
-  const day = dt.getDate();
-  const h = String(dt.getHours()).padStart(2, '0');
-  const min = String(dt.getMinutes()).padStart(2, '0');
-  return `${m}月${day}日 ${h}:${min}`;
+  return dayjs(d).format('YYYY-MM-DD HH:mm:ss');
 }
 
 // DB 存的是倍率（1.00=原价/0.95=九五折），*10 转换为 折

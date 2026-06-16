@@ -25,18 +25,14 @@ import { ref, onMounted } from 'vue';
 import { Clock } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import AnimatedNumber from '../components/AnimatedNumber.vue';
+import dayjs from 'dayjs';
 import api from '../utils/api.js';
 
 const info=ref({}),logs=ref([]),loading=ref(true);
 
 function fmtDate(d) {
   if (!d) return '';
-  const dt = new Date(d);
-  const m = dt.getMonth() + 1;
-  const day = dt.getDate();
-  const h = String(dt.getHours()).padStart(2, '0');
-  const min = String(dt.getMinutes()).padStart(2, '0');
-  return `${m}月${day}日 ${h}:${min}`;
+  return dayjs(d).format('YYYY-MM-DD HH:mm:ss');
 }
 
 onMounted(async()=>{try{const r=await api.getWalletInfo();info.value=r.data||{};}catch{};try{const r=await api.getWalletLogs();logs.value=r.data?.list||r.data||[];}catch{}finally{loading.value=false;}});
