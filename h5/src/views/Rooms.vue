@@ -6,32 +6,56 @@
     </div>
 
     <!-- 搜索 & 筛选 -->
-    <div class="rooms__filters">
-      <div class="rooms__search">
-        <Search :size="16" />
-        <input v-model="filters.keyword" @input="debounceSearch" placeholder="搜索房型名称..." class="rooms__search-input" />
+    <div class="filter-bar">
+      <!-- 搜索框 -->
+      <div class="filter-bar__search">
+        <Search :size="15" :stroke-width="2" class="filter-bar__search-icon" />
+        <input
+          v-model="filters.keyword"
+          @input="debounceSearch"
+          placeholder="搜索房型名称..."
+          class="filter-bar__input"
+        />
+        <button v-if="filters.keyword" class="filter-bar__clear" @click="clearSearch">
+          <X :size="14" :stroke-width="2" />
+        </button>
       </div>
-      <div class="rooms__filter-row">
-        <select v-model="filters.bedType" @change="loadRooms" class="rooms__select">
-          <option value="">全部床型</option>
-          <option value="大床">大床</option>
-          <option value="双床">双床</option>
-          <option value="三床">三床</option>
-          <option value="四床">四床</option>
-          <option value="单人床">单人床</option>
-          <option value="上下铺">上下铺</option>
-          <option value="榻榻米">榻榻米</option>
-        </select>
-        <select v-model="filters.sortBy" @change="loadRooms" class="rooms__select">
-          <option value="">默认排序</option>
-          <option value="price_asc">价格低→高</option>
-          <option value="price_desc">价格高→低</option>
-        </select>
+
+      <!-- 床型筛选 - 横向滚动标签栏 -->
+      <div class="filter-bar__chips" ref="chipRow" @touchstart.passive>
+        <button
+          v-for="item in bedTypeOptions"
+          :key="item.value"
+          class="chip"
+          :class="{ 'chip--active': filters.bedType === item.value }"
+          @click="selectBedType(item.value)"
+        >
+          <BedSingle v-if="item.icon" :size="14" :stroke-width="1.5" class="chip__icon" />
+          <span>{{ item.label }}</span>
+        </button>
+      </div>
+
+      <!-- 排序 & 结果计数 -->
+      <div class="filter-bar__footer">
+        <div class="sort-tabs">
+          <button
+            v-for="opt in sortOptions"
+            :key="opt.value"
+            class="sort-tab"
+            :class="{ 'sort-tab--active': filters.sortBy === opt.value }"
+            @click="selectSort(opt.value)"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+        <span class="filter-bar__result" v-if="!loading && total > 0">
+          {{ total }}个结果
+        </span>
       </div>
     </div>
 
     <div v-if="loading" class="rooms__state">
-      <div v-for="i in 3" :key="i" class="skeleton" style="height:200px;margin-bottom:10px;border-radius:14px"></div>
+      <div v-for="i in 3" :key="i" class="skeleton" style="height:200px;margin-bottom:var(--space-sm);border-radius:var(--radius-md)"></div>
     </div>
     <div v-else-if="!rooms.length" class="rooms__state">暂无可用房型</div>
 
@@ -77,17 +101,51 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { BedSingle, Ruler, Building2, Check, Gem, Search, Monitor } from 'lucide-vue-next';
+import { BedSingle, Ruler, Building2, Check, Gem, Search, Monitor, X } from 'lucide-vue-next';
 import api from '../utils/api.js';
 
 const router = useRouter();
 const rooms = ref([]);
 const loading = ref(true);
 const total = ref(0);
-const filters = ref({ keyword: '', bedType: '', sortBy: '' });
+const filters = reactive({ keyword: '', bedType: '', sortBy: '' });
 let searchTimer = 0;
+
+// 床型选项 - 移动端标签栏
+const bedTypeOptions = [
+  { value: '', label: '全部床型', icon: false },
+  { value: '大床', label: '大床', icon: true },
+  { value: '双床', label: '双床', icon: true },
+  { value: '三床', label: '三床', icon: true },
+  { value: '四床', label: '四床', icon: true },
+  { value: '单人床', label: '单人床', icon: true },
+  { value: '上下铺', label: '上下铺', icon: true },
+  { value: '榻榻米', label: '榻榻米', icon: true },
+];
+
+// 排序选项
+const sortOptions = [
+  { value: '', label: '默认' },
+  { value: 'price_asc', label: '价格↑' },
+  { value: 'price_desc', label: '价格↓' },
+];
+
+function selectBedType(value) {
+  filters.bedType = value;
+  loadRooms();
+}
+
+function selectSort(value) {
+  filters.sortBy = value;
+  loadRooms();
+}
+
+function clearSearch() {
+  filters.keyword = '';
+  loadRooms();
+}
 
 const facilityMap = [
   { key: 'tv', name: '智能电视' }, { key: 'ac', name: '空调' },
@@ -105,9 +163,9 @@ async function loadRooms() {
   loading.value = true;
   try {
     const params = {};
-    if (filters.value.keyword) params.keyword = filters.value.keyword;
-    if (filters.value.bedType) params.bedType = filters.value.bedType;
-    if (filters.value.sortBy) params.sortBy = filters.value.sortBy;
+    if (filters.keyword) params.keyword = filters.keyword;
+    if (filters.bedType) params.bedType = filters.bedType;
+    if (filters.sortBy) params.sortBy = filters.sortBy;
 
     const res = await api.getRooms(params);
     rooms.value = (res.data?.list || []).map(r => ({
@@ -132,55 +190,287 @@ function goBook(id) {
 </script>
 
 <style scoped>
-.rooms__top { padding: 20px 16px 4px; }
+/* ═══ 页面头部 ═══ */
+.rooms__top { padding: var(--space-lg) var(--space-md) var(--space-xs); }
 .rooms__title { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: 1px; }
-.rooms__count { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.rooms__count { font-size: 12px; color: var(--text-muted); margin-top: var(--space-xs); }
 .rooms__count strong { color: var(--text-secondary); }
-.rooms__state { padding: 16px; }
+.rooms__state { padding: var(--space-md); color: var(--text-muted); font-size: 14px; text-align: center; }
 
-/* Filters */
-.rooms__filters { padding: 10px 16px 0; display: flex; flex-direction: column; gap: 8px; }
-.rooms__search {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--bg-card); border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md); padding: 10px 14px; color: var(--text-muted);
+/* ═══ 筛选栏容器 ═══ */
+.filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0 var(--space-md) var(--space-sm);
+  background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep) 85%, transparent 100%);
 }
-.rooms__search-input {
-  flex: 1; border: none; outline: none; background: transparent;
-  font-size: 14px; color: var(--text-primary);
-}
-.rooms__search-input::placeholder { color: var(--text-muted); }
-.rooms__filter-row { display: flex; gap: 8px; }
-.rooms__select {
-  flex: 1; padding: 8px 10px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle); background: var(--bg-card);
-  color: var(--text-secondary); font-size: 13px; outline: none;
-}
-.rooms__select:focus { border-color: var(--border-glow); }
 
-.rooms__list { padding: 0 14px 20px; display: flex; flex-direction: column; gap: 12px; }
-.room-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; transition: all var(--dur-normal) var(--ease-out); }
+/* ═══ 搜索框 ═══ */
+.filter-bar__search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 42px;
+  padding: 0 var(--space-md);
+  margin-bottom: var(--space-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-normal);
+}
+.filter-bar__search:focus-within {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, .06);
+}
+.filter-bar__search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.filter-bar__input {
+  flex: 1;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.filter-bar__input::placeholder { color: var(--text-muted); }
+.filter-bar__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: background var(--dur-fast);
+}
+.filter-bar__clear:hover { background: rgba(255, 255, 255, .15); }
+
+/* ═══ 床型标签栏 (横向滚动) ═══ */
+.filter-bar__chips {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.filter-bar__chips::-webkit-scrollbar { display: none; }
+
+/* Chip 标签 */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.chip:active {
+  transform: scale(.95);
+}
+.chip--active {
+  background: rgba(0, 212, 255, .1);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, .12);
+}
+.chip__icon {
+  opacity: .7;
+}
+.chip--active .chip__icon {
+  opacity: 1;
+}
+
+/* ═══ 排序 & 结果 ═══ */
+.filter-bar__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sort-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 3px;
+}
+.sort-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.sort-tab--active {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 212, 255, .25);
+}
+.filter-bar__result {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ═══ 房型列表 ═══ */
+.rooms__list {
+  padding: 0 var(--space-md) calc(var(--space-lg) + 52px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* ═══ 房型卡片 ═══ */
+.room-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all var(--dur-normal) var(--ease-out);
+}
 .room-card:hover { border-color: var(--border-glow); }
-.room-card__photo { height: 180px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.room-card__photo-img { width: 100%; height: 100%; object-fit: cover; }
-.room-card__photo--ph { background: linear-gradient(135deg, rgba(0,212,255,.05), rgba(168,85,247,.05)); color: var(--neon-cyan); }
-.room-card__badge { position: absolute; top: 12px; right: 12px; font-size: 11px; padding: 3px 10px; border-radius: var(--radius-full); color: #fff; font-weight: 600; }
+
+.room-card__photo {
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.room-card__photo-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.room-card__photo--ph {
+  background: linear-gradient(135deg, rgba(0,212,255,.05), rgba(168,85,247,.05));
+  color: var(--neon-cyan);
+}
+
+/* Badge */
+.room-card__badge {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  color: #fff;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
 .room-card__badge--hot { background: var(--neon-pink); }
 .room-card__badge--suite { background: var(--neon-purple); }
-.room-card__body { padding: 14px 16px; cursor: pointer; }
-.room-card__name { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-.room-card__attrs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.room-card__attrs span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; background: rgba(255,255,255,.03); border: 1px solid var(--border-subtle); }
-.room-card__facs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-.room-card__facs span { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--neon-cyan); }
-.room-card__footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 14px; }
-.room-card__price { font-size: 22px; font-weight: 700; color: var(--neon-cyan); }
-.room-card__price sub { font-size: 12px; font-weight: 400; color: var(--text-muted); }
-.room-card__member { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: var(--neon-gold); margin-top: 4px; }
-.room-card__actions { display: flex; gap: 8px; }
-.btn { padding: 8px 16px; border-radius: var(--radius-full); font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
-.btn--outline { border: 1px solid var(--text-muted); color: var(--text-secondary); background: transparent; }
+
+.room-card__body { padding: var(--space-md); cursor: pointer; }
+.room-card__name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+/* 属性标签 */
+.room-card__attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+.room-card__attrs span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--border-subtle);
+}
+
+/* 设施标签 */
+.room-card__facs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+.room-card__facs span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--neon-cyan);
+}
+
+/* Footer */
+.room-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-md);
+}
+.room-card__price {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--neon-cyan);
+}
+.room-card__price sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.room-card__member {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--neon-gold);
+  margin-top: 4px;
+}
+.room-card__actions { display: flex; gap: var(--space-sm); }
+
+/* 按钮 */
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--dur-normal) var(--ease-out);
+}
+.btn--outline {
+  border: 1px solid var(--text-muted);
+  color: var(--text-secondary);
+  background: transparent;
+}
 .btn--outline:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
-.btn--neon { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; }
+.btn--neon {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  color: #fff;
+}
 .btn--neon:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow-cyan); }
 </style>
