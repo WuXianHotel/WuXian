@@ -58,13 +58,13 @@
     :visible="showNotify"
     :points-earned="notifyPoints"
     :level-up="notifyLevelUp"
-    @close="showNotify = false"
+    @close="onNotifyClose"
   />
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ClipboardList, Wallet, CreditCard, CircleCheck } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
 import NotifyPopup from '../components/NotifyPopup.vue';
@@ -72,6 +72,7 @@ import api from '../utils/api.js';
 import { showToast } from '../utils/toast.js';
 
 const route = useRoute();
+const router = useRouter();
 const order = ref({});
 const loading = ref(true);
 const paying = ref(false);
@@ -91,13 +92,17 @@ onMounted(async () => {
   finally { loading.value = false; }
 });
 
+function onNotifyClose() {
+  showNotify.value = false;
+  router.replace(`/order/${order.value.order_no}`);
+}
+
 async function payNow() {
   paying.value = true;
   try {
     const payRes = await api.walletPay(order.value.order_no);
     const data = payRes.data || {};
 
-    // 弹窗显示积分/升级
     notifyPoints.value = data.pointsEarned || 0;
     notifyLevelUp.value = data.levelUp || null;
 
@@ -105,6 +110,7 @@ async function payNow() {
       showNotify.value = true;
     } else {
       showToast('支付成功！', 'success');
+      router.replace(`/order/${order.value.order_no}`);
     }
 
     const res = await api.getOrderDetail(order.value.order_no);

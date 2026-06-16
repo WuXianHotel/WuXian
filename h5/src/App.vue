@@ -1,7 +1,7 @@
 <template>
   <div class="app" :class="{ 'app--audit': isAudit }">
     <router-view v-slot="{ Component, route }">
-      <transition :name="transitionName" mode="out-in">
+      <transition :name="transitionName">
         <component :is="Component" :key="route.path" />
       </transition>
     </router-view>
