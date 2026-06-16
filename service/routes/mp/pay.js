@@ -173,26 +173,29 @@ router.post('/mock-paid', mpAuth,
           'UPDATE payments SET status = 1, transaction_id = ?, pay_at = NOW() WHERE order_no = ?',
           ['MOCK_' + Date.now(), orderNo],
         );
-        const points = Math.floor(Number(order.pay_amount));
-        if (points > 0) {
-          const [[{ balance }]] = await conn.execute(
-            'SELECT points AS balance FROM members WHERE user_id = ?', [order.user_id],
-          );
-          const newBalance = balance + points;
-          await conn.execute(
-            'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + (SELECT nights FROM orders WHERE order_no = ?), total_amount = total_amount + ? WHERE user_id = ?',
-            [newBalance, points, orderNo, order.pay_amount, order.user_id],
-          );
-          await conn.execute(
-            'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
-            [order.user_id, 'earn', points, newBalance, '订单支付奖励积分(MOCK)', orderNo],
-          );
-        }
       });
-      // 检查等级升级
-      await checkLevelUpgrade(req.userId);
 
-      return ok(res, null, 'mock paid');
+      // 积分奖励（事务后处理，确保 levelCheck 可见）
+      const pointsEarned = Math.floor(Number(order.pay_amount));
+      if (pointsEarned > 0) {
+        const [[{ balance }]] = await query(
+          'SELECT points AS balance FROM members WHERE user_id = ?', [order.user_id],
+        );
+        const newBalance = balance + pointsEarned;
+        await query(
+          'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + (SELECT nights FROM orders WHERE order_no = ?), total_amount = total_amount + ? WHERE user_id = ?',
+          [newBalance, pointsEarned, orderNo, order.pay_amount, order.user_id],
+        );
+        await query(
+          'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
+          [order.user_id, 'earn', pointsEarned, newBalance, '订单支付奖励积分(MOCK)', orderNo],
+        );
+      }
+
+      // 检查等级升级
+      const levelUp = await checkLevelUpgrade(req.userId);
+
+      return ok(res, { orderNo, pointsEarned, levelUp }, 'mock paid');
     } catch (err) { next(err); }
   },
 );
@@ -244,29 +247,29 @@ router.post('/wallet',
           'INSERT INTO payments (order_no, user_id, amount, method, status, transaction_id, pay_at) VALUES (?,?,?,?,1,?,NOW()) ON DUPLICATE KEY UPDATE status=1, method=?, transaction_id=?, pay_at=NOW()',
           [orderNo, req.userId, payAmount, 'wallet', `WALLET_${Date.now()}`, 'wallet', `WALLET_${Date.now()}`],
         );
-
-        // 6. 积分奖励（每消费1元得1积分）
-        const points = Math.floor(payAmount);
-        if (points > 0) {
-          const [[{ bal }]] = await conn.execute(
-            'SELECT points AS bal FROM members WHERE user_id = ?', [req.userId],
-          );
-          const newPointsBal = bal + points;
-          await conn.execute(
-            'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + ?, total_amount = total_amount + ? WHERE user_id = ?',
-            [newPointsBal, points, order.nights, payAmount, req.userId],
-          );
-          await conn.execute(
-            'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
-            [req.userId, 'earn', points, newPointsBal, '订单支付奖励积分', orderNo],
-          );
-        }
       });
 
-      // 检查等级升级
-      await checkLevelUpgrade(req.userId);
+      // 积分奖励（事务结束后单独处理，确保积分变更对 levelCheck 可见）
+      const pointsEarned = Math.floor(payAmount);
+      if (pointsEarned > 0) {
+        const [[{ bal }]] = await query(
+          'SELECT points AS bal FROM members WHERE user_id = ?', [req.userId],
+        );
+        const newPointsBal = bal + pointsEarned;
+        await query(
+          'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + ?, total_amount = total_amount + ? WHERE user_id = ?',
+          [newPointsBal, pointsEarned, order.nights, payAmount, req.userId],
+        );
+        await query(
+          'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
+          [req.userId, 'earn', pointsEarned, newPointsBal, '订单支付奖励积分', orderNo],
+        );
+      }
 
-      return ok(res, { orderNo }, '支付成功');
+      // 检查等级升级
+      const levelUp = await checkLevelUpgrade(req.userId);
+
+      return ok(res, { orderNo, pointsEarned, levelUp }, '支付成功');
     } catch (err) {
       if (err.status === 400) return res.status(400).json({ code: 400, msg: err.message });
       next(err);
