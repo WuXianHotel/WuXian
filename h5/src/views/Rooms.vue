@@ -270,7 +270,6 @@ function goBook(id) {
   top: 0;
   z-index: 40;
   padding: 0 var(--space-md) var(--space-sm);
-  background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep) 85%, transparent 100%);
 }
 
 /* ═══ 搜索框 ═══ */

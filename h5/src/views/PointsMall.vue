@@ -1,6 +1,6 @@
 <template>
+  <NavBar title="积分商城" />
   <div class="mall">
-    <NavBar title="积分商城" />
     <div v-if="loading" class="mall__state">
       <div v-for="i in 3" :key="i" class="skeleton" style="height:180px;margin-bottom:var(--space-sm);border-radius:var(--radius-md)"></div>
     </div>
