@@ -32,14 +32,14 @@ if (ENABLE_VCONSOLE) {
   })();
 
   if (shouldEnableVConsole) {
-    console.log('[vConsole] URL:', window.location.href);
-    console.log('[vConsole] search:', window.location.search);
-    console.log('[vConsole] hash:', window.location.hash);
-    console.log('[vConsole] token in URL:', new URLSearchParams(window.location.search).get('token') || '(none)');
-    console.log('[vConsole] token in localStorage:', localStorage.getItem('hotel_h5_token') || '(none)');
     import('vconsole').then(({ default: VConsole }) => {
       new VConsole();
       console.log('[vConsole] 调试面板已启动');
+      console.log('[vConsole] URL:', window.location.href);
+      console.log('[vConsole] search:', window.location.search);
+      console.log('[vConsole] hash:', window.location.hash);
+      console.log('[vConsole] token in URL:', new URLSearchParams(window.location.search).get('token') || '(none)');
+      console.log('[vConsole] token in localStorage:', localStorage.getItem('hotel_h5_token') || '(none)');
     });
   }
 
