@@ -5,7 +5,13 @@ import { getToken } from '../utils/auth.js';
 function requireAuth(to, from, next) {
   const token = getToken();
   if (!token) {
-    // 无 token：跳转到登录提示页（实际由小程序重新授权）
+    // 无 token：尝试通知小程序重新登录
+    if (typeof wx !== 'undefined' && wx.miniProgram) {
+      wx.miniProgram.postMessage({ data: { action: 'reAuth' } });
+      // 延迟跳转，让用户看到授权提示
+      setTimeout(() => next('/auth-fail'), 500);
+      return;
+    }
     next('/auth-fail');
     return;
   }
