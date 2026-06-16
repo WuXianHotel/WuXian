@@ -7,7 +7,7 @@
     </div>
 
     <div v-if="loading" class="orders__skeleton">
-      <div v-for="i in 3" :key="i" class="skeleton" style="height:80px;margin-bottom:10px;border-radius:14px"></div>
+      <div v-for="i in 3" :key="i" class="skeleton" style="height:80px;margin-bottom:var(--space-sm);border-radius:var(--radius-md)"></div>
     </div>
     <div v-else-if="!list.length" class="orders__empty">暂无订单</div>
     <div v-else class="orders__list">
@@ -33,7 +33,14 @@ import api from '../utils/api.js';
 
 const router = useRouter();
 const loading=ref(true), activeTab=ref('all'), list=ref([]);
-const tabs=[{key:'all',label:'全部'},{key:'pending_payment',label:'待支付'},{key:'pending_checkin',label:'待入住'},{key:'completed',label:'已完成'},{key:'cancelled',label:'已取消'}];
+const tabs=[
+  { key: 'all', label: '全部' },
+  { key: 'pending_payment', label: '待支付' },
+  { key: 'pending_checkin', label: '待入住' },
+  { key: 'completed', label: '已完成' },
+  { key: 'cancelled', label: '已取消' },
+  { key: 'refunded', label: '已退款' },
+];
 const statusMap={0:'待支付',1:'待入住',2:'入住中',3:'已退房',4:'已取消',5:'退款中',6:'已退款'};
 const statusColor=s=> ({0:'var(--neon-gold)',1:'var(--neon-cyan)',2:'var(--neon-purple)',3:'var(--text-muted)',4:'var(--text-muted)',5:'var(--neon-gold)',6:'var(--text-muted)'}[s]||'var(--text-muted)');
 
@@ -63,18 +70,18 @@ function go(orderNo){ router.push(`/order/${orderNo}`); }
 </script>
 
 <style scoped>
-.orders__title { padding: 20px 16px 8px; font-size: 22px; font-weight: 800; color: var(--text-primary); }
-.orders__tabs { display: flex; gap: 8px; padding: 0 16px 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.orders__title { padding: var(--space-lg) var(--space-md) var(--space-xs); font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.orders__tabs { display: flex; gap: 6px; padding: 0 var(--space-md) var(--space-sm); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .orders__tabs::-webkit-scrollbar { display: none; }
 .orders__tab {
-  font-size: 12px; padding: 6px 14px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+  font-size: 12px; padding: 6px 12px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
   background: var(--bg-card); color: var(--text-muted); cursor: pointer; border: 1px solid var(--border-subtle);
   transition: all var(--dur-fast);
 }
 .orders__tab--active { background: rgba(0,212,255,.1); color: var(--neon-cyan); border-color: var(--border-glow); }
-.orders__skeleton { padding: 0 14px; }
+.orders__skeleton { padding: 0 var(--space-md); }
 .orders__empty { text-align: center; color: var(--text-muted); padding: 60px 0; }
-.orders__list { padding: 0 14px 20px; display: flex; flex-direction: column; gap: 10px; }
+.orders__list { padding: 0 var(--space-md) calc(var(--space-lg) + 52px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: var(--space-sm); }
 .order-card {
   display: flex; gap: 12px; padding: 12px;
   background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
