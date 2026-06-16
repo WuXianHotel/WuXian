@@ -11,11 +11,11 @@
         </div>
         <div class="member__stats">
           <div class="member__stat">
-            <AnimatedNumber :value="info.points || 0" class="member__stat-val" />
+            <AnimatedNumber :value="info.points || 0" font-size="20px" />
             <span class="member__stat-label">积分</span>
           </div>
           <div class="member__stat">
-            <AnimatedNumber :value="info.total_nights || 0" class="member__stat-val" />
+            <AnimatedNumber :value="info.total_nights || 0" font-size="20px" />
             <span class="member__stat-label">间夜</span>
           </div>
           <div class="member__stat">

@@ -5,8 +5,8 @@
       <h2 class="profile__name">{{ user.nickname || '用户' }}</h2>
       <p class="profile__member" v-if="user.member_no">{{ user.level_name||'会员' }} · <AnimatedNumber :value="user.points || 0" suffix="积分" /></p>
       <div class="profile__stats">
-        <div class="profile__stat"><strong><AnimatedNumber :value="user.total_nights || 0" /></strong><span>间夜</span></div>
-        <div class="profile__stat"><strong><AnimatedNumber :value="user.points || 0" /></strong><span>积分</span></div>
+        <div class="profile__stat"><AnimatedNumber :value="user.total_nights || 0" font-size="24px" color="var(--neon-cyan)" /><span>间夜</span></div>
+        <div class="profile__stat"><AnimatedNumber :value="user.points || 0" font-size="24px" color="var(--neon-cyan)" /><span>积分</span></div>
         <div class="profile__stat"><strong>{{ fmtDiscount(user.discount) }}</strong><span>折扣</span></div>
       </div>
     </div>

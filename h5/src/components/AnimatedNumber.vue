@@ -1,5 +1,5 @@
 <template>
-  <span class="ani-num" :class="{ 'ani-num--animating': isAnimating }">
+  <span class="ani-num" :class="{ 'ani-num--animating': isAnimating }" :style="rootStyle">
     <span v-if="prefix" class="ani-num__prefix">{{ prefix }}</span>
     <span class="ani-num__value">{{ display }}</span>
     <span v-if="suffix" class="ani-num__suffix">{{ suffix }}</span>
@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 
 const props = defineProps({
   value: { type: Number, default: 0 },
@@ -16,7 +16,14 @@ const props = defineProps({
   decimals: { type: Number, default: 0 },
   duration: { type: Number, default: 600 },
   animateOnMount: { type: Boolean, default: true },
+  fontSize: { type: String, default: '' },
+  color: { type: String, default: '' },
 });
+
+const rootStyle = computed(() => ({
+  ...(props.fontSize && { fontSize: props.fontSize }),
+  ...(props.color && { color: props.color }),
+}));
 
 const display = ref(formatValue(0));
 const isAnimating = ref(false);
