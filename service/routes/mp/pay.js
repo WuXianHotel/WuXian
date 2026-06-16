@@ -178,7 +178,7 @@ router.post('/mock-paid', mpAuth,
       // 积分奖励（事务后处理，确保 levelCheck 可见）
       const pointsEarned = Math.floor(Number(order.pay_amount));
       if (pointsEarned > 0) {
-        const [[{ balance }]] = await query(
+        const [{ balance }] = await query(
           'SELECT points AS balance FROM members WHERE user_id = ?', [order.user_id],
         );
         const newBalance = balance + pointsEarned;
@@ -252,7 +252,7 @@ router.post('/wallet',
       // 积分奖励（事务结束后单独处理，确保积分变更对 levelCheck 可见）
       const pointsEarned = Math.floor(payAmount);
       if (pointsEarned > 0) {
-        const [[{ bal }]] = await query(
+        const [{ bal }] = await query(
           'SELECT points AS bal FROM members WHERE user_id = ?', [req.userId],
         );
         const newPointsBal = bal + pointsEarned;
