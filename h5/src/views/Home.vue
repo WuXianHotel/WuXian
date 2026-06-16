@@ -2,8 +2,6 @@
   <div class="home">
     <!-- Hero -->
     <div class="hero">
-      <div class="hero__glow"></div>
-      <div class="hero__grid"></div>
       <p class="hero__tag">WELCOME TO WUXIAN HOTEL</p>
       <h1 class="hero__title">寻找你的专属住所</h1>
       <div class="hero__search" v-if="!isAudit" @click="$router.push('/rooms')">
@@ -243,11 +241,8 @@ function callPhone(e) {
 
 <style scoped>
 .hero {
-  position: relative; padding: var(--space-lg) var(--space-md) var(--space-md); overflow: hidden;
-  background: linear-gradient(160deg, #0a1628 0%, #131e3a 40%, #1a0a2e 100%);
+  position: relative; padding: var(--space-lg) var(--space-md) var(--space-sm); overflow: hidden;
 }
-.hero__glow { position: absolute; top: -40%; right: -20%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0,212,255,.1), transparent 70%); pointer-events: none; }
-.hero__grid { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,212,255,.03) 1px, transparent 1px), linear-gradient(rgba(0,212,255,.03) 1px, transparent 1px); background-size: 30px 30px; pointer-events: none; }
 .hero__tag { font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: var(--space-xs); opacity: .8; }
 .hero__title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: var(--space-sm); letter-spacing: 1px; }
 .hero__search { display: flex; align-items: center; gap: var(--space-sm); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--text-muted); font-size: 13px; cursor: pointer; transition: border-color var(--dur-normal); }
