@@ -20,8 +20,15 @@ const transitionName = ref('fade-up');
 const showTabBar = computed(() => route.meta.tabIndex !== undefined);
 const { isAudit } = useAuditMode();
 
-// 根据页面层级决定动效方向
+// 根据页面层级决定动效方向（tab 页面无动画）
 watch(() => route.path, (to, from) => {
+  // 进入或离开 tab 页面时跳过动画
+  const toTab = route.meta.tabIndex !== undefined;
+  const fromTab = (from || '').match(/\//g)?.length <= 1;
+  if (toTab || fromTab) {
+    transitionName.value = '';
+    return;
+  }
   const toDepth = (to.match(/\//g) || []).length;
   const fromDepth = (from || '').match(/\//g)?.length || 0;
   transitionName.value = toDepth > fromDepth ? 'slide-left' : 'slide-right';
