@@ -21,22 +21,48 @@
         </button>
       </div>
 
-      <!-- 床型筛选 - 横向滚动标签栏 -->
-      <div class="filter-bar__chips" ref="chipRow" @touchstart.passive>
-        <button
-          v-for="item in bedTypeOptions"
-          :key="item.value"
-          class="chip"
-          :class="{ 'chip--active': filters.bedType === item.value }"
-          @click="selectBedType(item.value)"
-        >
-          <BedSingle v-if="item.icon" :size="14" :stroke-width="1.5" class="chip__icon" />
-          <span>{{ item.label }}</span>
-        </button>
-      </div>
+      <!-- 床型 & 排序 - 同一行 -->
+      <div class="filter-bar__row">
+        <!-- 床型下拉 -->
+        <div class="dropdown" :class="{ 'dropdown--open': dropdownOpen }">
+          <button class="dropdown__trigger" @click="toggleDropdown">
+            <BedSingle :size="14" :stroke-width="1.5" class="dropdown__icon" />
+            <span class="dropdown__label">{{ selectedBedTypeLabel }}</span>
+            <ChevronDown :size="14" :stroke-width="2" class="dropdown__arrow" :class="{ 'dropdown__arrow--up': dropdownOpen }" />
+          </button>
 
-      <!-- 排序 & 结果计数 -->
-      <div class="filter-bar__footer">
+          <!-- 下拉面板 -->
+          <Teleport to="body">
+            <Transition name="sheet-overlay">
+              <div v-if="dropdownOpen" class="dropdown__overlay" @click="closeDropdown"></div>
+            </Transition>
+            <Transition name="sheet-panel">
+              <div v-if="dropdownOpen" class="dropdown__panel">
+                <div class="dropdown__head">
+                  <span class="dropdown__title">选择床型</span>
+                  <button class="dropdown__close" @click="closeDropdown">
+                    <X :size="18" :stroke-width="2" />
+                  </button>
+                </div>
+                <div class="dropdown__list">
+                  <button
+                    v-for="item in bedTypeOptions"
+                    :key="item.value"
+                    class="dropdown__option"
+                    :class="{ 'dropdown__option--active': filters.bedType === item.value }"
+                    @click="selectBedType(item.value)"
+                  >
+                    <BedSingle v-if="item.icon" :size="16" :stroke-width="1.5" />
+                    <span>{{ item.label }}</span>
+                    <Check v-if="filters.bedType === item.value" :size="16" :stroke-width="2" class="dropdown__check" />
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </Teleport>
+        </div>
+
+        <!-- 排序 -->
         <div class="sort-tabs">
           <button
             v-for="opt in sortOptions"
@@ -48,9 +74,6 @@
             {{ opt.label }}
           </button>
         </div>
-        <span class="filter-bar__result" v-if="!loading && total > 0">
-          {{ total }}个结果
-        </span>
       </div>
     </div>
 
@@ -101,9 +124,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { BedSingle, Ruler, Building2, Check, Gem, Search, Monitor, X } from 'lucide-vue-next';
+import { BedSingle, Ruler, Building2, Check, Gem, Search, Monitor, X, ChevronDown } from 'lucide-vue-next';
 import api from '../utils/api.js';
 
 const router = useRouter();
@@ -113,17 +136,16 @@ const total = ref(0);
 const filters = reactive({ keyword: '', bedType: '', sortBy: '' });
 let searchTimer = 0;
 
-// 床型选项 - 移动端标签栏
-const bedTypeOptions = [
-  { value: '', label: '全部床型', icon: false },
-  { value: '大床', label: '大床', icon: true },
-  { value: '双床', label: '双床', icon: true },
-  { value: '三床', label: '三床', icon: true },
-  { value: '四床', label: '四床', icon: true },
-  { value: '单人床', label: '单人床', icon: true },
-  { value: '上下铺', label: '上下铺', icon: true },
-  { value: '榻榻米', label: '榻榻米', icon: true },
-];
+// 下拉状态
+const dropdownOpen = ref(false);
+
+// 从接口获取的床型列表
+const bedTypeOptions = ref([{ value: '', label: '全部床型', icon: true }]);
+
+const selectedBedTypeLabel = computed(() => {
+  const opt = bedTypeOptions.value.find(o => o.value === filters.bedType);
+  return opt?.label || '全部床型';
+});
 
 // 排序选项
 const sortOptions = [
@@ -132,8 +154,17 @@ const sortOptions = [
   { value: 'price_desc', label: '价格↓' },
 ];
 
+function toggleDropdown() {
+  dropdownOpen.value = !dropdownOpen.value;
+}
+
+function closeDropdown() {
+  dropdownOpen.value = false;
+}
+
 function selectBedType(value) {
   filters.bedType = value;
+  closeDropdown();
   loadRooms();
 }
 
@@ -177,7 +208,43 @@ async function loadRooms() {
   finally { loading.value = false; }
 }
 
-onMounted(() => { loadRooms(); });
+// 从接口获取所有已有床型
+async function fetchBedTypes() {
+  try {
+    const res = await api.getRooms({});
+    const list = res.data?.list || [];
+    const types = [...new Set(list.map(r => r.bed_type).filter(Boolean))];
+    // 按常见床型顺序排列
+    const order = ['大床', '双床', '单人床', '三床', '四床', '上下铺', '榻榻米'];
+    types.sort((a, b) => {
+      const ai = order.indexOf(a);
+      const bi = order.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    bedTypeOptions.value = [
+      { value: '', label: '全部床型', icon: true },
+      ...types.map(t => ({ value: t, label: t, icon: true })),
+    ];
+  } catch { /* 使用默认值 */ }
+}
+
+// ESC 关闭下拉
+function onKeydown(e) {
+  if (e.key === 'Escape') closeDropdown();
+}
+
+onMounted(() => {
+  fetchBedTypes();
+  loadRooms();
+  document.addEventListener('keydown', onKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown);
+});
 
 function goDetail(id) { router.push(`/room/${id}`); }
 function goBook(id) {
@@ -223,26 +290,19 @@ function goBook(id) {
   border-color: var(--border-glow);
   box-shadow: 0 0 0 2px rgba(0, 212, 255, .06);
 }
-.filter-bar__search-icon {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
+.filter-bar__search-icon { color: var(--text-muted); flex-shrink: 0; }
 .filter-bar__input {
   flex: 1;
   height: 100%;
-  border: 0;
-  outline: 0;
+  border: 0; outline: 0;
   background: transparent;
   font-size: 14px;
   color: var(--text-primary);
 }
 .filter-bar__input::placeholder { color: var(--text-muted); }
 .filter-bar__clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
   border-radius: 50%;
   background: rgba(255, 255, 255, .08);
   color: var(--text-muted);
@@ -251,58 +311,139 @@ function goBook(id) {
 }
 .filter-bar__clear:hover { background: rgba(255, 255, 255, .15); }
 
-/* ═══ 床型标签栏 (横向滚动) ═══ */
-.filter-bar__chips {
+/* ═══ 床型 & 排序 - 同行布局 ═══ */
+.filter-bar__row {
   display: flex;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-sm);
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
-}
-.filter-bar__chips::-webkit-scrollbar { display: none; }
-
-/* Chip 标签 */
-.chip {
-  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  padding: 8px 14px;
-  border-radius: var(--radius-full);
+  gap: var(--space-xs);
+}
+
+/* ═══ 床型下拉 ═══ */
+.dropdown {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.dropdown__trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
   color: var(--text-secondary);
   font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
   -webkit-tap-highlight-color: transparent;
 }
-.chip:active {
-  transform: scale(.95);
+.dropdown--open .dropdown__trigger {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, .08);
 }
-.chip--active {
-  background: rgba(0, 212, 255, .1);
-  border-color: var(--neon-cyan);
+.dropdown__icon {
   color: var(--neon-cyan);
-  box-shadow: 0 0 12px rgba(0, 212, 255, .12);
+  flex-shrink: 0;
 }
-.chip__icon {
-  opacity: .7;
+.dropdown__label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.chip--active .chip__icon {
-  opacity: 1;
+.dropdown__arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.dropdown__arrow--up {
+  transform: rotate(180deg);
 }
 
-/* ═══ 排序 & 结果 ═══ */
-.filter-bar__footer {
+/* 下拉面板遮罩 */
+.dropdown__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, .4);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 下拉面板 */
+.dropdown__panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 201;
+  max-height: 55vh;
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-top: 1px solid var(--border-subtle);
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.dropdown__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
+.dropdown__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.dropdown__close {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: all var(--dur-fast);
+}
+.dropdown__close:hover { background: rgba(255, 255, 255, .06); color: var(--text-primary); }
+
+.dropdown__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dropdown__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 13px var(--space-md);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.dropdown__option:hover { background: rgba(255, 255, 255, .04); }
+.dropdown__option--active {
+  background: rgba(0, 212, 255, .06);
+  color: var(--neon-cyan);
+}
+.dropdown__check {
+  margin-left: auto;
+  color: var(--neon-cyan);
+  flex-shrink: 0;
+}
+
+/* ═══ 排序标签 ═══ */
 .sort-tabs {
   display: flex;
   gap: var(--space-xs);
@@ -310,15 +451,17 @@ function goBook(id) {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   padding: 3px;
+  flex-shrink: 0;
 }
 .sort-tab {
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: var(--radius-full);
   border: 0;
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
   -webkit-tap-highlight-color: transparent;
@@ -327,11 +470,6 @@ function goBook(id) {
   background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 212, 255, .25);
-}
-.filter-bar__result {
-  font-size: 12px;
-  color: var(--text-muted);
-  flex-shrink: 0;
 }
 
 /* ═══ 房型列表 ═══ */
@@ -473,4 +611,23 @@ function goBook(id) {
   color: #fff;
 }
 .btn--neon:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow-cyan); }
+
+/* ═══ 下拉面板过渡动画 ═══ */
+.sheet-overlay-enter-active,
+.sheet-overlay-leave-active {
+  transition: opacity .25s cubic-bezier(.16, 1, .3, 1);
+}
+.sheet-overlay-enter-from,
+.sheet-overlay-leave-to {
+  opacity: 0;
+}
+
+.sheet-panel-enter-active,
+.sheet-panel-leave-active {
+  transition: transform .25s cubic-bezier(.16, 1, .3, 1);
+}
+.sheet-panel-enter-from,
+.sheet-panel-leave-to {
+  transform: translateY(100%);
+}
 </style>
