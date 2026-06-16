@@ -2,10 +2,6 @@
   <div class="profile">
     <div class="profile__card">
       <div class="profile__card-glow"></div>
-      <div class="profile__avatar-wrap">
-        <img v-if="user.avatar_url" :src="avatarUrl(user.avatar_url)" class="profile__avatar" />
-        <span v-else class="profile__avatar profile__avatar--text">{{ (user.nickname||'用')[0] }}</span>
-      </div>
       <h2 class="profile__name">{{ user.nickname || '用户' }}</h2>
       <p class="profile__member" v-if="user.member_no">{{ user.level_name||'会员' }} · {{ user.points||0 }}积分</p>
       <div class="profile__stats">
@@ -38,11 +34,6 @@ const menuItems = [
   { path: '/profile/edit', label: '编辑资料' },
 ];
 
-function avatarUrl(url) {
-  if (!url) return '';
-  if (/^https?:\/\//.test(url)) return url;
-  return `https://wuxian-hotel.online${url}`;
-}
 onMounted(async () => { try { const r = await api.getProfile(); user.value = r.data || {}; } catch {} });
 function go(p) { router.push(p); }
 </script>
@@ -61,9 +52,6 @@ function go(p) { router.push(p); }
   background: radial-gradient(circle at 50% 50%, rgba(0,212,255,.06), transparent 60%);
   pointer-events: none;
 }
-.profile__avatar-wrap { margin-bottom: 12px; position: relative; z-index: 1; }
-.profile__avatar { width: 68px; height: 68px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(0,212,255,.25); }
-.profile__avatar--text { display: inline-flex; align-items: center; justify-content: center; background: rgba(0,212,255,.12); font-size: 28px; color: var(--neon-cyan); }
 .profile__name { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; position: relative; z-index: 1; }
 .profile__member { font-size: 13px; color: var(--neon-cyan); margin-bottom: 18px; position: relative; z-index: 1; opacity: .8; }
 .profile__stats { display: flex; justify-content: center; gap: 28px; position: relative; z-index: 1; }
