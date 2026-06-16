@@ -8,40 +8,24 @@ import { initAuditMode } from './utils/audit.js';
 
 initAuditMode();
 
+// 在 getToken() 消费前保存 URL 状态（方便排查 token 丢失问题）
+window.__H5_ENTRY_URL = window.location.href;
+window.__H5_ENTRY_SEARCH = window.location.search;
+window.__H5_ENTRY_HASH = window.location.hash;
+
 // vConsole 调试面板开关（需要时改为 true）
 const ENABLE_VCONSOLE = true;
 
 if (ENABLE_VCONSOLE) {
-  // 启用方式（任一即可）：
-  //   1. URL 带 ?vconsole=1（浏览器直接访问时）
-  //   2. localStorage 设置 vconsole_enabled=1（小程序 WebView 中首次需通过方式1激活）
-  //   3. 页面底部双击 5 次自动激活
-  // 停用：URL 带 ?vconsole=0 或在 vConsole 面板中点击 Hide
-  const shouldEnableVConsole = (() => {
-    const s = window.location.search;
-    const h = window.location.hash;
-    if (s.includes('vconsole=1') || h.includes('vconsole=1')) {
-      localStorage.setItem('vconsole_enabled', '1');
-      return true;
-    }
-    if (s.includes('vconsole=0') || h.includes('vconsole=0')) {
-      localStorage.removeItem('vconsole_enabled');
-      return false;
-    }
-    return localStorage.getItem('vconsole_enabled') === '1';
-  })();
-
-  if (shouldEnableVConsole) {
-    import('vconsole').then(({ default: VConsole }) => {
-      new VConsole();
-      console.log('[vConsole] 调试面板已启动');
-      console.log('[vConsole] URL:', window.location.href);
-      console.log('[vConsole] search:', window.location.search);
-      console.log('[vConsole] hash:', window.location.hash);
-      console.log('[vConsole] token in URL:', new URLSearchParams(window.location.search).get('token') || '(none)');
-      console.log('[vConsole] token in localStorage:', localStorage.getItem('hotel_h5_token') || '(none)');
-    });
-  }
+  import('vconsole').then(({ default: VConsole }) => {
+    new VConsole();
+    console.log('[vConsole] 入口URL(原始):', window.__H5_ENTRY_URL);
+    console.log('[vConsole] 入口search(原始):', window.__H5_ENTRY_SEARCH);
+    console.log('[vConsole] 入口hash(原始):', window.__H5_ENTRY_HASH);
+    console.log('[vConsole] 当前URL:', window.location.href);
+    console.log('[vConsole] 当前search:', window.location.search);
+    console.log('[vConsole] token in localStorage:', localStorage.getItem('hotel_h5_token') || '(none)');
+  });
 
   // 双击5次任意位置也可激活 vConsole（兜底方案）
   let tapCount = 0;
@@ -52,7 +36,6 @@ if (ENABLE_VCONSOLE) {
     tapTimer = setTimeout(() => { tapCount = 0; }, 800);
     if (tapCount >= 5) {
       tapCount = 0;
-      localStorage.setItem('vconsole_enabled', '1');
       location.reload();
     }
   });
