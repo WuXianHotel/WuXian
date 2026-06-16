@@ -8,6 +8,7 @@
         <img :src="p.image||'/placeholder.jpg'" :alt="p.name" class="mall__img" />
         <div class="mall__body">
           <h3>{{ p.name }}</h3>
+          <p v-if="p.description" class="mall__desc">{{ p.description }}</p>
           <div class="mall__footer">
             <span class="mall__points"><Zap :size="12" /> {{ p.points_cost }}积分</span>
             <button @click="exchange(p)">兑换</button>
@@ -73,18 +74,12 @@ async function exchange(p) {
   const ok = await showConfirm('确认兑换', `使用 ${p.points_cost} 积分兑换「${p.name}」？`);
   if (!ok) return;
 
-  // 实物商品(type=1)需要填写地址
-  if (p.type === 1) {
-    exchProduct.value = p;
-    addrForm.receiver = '';
-    addrForm.phone = '';
-    addrForm.address = '';
-    showAddress.value = true;
-    return;
-  }
-
-  // 虚拟商品直接兑换
-  await doExchange(p.id);
+  // 统一弹出收货地址表单
+  exchProduct.value = p;
+  addrForm.receiver = '';
+  addrForm.phone = '';
+  addrForm.address = '';
+  showAddress.value = true;
 }
 
 async function confirmExchange() {
@@ -120,7 +115,8 @@ async function doExchange(productId, receiver, phone, address) {
 .mall__card:hover { border-color: var(--border-glow); }
 .mall__img { width: 100%; height: 130px; object-fit: cover; background: rgba(255,255,255,.02); }
 .mall__body { padding: 10px 12px 12px; }
-.mall__body h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.mall__body h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.mall__desc { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mall__footer { display: flex; justify-content: space-between; align-items: center; }
 .mall__points { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 600; color: var(--neon-gold); }
 .mall__footer button {
