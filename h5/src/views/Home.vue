@@ -168,15 +168,18 @@ onMounted(async () => {
     banners.value = bannerRes.data || [];
     reviews.value = reviewRes.data || [];
 
-    // 检查 Token 是否已被管理员撤销
-    if (cfg.mp_token_revoked_at) {
+    // 检查 Token 是否已被管理员撤销（仅对已有 token 且已记录过检查时间的用户生效）
+    const curToken = localStorage.getItem('hotel_h5_token');
+    if (cfg.mp_token_revoked_at && curToken) {
       const revokedAt = new Date(cfg.mp_token_revoked_at).getTime();
       const storedAt = parseInt(localStorage.getItem('mp_token_checked_at') || '0', 10);
-      if (revokedAt > storedAt) {
+      // storedAt=0 表示首次检查，不撤销（允许新用户正常登录）
+      if (storedAt > 0 && revokedAt > storedAt) {
+        console.log('[revoke] 检测到管理员撤销token，清除登录状态');
         localStorage.removeItem('hotel_h5_token');
         localStorage.removeItem('hotel_h5_user');
-        localStorage.setItem('mp_token_checked_at', String(revokedAt));
       }
+      localStorage.setItem('mp_token_checked_at', String(revokedAt));
     }
   } catch { /* ignore */ }
   finally { loading.value = false; }
