@@ -64,7 +64,7 @@
       </div>
 
       <div v-if="loading" class="home__skeleton">
-        <div v-for="i in 3" :key="i" class="skeleton" style="height:100px;margin-bottom:10px;border-radius:14px"></div>
+        <div v-for="i in 3" :key="i" class="skeleton" style="height:100px;margin-bottom:var(--space-sm);border-radius:var(--radius-md)"></div>
       </div>
 
       <div v-else class="room-list">
@@ -243,52 +243,52 @@ function callPhone(e) {
 
 <style scoped>
 .hero {
-  position: relative; padding: 20px 20px 18px; overflow: hidden;
+  position: relative; padding: var(--space-lg) var(--space-md) var(--space-md); overflow: hidden;
   background: linear-gradient(160deg, #0a1628 0%, #131e3a 40%, #1a0a2e 100%);
 }
 .hero__glow { position: absolute; top: -40%; right: -20%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0,212,255,.1), transparent 70%); pointer-events: none; }
 .hero__grid { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,212,255,.03) 1px, transparent 1px), linear-gradient(rgba(0,212,255,.03) 1px, transparent 1px); background-size: 30px 30px; pointer-events: none; }
-.hero__tag { font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: 4px; opacity: .8; }
-.hero__title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 12px; letter-spacing: 1px; }
-.hero__search { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-md); padding: 10px 14px; color: var(--text-muted); font-size: 13px; cursor: pointer; transition: border-color var(--dur-normal); }
+.hero__tag { font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: var(--space-xs); opacity: .8; }
+.hero__title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: var(--space-sm); letter-spacing: 1px; }
+.hero__search { display: flex; align-items: center; gap: var(--space-sm); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--text-muted); font-size: 13px; cursor: pointer; transition: border-color var(--dur-normal); }
 .hero__search:hover { border-color: var(--border-glow); }
 .hero__search-icon { color: var(--text-muted); flex-shrink: 0; }
 
-.notice { display: flex; align-items: center; gap: 10px; margin: 14px; padding: 12px 14px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.15); border-radius: var(--radius-md); font-size: 12px; color: var(--neon-gold); }
+.notice { display: flex; align-items: center; gap: var(--space-sm); margin: var(--space-md); padding: var(--space-sm) var(--space-md); background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.15); border-radius: var(--radius-md); font-size: 12px; color: var(--neon-gold); }
 .notice :deep(svg) { flex-shrink: 0; }
 
 /* Banner */
-.banner { margin: 6px 14px; border-radius: var(--radius-md); overflow: hidden; position: relative; }
+.banner { margin: var(--space-sm) var(--space-md); border-radius: var(--radius-md); overflow: hidden; position: relative; }
 .banner__track { display: flex; transition: transform .5s cubic-bezier(.25,.1,.25,1); }
 .banner__slide { flex: 0 0 100%; cursor: pointer; }
 .banner__img { width: 100%; height: 130px; object-fit: cover; display: block; }
-.banner__dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+.banner__dots { position: absolute; bottom: var(--space-sm); left: 50%; transform: translateX(-50%); display: flex; gap: var(--space-xs); }
 .banner__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.4); cursor: pointer; transition: all var(--dur-fast); }
 .banner__dot--active { width: 16px; border-radius: 3px; background: var(--neon-cyan); }
 
-.contact { margin: 0 14px 6px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
-.contact__item { display: flex; align-items: center; gap: 10px; padding: 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-fast); text-decoration: none; }
+.contact { margin: 0 var(--space-md) var(--space-sm); background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
+.contact__item { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-fast); text-decoration: none; }
 .contact__item:hover { background: rgba(0,212,255,.04); }
 .contact__item :deep(svg:first-child) { color: var(--neon-cyan); flex-shrink: 0; }
 .contact__arrow { color: var(--text-muted); margin-left: auto; flex-shrink: 0; }
-.contact__divider { height: 1px; background: var(--border-subtle); margin: 0 14px; }
+.contact__divider { height: 1px; background: var(--border-subtle); margin: 0 var(--space-md); }
 
-.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 14px; margin-bottom: 8px; }
-.quick__item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
+.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-sm); padding: 0 var(--space-md); margin-bottom: var(--space-sm); }
+.quick__item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-sm); aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
 .quick__item:hover { border-color: var(--border-glow); transform: translateY(-2px); }
 .quick__icon { color: var(--neon-cyan); }
 .quick__label { font-size: 11px; color: var(--text-secondary); }
 
-.section { padding: 6px 14px 20px; }
-.section__head { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+.section { padding: var(--space-sm) var(--space-md) var(--space-lg); }
+.section__head { display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) 0; }
 .section__title { font-size: 17px; font-weight: 700; color: var(--text-primary); }
 .section__more { font-size: 12px; color: var(--neon-cyan); cursor: pointer; display: flex; align-items: center; gap: 2px; }
 .section__more-icon { transition: transform var(--dur-fast); }
 .section__more:hover .section__more-icon { transform: translateX(2px); }
 
-.home__skeleton { padding-top: 8px; }
+.home__skeleton { padding-top: var(--space-sm); }
 
-.room-list { display: flex; flex-direction: column; gap: 10px; }
+.room-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 .room-card { display: flex; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; transition: all var(--dur-normal) var(--ease-out); }
 .room-card--static { cursor: default; }
 .room-card--static:hover { border-color: var(--border-subtle); transform: none; }
@@ -297,8 +297,8 @@ function callPhone(e) {
 .room-card__img { width: 100%; height: 100%; min-height: 100px; object-fit: cover; }
 .room-card__img--ph { background: linear-gradient(135deg, rgba(0,212,255,.1), rgba(168,85,247,.1)); display: flex; align-items: center; justify-content: center; color: var(--neon-cyan); }
 .room-card__body { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-.room-card__name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-.room-card__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.room-card__name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-xs); }
+.room-card__tags { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-bottom: var(--space-xs); }
 .room-card__tags span { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: rgba(0,212,255,.08); color: var(--neon-cyan); }
 .room-card__footer { display: flex; justify-content: space-between; align-items: center; }
 .room-card__price { font-size: 18px; font-weight: 700; color: var(--neon-cyan); }
@@ -307,14 +307,14 @@ function callPhone(e) {
 .room-card:hover .room-card__btn { color: var(--neon-cyan); }
 
 /* 住客好评 */
-.reviews { padding: 0 14px; display: flex; flex-direction: column; gap: 10px; }
+.reviews { display: flex; flex-direction: column; gap: var(--space-sm); }
 .reviews__item {
-  padding: 14px; background: var(--bg-card); border: 1px solid var(--border-subtle);
+  padding: var(--space-md); background: var(--bg-card); border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
 }
-.reviews__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.reviews__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xs); }
 .reviews__user { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 .reviews__stars { font-size: 12px; color: var(--neon-gold); letter-spacing: 1px; }
-.reviews__text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px; }
+.reviews__text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-xs); }
 .reviews__date { font-size: 11px; color: var(--text-muted); }
 </style>
