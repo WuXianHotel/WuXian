@@ -10,7 +10,7 @@
         <div class="ml__info">
           <h3 class="ml__name">{{ level.name }}</h3>
           <p class="ml__desc">消费 {{ level.min_nights || 0 }} 间夜后升级</p>
-          <p class="ml__discount">折扣：{{ level.discount || 100 }}折</p>
+          <p class="ml__discount">折扣：{{ fmtDiscount(level.discount) }}</p>
         </div>
         <span v-if="level.is_current" class="ml__current-badge">当前</span>
       </div>
@@ -26,6 +26,12 @@ import api from '../utils/api.js';
 
 const levels = ref([]);
 const loading = ref(true);
+
+// DB 存的是倍率（1.00=原价/0.95=九五折），*10 转换为 折
+function fmtDiscount(val) {
+  const d = (Number(val) || 1) * 10;
+  return d % 1 === 0 ? Math.round(d) + '折' : d.toFixed(1) + '折';
+}
 
 onMounted(async () => {
   try {

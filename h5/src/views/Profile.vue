@@ -7,7 +7,7 @@
       <div class="profile__stats">
         <div class="profile__stat"><strong>{{ user.total_nights||0 }}</strong><span>间夜</span></div>
         <div class="profile__stat"><strong>{{ user.points||0 }}</strong><span>积分</span></div>
-        <div class="profile__stat"><strong>{{ user.discount||100 }}折</strong><span>折扣</span></div>
+        <div class="profile__stat"><strong>{{ fmtDiscount(user.discount) }}</strong><span>折扣</span></div>
       </div>
     </div>
 
@@ -33,6 +33,12 @@ const menuItems = [
   { path: '/mall', label: '积分商城' },
   { path: '/profile/edit', label: '编辑资料' },
 ];
+
+// DB 存的是倍率（1.00=原价/0.95=九五折），*10 转换为 折
+function fmtDiscount(val) {
+  const d = (Number(val) || 1) * 10;
+  return d % 1 === 0 ? Math.round(d) + '折' : d.toFixed(1) + '折';
+}
 
 onMounted(async () => { try { const r = await api.getProfile(); user.value = r.data || {}; } catch {} });
 function go(p) { router.push(p); }

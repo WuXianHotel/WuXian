@@ -19,7 +19,7 @@
             <span class="member__stat-label">间夜</span>
           </div>
           <div class="member__stat">
-            <span class="member__stat-val">{{ info.discount || 100 }}折</span>
+            <span class="member__stat-val">{{ fmtDiscount(info.discount) }}</span>
             <span class="member__stat-label">折扣</span>
           </div>
         </div>
@@ -67,6 +67,12 @@ const pointsHistory = ref([]);
 const pointsLoading = ref(true);
 
 const privileges = ['会员专享折扣', '积分抵现', '延迟退房', '生日礼遇'];
+
+// DB 存的是倍率（1.00=原价/0.95=九五折），*10 转换为 折
+function fmtDiscount(val) {
+  const d = (Number(val) || 1) * 10;
+  return d % 1 === 0 ? Math.round(d) + '折' : d.toFixed(1) + '折';
+}
 
 onMounted(async () => {
   try {
