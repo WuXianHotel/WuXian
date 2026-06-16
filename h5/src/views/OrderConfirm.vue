@@ -53,14 +53,13 @@
     </template>
   </div>
 
-    <!-- 积分/升级弹窗 -->
-    <NotifyPopup
-      :visible="showNotify"
-      :points-earned="notifyPoints"
-      :level-up="notifyLevelUp"
-      @close="showNotify = false"
-    />
-  </div>
+  <!-- 积分/升级弹窗 -->
+  <NotifyPopup
+    :visible="showNotify"
+    :points-earned="notifyPoints"
+    :level-up="notifyLevelUp"
+    @close="showNotify = false"
+  />
 </template>
 
 <script setup>
