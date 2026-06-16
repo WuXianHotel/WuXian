@@ -11,7 +11,7 @@ router.get('/', async (req, res, next) => {
   try {
     const [hotelRows, systemRows] = await Promise.all([
       query("SELECT `key`, `value`, `type` FROM settings WHERE `group` = 'hotel'"),
-      query("SELECT `key`, `value`, `type` FROM settings WHERE `group` = 'system' AND `key` = 'app_version'"),
+      query("SELECT `key`, `value` FROM settings WHERE `group` = 'system'"),
     ]);
 
     const config = {};
@@ -19,12 +19,11 @@ router.get('/', async (req, res, next) => {
       config[r.key] = r.type === 'number' ? Number(r.value) : r.value;
     }
 
-    // 系统版本控制
-    if (systemRows.length > 0) {
-      config.app_version = systemRows[0].value;
-    } else {
-      config.app_version = '0.0.1';
+    // 系统配置
+    for (const r of systemRows) {
+      config[r.key] = r.value;
     }
+    if (!config.app_version) config.app_version = '0.0.1';
 
     return ok(res, config);
   } catch (err) { next(err); }

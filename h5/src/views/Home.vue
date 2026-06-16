@@ -167,6 +167,17 @@ onMounted(async () => {
     hotel.longitude = parseFloat(cfg.hotel_longitude) || 0;
     banners.value = bannerRes.data || [];
     reviews.value = reviewRes.data || [];
+
+    // 检查 Token 是否已被管理员撤销
+    if (cfg.mp_token_revoked_at) {
+      const revokedAt = new Date(cfg.mp_token_revoked_at).getTime();
+      const storedAt = parseInt(localStorage.getItem('mp_token_checked_at') || '0', 10);
+      if (revokedAt > storedAt) {
+        localStorage.removeItem('hotel_h5_token');
+        localStorage.removeItem('hotel_h5_user');
+        localStorage.setItem('mp_token_checked_at', String(revokedAt));
+      }
+    }
   } catch { /* ignore */ }
   finally { loading.value = false; }
 });

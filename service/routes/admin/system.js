@@ -151,4 +151,19 @@ router.get('/logs', adminAuth('super'), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── POST /clear-sessions  强制所有小程序用户重新登录（调试用）────────────────
+router.post('/clear-sessions', adminAuth('super'), async (req, res, next) => {
+  try {
+    const now = new Date().toISOString();
+    // 写入或更新 mp_token_revoked_at 设置项
+    await query(
+      `INSERT INTO settings (\`key\`, \`value\`, \`type\`, \`label\`, \`group\`)
+       VALUES ('mp_token_revoked_at', ?, 'string', '小程序Token撤销时间', 'system')
+       ON DUPLICATE KEY UPDATE \`value\` = ?`,
+      [now, now],
+    );
+    return ok(res, { revokedAt: now }, `已撤销所有小程序用户登录状态（${now}）`);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
