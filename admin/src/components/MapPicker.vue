@@ -175,6 +175,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.map-picker {
+    width: 100%;
+}
+
 .map-picker__coords {
   display: flex; gap: 8px; align-items: center;
   margin-bottom: 8px; flex-wrap: wrap;
