@@ -37,6 +37,8 @@ function normalizeRoom(row) {
     bedType:         row.bed_type,
     floorInfo:       row.floor_info,
     maxGuests:       row.max_guests,
+    pcCount:         row.pc_count,
+    pcConfig:        row.pc_config,
     smokeFree:       row.smoke === 0 || row.smoke === false, // DB 里 smoke=1 表示允许吸烟，前端要的是"是否禁烟"
     reviewCount:     row.review_count ?? row.review_count_real,
     totalRooms:      row.total_rooms,

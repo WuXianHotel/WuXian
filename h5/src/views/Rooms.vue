@@ -16,7 +16,11 @@
           <option value="">全部床型</option>
           <option value="大床">大床</option>
           <option value="双床">双床</option>
-          <option value="多床">多床</option>
+          <option value="三床">三床</option>
+          <option value="四床">四床</option>
+          <option value="单人床">单人床</option>
+          <option value="上下铺">上下铺</option>
+          <option value="榻榻米">榻榻米</option>
         </select>
         <select v-model="filters.sortBy" @change="loadRooms" class="rooms__select">
           <option value="">默认排序</option>
@@ -46,9 +50,11 @@
 
         <div class="room-card__body" @click="goDetail(room.id)">
           <h3 class="room-card__name">{{ room.name }}</h3>
-          <div class="room-card__attrs" v-if="room.area || room.bed_type">
+          <div class="room-card__attrs" v-if="room.area || room.bed_type || room.pcCount">
             <span v-if="room.area"><Ruler :size="12" /> {{ room.area }}㎡</span>
             <span v-if="room.bed_type"><BedSingle :size="12" /> {{ room.bed_type }}</span>
+            <span v-if="room.pcConfig"><Monitor :size="12" /> {{ room.pcConfig }}</span>
+            <span v-if="room.pcCount"><Monitor :size="12" /> {{ room.pcCount }}台电脑</span>
             <span v-if="room.view_type"><Building2 :size="12" /> {{ room.view_type }}</span>
           </div>
           <div class="room-card__facs" v-if="room.facilityList?.length">
@@ -73,7 +79,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { BedSingle, Ruler, Building2, Check, Gem, Search } from 'lucide-vue-next';
+import { BedSingle, Ruler, Building2, Check, Gem, Search, Monitor } from 'lucide-vue-next';
 import api from '../utils/api.js';
 
 const router = useRouter();

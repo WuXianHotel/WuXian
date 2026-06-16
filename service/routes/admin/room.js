@@ -71,11 +71,11 @@ router.post('/',
       const f = req.body;
       const [{ insertId }] = await query(
         `INSERT INTO room_types
-          (name,area,bed_type,floor_info,view,max_guests,smoke,breakfast,
+          (name,area,bed_type,floor_info,view,max_guests,pc_count,pc_config,smoke,breakfast,
            base_price,holiday_price,total_rooms,images,facilities,description,sort_order,status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [f.name, f.area||null, f.bedType||null, f.floorInfo||null, f.view||null,
-         f.maxGuests||2, f.smoke?1:0, f.breakfast?1:0,
+         f.maxGuests||2, f.pcCount||1, f.pcConfig||null, f.smoke?1:0, f.breakfast?1:0,
          f.basePrice, f.holidayPrice||null, f.totalRooms,
          JSON.stringify(f.images||[]), JSON.stringify(f.facilities||[]),
          f.description||null, f.sortOrder||0, f.status??1],
@@ -193,14 +193,16 @@ router.put('/:id', canEdit, async (req, res, next) => {
       `UPDATE room_types SET
          name=COALESCE(?,name), area=COALESCE(?,area), bed_type=COALESCE(?,bed_type),
          floor_info=COALESCE(?,floor_info), view=COALESCE(?,view),
-         max_guests=COALESCE(?,max_guests), smoke=COALESCE(?,smoke), breakfast=COALESCE(?,breakfast),
+         max_guests=COALESCE(?,max_guests), pc_count=COALESCE(?,pc_count), pc_config=COALESCE(?,pc_config),
+         smoke=COALESCE(?,smoke), breakfast=COALESCE(?,breakfast),
          base_price=COALESCE(?,base_price), holiday_price=COALESCE(?,holiday_price),
          total_rooms=COALESCE(?,total_rooms), images=COALESCE(?,images),
          facilities=COALESCE(?,facilities), description=COALESCE(?,description),
          sort_order=COALESCE(?,sort_order)
        WHERE id = ?`,
       [f.name??null, f.area??null, f.bedType??null, f.floorInfo??null, f.view??null,
-       f.maxGuests??null, f.smoke!=null?Number(f.smoke):null, f.breakfast!=null?Number(f.breakfast):null,
+       f.maxGuests??null, f.pcCount??null, f.pcConfig??null,
+       f.smoke!=null?Number(f.smoke):null, f.breakfast!=null?Number(f.breakfast):null,
        f.basePrice??null, f.holidayPrice??null, f.totalRooms??null,
        f.images?JSON.stringify(f.images):null, f.facilities?JSON.stringify(f.facilities):null,
        f.description??null, f.sortOrder??null, req.params.id],

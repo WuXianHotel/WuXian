@@ -156,7 +156,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="床型">
-              <el-select v-model="form.bedType" placeholder="请选择" style="width:100%">
+              <el-select v-model="form.bedType" placeholder="选择或输入" style="width:100%" filterable allow-create>
                 <el-option v-for="bt in bedTypes" :key="bt" :label="bt" :value="bt" />
               </el-select>
             </el-form-item>
@@ -169,6 +169,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="最多入住"><el-input-number v-model="form.maxGuests" :min="1" style="width:100%" /></el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="电脑数量"><el-input-number v-model="form.pcCount" :min="0" style="width:100%" /></el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="电脑配置"><el-input v-model="form.pcConfig" placeholder="如：i7-13700/RTX4060/32G" /></el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="基础价格"><el-input-number v-model="form.basePrice" :min="0" style="width:100%" /></el-form-item>
@@ -297,7 +303,7 @@ const allRoomsGrandTotal = computed(() =>
 )
 const formErr   = ref('')
 const form      = ref({})
-const bedTypes  = ['大床', '双床', '单床', '亲子床', '圆床']
+const bedTypes  = ['大床', '双床', '三床', '四床', '单人床', '上下铺', '榻榻米', '圆床']
 
 const firstImage = (r) => {
   try { const imgs = typeof r.images === 'string' ? JSON.parse(r.images) : r.images; return imgs?.[0] || null }
@@ -361,7 +367,7 @@ async function changeRoomStatusFromAll(row, newStatus) {
 
 function openCreate() {
   editing.value = null
-  form.value = { name:'', area:null, bedType:'', floorInfo:'', view:'', maxGuests:2,
+  form.value = { name:'', area:null, bedType:'', floorInfo:'', view:'', maxGuests:2, pcCount:1, pcConfig:'',
                  smoke:false, breakfast:false, basePrice:null, holidayPrice:null,
                  totalRooms:null, sortOrder:0, description:'', imageList:[] }
   formErr.value = ''
@@ -378,6 +384,7 @@ function openEdit(r) {
     }
   } catch {}
   form.value = { name:r.name, area:r.area, bedType:r.bed_type, floorInfo:r.floor_info,
+    pcCount:r.pc_count||1, pcConfig:r.pc_config||'',
                  view:r.view, maxGuests:r.max_guests, smoke:!!r.smoke, breakfast:!!r.breakfast,
                  basePrice:r.base_price, holidayPrice:r.holiday_price, totalRooms:r.total_rooms,
                  sortOrder:r.sort_order, description:r.description, imageList: existingImages }
