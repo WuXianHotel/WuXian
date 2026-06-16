@@ -19,7 +19,13 @@
       <div class="od__section">
         <div class="od__row"><span>应付金额</span><span class="od__total-price">¥{{ order.pay_amount }}</span></div>
       </div>
-      <div class="od__actions" v-if="order.status === 0 || order.status === 1">
+      <!-- 待支付：支付 + 取消 -->
+      <div class="od__actions" v-if="order.status === 0">
+        <button class="od__btn od__btn--pay" @click="goPay">立即支付</button>
+        <button class="od__btn od__btn--cancel" @click="cancelOrder">取消订单</button>
+      </div>
+      <!-- 待入住：取消 -->
+      <div class="od__actions" v-if="order.status === 1">
         <button class="od__btn od__btn--danger" @click="cancelOrder">取消订单</button>
       </div>
     </template>
@@ -62,6 +68,10 @@ function getFirstImg(images) {
   }
   return '/placeholder.jpg';
 }
+function goPay() {
+  router.push(`/order/confirm/${order.value.order_no}`);
+}
+
 async function cancelOrder() {
   const ok = await showConfirm('取消订单', '确认取消该订单？');
   if (!ok) return;
@@ -90,7 +100,10 @@ async function cancelOrder() {
 .od__row--total { font-weight: 600; border-top: 1px solid var(--border-subtle); padding-top: 8px; margin-top: 8px; color: var(--text-primary); }
 .od__discount { color: var(--neon-green); }
 .od__total-price { font-size: 20px; color: var(--neon-cyan); }
-.od__actions { padding: 12px; }
-.od__btn { width: 100%; padding: 12px; border-radius: 8px; font-size: 15px; }
+.od__actions { padding: var(--space-sm) var(--space-md); display: flex; gap: var(--space-sm); }
+.od__btn { flex: 1; padding: 12px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; border: 0; cursor: pointer; transition: all var(--dur-fast); }
+.od__btn--pay { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; }
+.od__btn--pay:active { transform: scale(.97); }
+.od__btn--cancel { background: transparent; color: var(--text-muted); border: 1px solid var(--border-subtle); }
 .od__btn--danger { background: transparent; color: var(--neon-pink); border: 1px solid var(--neon-pink); }
 </style>
