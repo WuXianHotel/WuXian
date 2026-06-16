@@ -90,6 +90,8 @@
             <div class="room-card__tags">
               <span v-if="room.area">{{ room.area }}㎡</span>
               <span v-if="room.bed_type">{{ room.bed_type }}</span>
+              <span v-if="room.pcCount">{{ room.pcCount }}台电脑</span>
+              <span v-if="room.pcConfigs && room.pcConfigs[0]">{{ room.pcConfigs[0] }}</span>
               <span v-for="(f, i) in room.facilities.slice(0,2)" :key="i">{{ f }}</span>
             </div>
             <div class="room-card__footer">

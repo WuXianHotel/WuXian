@@ -11,6 +11,13 @@ const { parsePager, ok, page } = require('../../middleware/helper');
 const { mpAuth } = require('../../middleware/auth');
 const { signUrls } = require('../../config/cos');
 
+function parseJson(val) {
+  if (!val) return null;
+  if (Array.isArray(val)) return val;
+  try { const arr = JSON.parse(val); return Array.isArray(arr) ? arr : null; }
+  catch { return null; }
+}
+
 // ── 出口字段归一化（snake_case → camelCase，并平铺常用字段给前端） ───────────
 function normalizeRoom(row) {
   if (!row) return row;
@@ -38,7 +45,7 @@ function normalizeRoom(row) {
     floorInfo:       row.floor_info,
     maxGuests:       row.max_guests,
     pcCount:         row.pc_count,
-    pcConfig:        row.pc_config,
+    pcConfigs:       parseJson(row.pc_configs) || parseJson(row.pc_config) || [],
     smokeFree:       row.smoke === 0 || row.smoke === false, // DB 里 smoke=1 表示允许吸烟，前端要的是"是否禁烟"
     reviewCount:     row.review_count ?? row.review_count_real,
     totalRooms:      row.total_rooms,

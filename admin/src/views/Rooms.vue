@@ -173,8 +173,13 @@
           <el-col :span="12">
             <el-form-item label="电脑数量"><el-input-number v-model="form.pcCount" :min="0" style="width:100%" /></el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="电脑配置"><el-input v-model="form.pcConfig" placeholder="如：i7-13700/RTX4060/32G" /></el-form-item>
+          <el-col :span="24" v-if="form.pcCount > 0">
+            <el-form-item label="电脑配置">
+              <div v-for="(_, i) in form.pcCount" :key="i" style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
+                <el-tag size="small" type="info">PC{{ i + 1 }}</el-tag>
+                <el-input v-model="pcConfigList[i]" placeholder="如：i7-13700/RTX4060/32G" style="flex:1" />
+              </div>
+            </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="基础价格"><el-input-number v-model="form.basePrice" :min="0" style="width:100%" /></el-form-item>
@@ -303,7 +308,22 @@ const allRoomsGrandTotal = computed(() =>
 )
 const formErr   = ref('')
 const form      = ref({})
+const pcConfigList = ref([])
 const bedTypes  = ['大床', '双床', '三床', '四床', '单人床', '上下铺', '榻榻米', '圆床']
+
+function parsePcConfigs(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try { const arr = JSON.parse(val); return Array.isArray(arr) ? arr : []; }
+  catch { return []; }
+}
+
+// pcCount 变化时自动调整配置列表长度
+watch(() => form.value?.pcCount, (count) => {
+  const list = pcConfigList.value;
+  while (list.length < count) list.push('');
+  if (list.length > count) list.length = count;
+})
 
 const firstImage = (r) => {
   try { const imgs = typeof r.images === 'string' ? JSON.parse(r.images) : r.images; return imgs?.[0] || null }
@@ -367,9 +387,10 @@ async function changeRoomStatusFromAll(row, newStatus) {
 
 function openCreate() {
   editing.value = null
-  form.value = { name:'', area:null, bedType:'', floorInfo:'', view:'', maxGuests:2, pcCount:1, pcConfig:'',
+  form.value = { name:'', area:null, bedType:'', floorInfo:'', view:'', maxGuests:2, pcCount:1, pcConfigs:[],
                  smoke:false, breakfast:false, basePrice:null, holidayPrice:null,
                  totalRooms:null, sortOrder:0, description:'', imageList:[] }
+  pcConfigList.value = ['']
   formErr.value = ''
   showModal.value = true
 }
@@ -384,10 +405,12 @@ function openEdit(r) {
     }
   } catch {}
   form.value = { name:r.name, area:r.area, bedType:r.bed_type, floorInfo:r.floor_info,
-    pcCount:r.pc_count||1, pcConfig:r.pc_config||'',
+    pcCount:r.pc_count||1, pcConfigs: parsePcConfigs(r.pc_configs) || parsePcConfigs(r.pc_config) || [],
                  view:r.view, maxGuests:r.max_guests, smoke:!!r.smoke, breakfast:!!r.breakfast,
                  basePrice:r.base_price, holidayPrice:r.holiday_price, totalRooms:r.total_rooms,
                  sortOrder:r.sort_order, description:r.description, imageList: existingImages }
+  const configs = parsePcConfigs(r.pc_configs) || parsePcConfigs(r.pc_config) || []
+  pcConfigList.value = configs.length ? [...configs] : new Array(r.pc_count||1).fill('')
   formErr.value = ''
   showModal.value = true
 }
@@ -420,7 +443,7 @@ async function saveRoom() {
       }
     }
 
-    const payload = { ...form.value, images: JSON.stringify(imageUrls) }
+    const payload = { ...form.value, images: JSON.stringify(imageUrls), pcConfigs: pcConfigList.value.filter(Boolean) }
     delete payload.imageList
 
     if (editing.value) {

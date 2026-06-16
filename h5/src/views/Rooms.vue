@@ -53,8 +53,8 @@
           <div class="room-card__attrs" v-if="room.area || room.bed_type || room.pcCount">
             <span v-if="room.area"><Ruler :size="12" /> {{ room.area }}㎡</span>
             <span v-if="room.bed_type"><BedSingle :size="12" /> {{ room.bed_type }}</span>
-            <span v-if="room.pcConfig"><Monitor :size="12" /> {{ room.pcConfig }}</span>
-            <span v-if="room.pcCount"><Monitor :size="12" /> {{ room.pcCount }}台电脑</span>
+            <span v-if="room.pcCount" class="room-card__pc"><Monitor :size="12" /> {{ room.pcCount }}台电脑</span>
+            <span v-for="(cfg, i) in room.pcConfigs" :key="i" class="room-card__pc"><Monitor :size="12" /> {{ cfg }}</span>
             <span v-if="room.view_type"><Building2 :size="12" /> {{ room.view_type }}</span>
           </div>
           <div class="room-card__facs" v-if="room.facilityList?.length">
