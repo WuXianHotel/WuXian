@@ -44,10 +44,10 @@
       <div v-else class="member__points-list">
         <div v-for="record in pointsHistory" :key="record.id" class="member__points-item">
           <div>
-            <span class="member__points-desc">{{ record.description }}</span>
+            <span class="member__points-desc">{{ record.remark }}</span>
             <span class="member__points-date">{{ fmtDate(record.created_at) }}</span>
           </div>
-          <span class="member__points-val" :class="{ 'member__points-val--plus': record.amount > 0 }">{{ record.amount > 0 ? '+' : '' }}{{ record.amount }}</span>
+          <span class="member__points-val" :class="{ 'member__points-val--plus': record.points > 0 }">{{ record.points > 0 ? '+' : '' }}{{ record.points }}</span>
         </div>
       </div>
     </section>
