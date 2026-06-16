@@ -2,7 +2,28 @@
   <div class="rooms">
     <div class="rooms__top">
       <h1 class="rooms__title">选择房型</h1>
-      <p class="rooms__count" v-if="!loading">共 <strong>{{ rooms.length }}</strong> 个房型</p>
+      <p class="rooms__count" v-if="!loading">共 <strong>{{ total }}</strong> 个房型</p>
+    </div>
+
+    <!-- 搜索 & 筛选 -->
+    <div class="rooms__filters">
+      <div class="rooms__search">
+        <Search :size="16" />
+        <input v-model="filters.keyword" @input="debounceSearch" placeholder="搜索房型名称..." class="rooms__search-input" />
+      </div>
+      <div class="rooms__filter-row">
+        <select v-model="filters.bedType" @change="loadRooms" class="rooms__select">
+          <option value="">全部床型</option>
+          <option value="大床">大床</option>
+          <option value="双床">双床</option>
+          <option value="多床">多床</option>
+        </select>
+        <select v-model="filters.sortBy" @change="loadRooms" class="rooms__select">
+          <option value="">默认排序</option>
+          <option value="price_asc">价格低→高</option>
+          <option value="price_desc">价格高→低</option>
+        </select>
+      </div>
     </div>
 
     <div v-if="loading" class="rooms__state">
@@ -52,12 +73,15 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { BedSingle, Ruler, Building2, Check, Gem } from 'lucide-vue-next';
+import { BedSingle, Ruler, Building2, Check, Gem, Search } from 'lucide-vue-next';
 import api from '../utils/api.js';
 
 const router = useRouter();
 const rooms = ref([]);
 const loading = ref(true);
+const total = ref(0);
+const filters = ref({ keyword: '', bedType: '', sortBy: '' });
+let searchTimer = 0;
 
 const facilityMap = [
   { key: 'tv', name: '智能电视' }, { key: 'ac', name: '空调' },
@@ -66,16 +90,30 @@ const facilityMap = [
   { key: 'washer', name: '洗衣机' }, { key: 'parking', name: '免费停车' },
 ];
 
-onMounted(async () => {
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadRooms, 400);
+}
+
+async function loadRooms() {
+  loading.value = true;
   try {
-    const res = await api.getRooms();
+    const params = {};
+    if (filters.value.keyword) params.keyword = filters.value.keyword;
+    if (filters.value.bedType) params.bedType = filters.value.bedType;
+    if (filters.value.sortBy) params.sortBy = filters.value.sortBy;
+
+    const res = await api.getRooms(params);
     rooms.value = (res.data?.list || []).map(r => ({
       ...r,
       facilityList: facilityMap.filter(f => r[f.key]).map(f => f.name),
     }));
+    total.value = res.data?.total || 0;
   } catch { /* ignore */ }
   finally { loading.value = false; }
-});
+}
+
+onMounted(() => { loadRooms(); });
 
 function goDetail(id) { router.push(`/room/${id}`); }
 function goBook(id) {
@@ -93,6 +131,26 @@ function goBook(id) {
 .rooms__count { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
 .rooms__count strong { color: var(--text-secondary); }
 .rooms__state { padding: 16px; }
+
+/* Filters */
+.rooms__filters { padding: 10px 16px 0; display: flex; flex-direction: column; gap: 8px; }
+.rooms__search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 10px 14px; color: var(--text-muted);
+}
+.rooms__search-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 14px; color: var(--text-primary);
+}
+.rooms__search-input::placeholder { color: var(--text-muted); }
+.rooms__filter-row { display: flex; gap: 8px; }
+.rooms__select {
+  flex: 1; padding: 8px 10px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle); background: var(--bg-card);
+  color: var(--text-secondary); font-size: 13px; outline: none;
+}
+.rooms__select:focus { border-color: var(--border-glow); }
 
 .rooms__list { padding: 0 14px 20px; display: flex; flex-direction: column; gap: 12px; }
 .room-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; transition: all var(--dur-normal) var(--ease-out); }
