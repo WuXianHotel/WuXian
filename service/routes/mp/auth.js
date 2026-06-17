@@ -281,22 +281,24 @@ router.put('/profile',
   body('nickname').optional().isLength({ max: 30 }),
   body('gender').optional().isIn([0, 1, 2]),
   body('realName').optional().isLength({ max: 20 }),
+  body('phone').optional().isLength({ max: 20 }),
   body('idType').optional().isInt({ min: 1, max: 4 }),
   body('idNumber').optional().isLength({ max: 30 }),
   validate,
   async (req, res, next) => {
     try {
-      const { nickname, gender, realName, idType, idNumber, avatarUrl } = req.body;
+      const { nickname, gender, realName, phone, idType, idNumber, avatarUrl } = req.body;
       await query(
         `UPDATE users SET
            nickname   = COALESCE(?, nickname),
            gender     = COALESCE(?, gender),
            real_name  = COALESCE(?, real_name),
+           phone      = COALESCE(?, phone),
            id_type    = COALESCE(?, id_type),
            id_number  = COALESCE(?, id_number),
            avatar_url = COALESCE(?, avatar_url)
          WHERE id = ?`,
-        [nickname ?? null, gender ?? null, realName ?? null,
+        [nickname ?? null, gender ?? null, realName ?? null, phone ?? null,
          idType ?? null, idNumber ?? null, avatarUrl ?? null, req.userId],
       );
       return ok(res, null, '更新成功');

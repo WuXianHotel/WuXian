@@ -11,6 +11,10 @@
         <input v-model="form.realName" class="profile-edit__input" placeholder="请输入真实姓名" maxlength="20" />
       </div>
       <div class="profile-edit__field">
+        <label class="profile-edit__label">手机号</label>
+        <input v-model="form.phone" class="profile-edit__input" placeholder="请输入手机号" maxlength="20" type="tel" />
+      </div>
+      <div class="profile-edit__field">
         <label class="profile-edit__label">性别</label>
         <div class="profile-edit__radio-group">
           <label v-for="g in genders" :key="g.value" class="profile-edit__radio">
@@ -35,7 +39,7 @@ import { showToast } from '../utils/toast.js';
 
 const router = useRouter();
 const submitting = ref(false);
-const form = reactive({ nickname: '', realName: '', gender: 0 });
+const form = reactive({ nickname: '', realName: '', phone: '', gender: 0 });
 const genders = [
   { value: 0, label: '保密' },
   { value: 1, label: '男' },
@@ -48,6 +52,7 @@ onMounted(async () => {
     const u = res.data || {};
     form.nickname = u.nickname || '';
     form.realName = u.real_name || '';
+    form.phone = u.phone || '';
     form.gender = u.gender ?? 0;
   } catch {
     // ignore
@@ -57,7 +62,7 @@ onMounted(async () => {
 async function submit() {
   submitting.value = true;
   try {
-    await api.updateProfile({ nickname: form.nickname, realName: form.realName, gender: form.gender });
+    await api.updateProfile({ nickname: form.nickname, realName: form.realName, phone: form.phone, gender: form.gender });
     showToast('保存成功', 'success');
     router.back();
   } catch {
