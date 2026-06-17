@@ -44,13 +44,17 @@ async function retry() {
     const res = await api.getProfile();
     if (res.code === 0) {
       // 已解封 → 回到首页
-      router.replace('/');
+      window.location.replace('/h5/');
     }
   } catch (err) {
-    // 403: api.js 拦截器自动跳回封禁页，页面重载，无需额外处理
-    // 其他错误：网络问题等
-    if (err.message !== '403') {
-      showToast('网络错误，请稍后再试', 'error');
+    console.error('[BanPage] retry error:', err.message, err);
+    // 403: 仍在封禁，api.js 不跳转（已在 banned 页）
+    if (err.message === '403') {
+      showToast('账号仍在封禁中', 'warning');
+    } else if (err.message === '401') {
+      // 401 已由 api.js 处理（清 token + toast），不再重复提示
+    } else {
+      showToast(err.message || '网络错误，请稍后再试', 'error');
     }
   } finally {
     checking.value = false;
