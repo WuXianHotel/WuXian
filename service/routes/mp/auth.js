@@ -139,17 +139,18 @@ router.post('/login',
         [user] = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid]);
       }
 
-      if (user.status !== 1) {
-        return res.status(403).json({ code: 403, msg: '账号已被封禁，请联系酒店客服' });
-      }
-
       await query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
 
+      // 始终签发 Token（鉴权与授权分离，封禁由中间件控制）
       const token = jwt.sign(
         { userId: user.id, openid },
         process.env.MP_JWT_SECRET,
         { expiresIn: process.env.MP_JWT_EXPIRES_IN || '7d' },
       );
+
+      if (user.status !== 1) {
+        return ok(res, { token, banned: true }, '账号已被封禁，请联系酒店客服');
+      }
 
       return ok(res, { token, userId: user.id, nickname: user.nickname, avatarUrl: user.avatar_url });
     } catch (err) { next(err); }
