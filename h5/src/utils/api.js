@@ -44,8 +44,6 @@ async function request({ url, method = 'GET', data, silent = false }) {
     }
 
     if (res.status === 403) {
-      clearToken();
-      localStorage.removeItem('hotel_onboarded');
       console.warn('[api] 403 Forbidden — 账号已封禁');
       window.location.replace('/h5/banned');
       throw new Error('403');
