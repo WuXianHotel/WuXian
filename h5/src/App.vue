@@ -1,16 +1,16 @@
 <template>
-  <div class="app" :class="{ 'app--audit': isAudit, 'app--no-nav': !isOnboarded }">
+  <div class="app" :class="{ 'app--audit': isAudit, 'app--no-nav': isOnboarded === false }">
     <router-view v-slot="{ Component, route }">
       <transition :name="transitionName">
         <component :is="Component" :key="route.path" />
       </transition>
     </router-view>
-    <BottomNav v-if="showTabBar && !isAudit && isOnboarded" />
+    <BottomNav v-if="showTabBar && !isAudit && isOnboarded === true" />
   </div>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import BottomNav from './components/BottomNav.vue';
 import { useAuditMode } from './utils/audit.js';
@@ -18,8 +18,29 @@ import { useAuditMode } from './utils/audit.js';
 const route = useRoute();
 const transitionName = ref('fade-up');
 const showTabBar = computed(() => route.meta.tabIndex !== undefined);
-const isOnboarded = computed(() => localStorage.getItem('hotel_onboarded') !== '0');
 const { isAudit } = useAuditMode();
+
+// 添加一个状态来跟踪onboarding检查是否完成
+const isOnboarded = ref(null);
+
+// 检查onboarding状态
+function checkOnboarded() {
+  const onboarded = localStorage.getItem('hotel_onboarded');
+  // null表示未初始化，'0'表示未完成，'1'表示已完成
+  isOnboarded.value = onboarded === null ? null : onboarded !== '0';
+}
+
+// 监听localStorage变化
+onMounted(() => {
+  checkOnboarded();
+  
+  // 监听storage事件，当其他页面更新onboarding状态时同步更新
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'hotel_onboarded') {
+      checkOnboarded();
+    }
+  });
+});
 
 // 根据页面层级决定动效方向（回到 tab 页时无动画）
 watch(() => route.path, (to, from) => {

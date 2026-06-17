@@ -88,11 +88,13 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { Check } from 'lucide-vue-next';
 import { verify } from 'idcard-verify';
 import api from '../utils/api.js';
 import { showToast } from '../utils/toast.js';
 
+const router = useRouter();
 const form = reactive({ phone: '', realName: '', idNumber: '', nickname: '' });
 const agreed = ref(false);
 const submitting = ref(false);
@@ -173,7 +175,10 @@ async function submit() {
       nickname: form.nickname || undefined,
     });
     showToast('信息已保存', 'success');
-    window.location.replace('/h5/#/');
+    // 更新本地onboarding状态并触发事件
+    localStorage.setItem('hotel_onboarded', '1');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'hotel_onboarded', newValue: '1' }));
+    router.replace('/');
   } catch {
     showToast('保存失败，请重试', 'error');
   } finally {

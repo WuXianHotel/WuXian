@@ -19,10 +19,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { ShieldOff, Phone } from 'lucide-vue-next';
 import api from '../utils/api.js';
 import { showToast } from '../utils/toast.js';
 
+const router = useRouter();
 const hotelPhone = ref('');
 const checking = ref(false);
 
@@ -42,7 +44,7 @@ async function retry() {
     const res = await api.getProfile();
     if (res.code === 0) {
       // 已解封 → 回到首页
-      window.location.replace('/h5/');
+      router.replace('/');
     }
   } catch (err) {
     // 403: api.js 拦截器自动跳回封禁页，页面重载，无需额外处理

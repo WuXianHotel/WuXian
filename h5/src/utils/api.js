@@ -36,6 +36,8 @@ async function request({ url, method = 'GET', data, silent = false }) {
     if (res.status === 401) {
       clearToken();
       localStorage.removeItem('hotel_onboarded');
+      // 触发storage事件，让App.vue同步更新
+      window.dispatchEvent(new StorageEvent('storage', { key: 'hotel_onboarded', newValue: null }));
       console.warn('[api] 401 Unauthorized — token 已清除');
       if (!silent) {
         showToast('登录已过期，请重新进入小程序', 'error', 3000);
@@ -45,7 +47,10 @@ async function request({ url, method = 'GET', data, silent = false }) {
 
     if (res.status === 403) {
       console.warn('[api] 403 Forbidden — 账号已封禁');
-      window.location.replace('/h5/banned');
+      // 使用Vue Router导航而不是硬刷新
+      if (window.location.pathname !== '/h5/banned' && window.location.pathname !== '/banned') {
+        window.location.replace('/h5/banned');
+      }
       throw new Error('403');
     }
 

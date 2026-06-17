@@ -142,6 +142,9 @@ const isOnboarded = ref(null);
 async function checkOnboardStatus() {
   if (!getToken()) {
     isOnboarded.value = false;
+    localStorage.setItem('hotel_onboarded', '0');
+    // 触发storage事件，让App.vue同步更新
+    window.dispatchEvent(new StorageEvent('storage', { key: 'hotel_onboarded', newValue: '0' }));
     return;
   }
   try {
@@ -152,9 +155,13 @@ async function checkOnboardStatus() {
     const done = !!(u.phone && u.real_name && u.id_number);
     isOnboarded.value = done;
     localStorage.setItem('hotel_onboarded', done ? '1' : '0');
+    // 触发storage事件，让App.vue同步更新
+    window.dispatchEvent(new StorageEvent('storage', { key: 'hotel_onboarded', newValue: done ? '1' : '0' }));
   } catch {
     isOnboarded.value = false;
     localStorage.setItem('hotel_onboarded', '0');
+    // 触发storage事件，让App.vue同步更新
+    window.dispatchEvent(new StorageEvent('storage', { key: 'hotel_onboarded', newValue: '0' }));
   }
 }
 
@@ -257,7 +264,7 @@ function doLogin() {
     return;
   }
   // 非小程序环境：跳转登录提示页
-  window.location.replace('/h5/#/auth-fail');
+  router.push('/auth-fail');
 }
 
 // 检测是否在小程序 WebView 中
