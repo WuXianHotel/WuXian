@@ -35,6 +35,7 @@ async function request({ url, method = 'GET', data, silent = false }) {
 
     if (res.status === 401) {
       clearToken();
+      localStorage.removeItem('hotel_onboarded');
       console.warn('[api] 401 Unauthorized — token 已清除');
       if (!silent) {
         showToast('登录已过期，请重新进入小程序', 'error', 3000);
@@ -44,6 +45,7 @@ async function request({ url, method = 'GET', data, silent = false }) {
 
     if (res.status === 403) {
       clearToken();
+      localStorage.removeItem('hotel_onboarded');
       console.warn('[api] 403 Forbidden — 账号已封禁');
       window.location.replace('/h5/#/banned');
       throw new Error('403');

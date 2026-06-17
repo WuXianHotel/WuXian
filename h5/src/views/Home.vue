@@ -149,9 +149,12 @@ async function checkOnboardStatus() {
     const res = await api.getProfile();
     const u = res.data || {};
     // 手机号 + 真实姓名 + 身份证号 三者齐全才算已完成引导
-    isOnboarded.value = !!(u.phone && u.real_name && u.id_number);
+    const done = !!(u.phone && u.real_name && u.id_number);
+    isOnboarded.value = done;
+    localStorage.setItem('hotel_onboarded', done ? '1' : '0');
   } catch {
     isOnboarded.value = false;
+    localStorage.setItem('hotel_onboarded', '0');
   }
 }
 

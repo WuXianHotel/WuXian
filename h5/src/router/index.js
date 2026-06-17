@@ -135,8 +135,18 @@ const router = createRouter({
   routes,
 });
 
-// 全局守卫：首页通过接口判断引导状态，不再需要在路由层拦截
+// 全局守卫：未引导用户只能访问首页和引导相关页面
+const ONBOARD_ALLOWED = ['/', '/onboard', '/banned', '/auth-fail'];
 router.beforeEach((to, _from, next) => {
+  if (ONBOARD_ALLOWED.includes(to.path)) {
+    next();
+    return;
+  }
+  // 未引导 → 拦截并跳转首页
+  if (localStorage.getItem('hotel_onboarded') === '0') {
+    next('/');
+    return;
+  }
   next();
 });
 
