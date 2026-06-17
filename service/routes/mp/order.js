@@ -32,9 +32,9 @@ router.post('/',
     if (b.checkOutDate  == null && b.checkOut   != null) b.checkOutDate  = b.checkOut;
     if (b.roomCount     == null && b.qty        != null) b.roomCount     = Number(b.qty);
     if (b.specialRequest== null && b.remark     != null) b.specialRequest= b.remark;
-    // 把 guestName/guestPhone 合成 guestsInfo 数组
-    if (b.guestsInfo == null && (b.guestName || b.guestPhone)) {
-      b.guestsInfo = [{ name: b.guestName || '', phone: b.guestPhone || '' }];
+    // 把 guestName/guestPhone/idNumber 合成 guestsInfo 数组
+    if (b.guestsInfo == null && (b.guestName || b.guestPhone || b.idNumber)) {
+      b.guestsInfo = [{ name: b.guestName || '', phone: b.guestPhone || '', idNumber: b.idNumber || '' }];
     }
     next();
   },

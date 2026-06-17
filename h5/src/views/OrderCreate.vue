@@ -59,6 +59,12 @@
             <input v-model="form.guestName" class="oc__input" :class="{ 'oc__input--filled': form.guestName }" placeholder="请输入入住人姓名" />
           </div>
           <div class="oc__field">
+            <label class="oc__label">身份证号 <span class="oc__required">*</span></label>
+            <input v-model="form.idNumber" class="oc__input" :class="{ 'oc__input--filled': form.idNumber, 'oc__input--error': idError }" placeholder="请输入18位身份证号" maxlength="18" @input="parseIdCard(form.idNumber)" />
+            <p v-if="idError" class="oc__field-err">{{ idError }}</p>
+            <p v-else-if="form.idNumber && idAge" class="oc__field-hint">出生日期 {{ idBirth }} · {{ idAge }}岁</p>
+          </div>
+          <div class="oc__field">
             <label class="oc__label">手机号 <span class="oc__required">*</span></label>
             <input v-model="form.guestPhone" class="oc__input" :class="{ 'oc__input--filled': form.guestPhone }" placeholder="请输入手机号" type="tel" />
           </div>
@@ -108,9 +114,53 @@ const checkIn = ref('');
 const checkOut = ref('');
 const nights = ref(1);
 
-const form = reactive({ guestName: '', guestPhone: '', remark: '' });
+const form = reactive({ guestName: '', idNumber: '', guestPhone: '', remark: '' });
 
 const roomTotal = computed(() => (room.value.price || 0) * nights.value);
+
+// 身份证解析
+const idBirth = ref('');
+const idAge = ref(null);
+const idError = ref('');
+
+function parseIdCard(val) {
+  idError.value = '';
+  idBirth.value = '';
+  idAge.value = null;
+
+  if (!val) return;
+  // 18位身份证：第7-14位为出生日期 YYYYMMDD
+  const match = val.match(/^(\d{6})(\d{8})([\dxX])$/);
+  if (!match) {
+    if (val.length >= 7) idError.value = '身份证号格式不正确';
+    return;
+  }
+  const birth = match[2];
+  const y = parseInt(birth.slice(0, 4), 10);
+  const m = parseInt(birth.slice(4, 6), 10);
+  const d = parseInt(birth.slice(6, 8), 10);
+  const dt = new Date(y, m - 1, d);
+
+  // 日期合法性校验
+  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d || y < 1900 || y > 2100) {
+    idError.value = '身份证号出生日期无效';
+    return;
+  }
+
+  // 年龄
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  const mdNow = now.getMonth() * 100 + now.getDate();
+  const mdBirth = (m - 1) * 100 + d;
+  if (mdNow < mdBirth) age--;
+
+  idBirth.value = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  idAge.value = age;
+
+  if (age < 18) {
+    idError.value = '未满18岁，不能预订房间';
+  }
+}
 
 onMounted(async () => {
   const { roomId, checkIn: ci, checkOut: co } = route.query;
@@ -127,6 +177,10 @@ onMounted(async () => {
 
 async function submitOrder() {
   if (!form.guestName.trim()) { showToast('请输入入住人姓名', 'warning'); return; }
+  if (!form.idNumber.trim()) { showToast('请输入身份证号', 'warning'); return; }
+  // 触发一次校验以获取最新错误
+  parseIdCard(form.idNumber);
+  if (idError.value) { showToast(idError.value, 'warning'); return; }
   if (form.guestPhone && !/^1[3-9]\d{9}$/.test(form.guestPhone)) { showToast('请输入正确的手机号', 'warning'); return; }
 
   submitting.value = true;
@@ -137,6 +191,7 @@ async function submitOrder() {
       checkOut: checkOut.value,
       guestName: form.guestName,
       guestPhone: form.guestPhone,
+      idNumber: form.idNumber,
       remark: form.remark,
     });
     const order = res.data || {};
@@ -200,6 +255,9 @@ async function submitOrder() {
 }
 .oc__input::placeholder { color: var(--text-muted); }
 .oc__input--filled { border-color: var(--neon-cyan); }
+.oc__input--error { border-color: var(--neon-pink); }
+.oc__field-err { font-size: 11px; color: var(--neon-pink); margin-top: 4px; }
+.oc__field-hint { font-size: 11px; color: var(--neon-cyan); margin-top: 4px; }
 .oc__textarea {
   width: 100%; padding: 10px 12px;
   border: 1px solid var(--border-subtle); border-radius: 8px;
