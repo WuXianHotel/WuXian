@@ -1,11 +1,11 @@
 <template>
-  <div class="app" :class="{ 'app--audit': isAudit }">
+  <div class="app" :class="{ 'app--audit': isAudit, 'app--no-nav': !isOnboarded }">
     <router-view v-slot="{ Component, route }">
       <transition :name="transitionName">
         <component :is="Component" :key="route.path" />
       </transition>
     </router-view>
-    <BottomNav v-if="showTabBar && !isAudit" />
+    <BottomNav v-if="showTabBar && !isAudit && isOnboarded" />
   </div>
 </template>
 
@@ -18,6 +18,7 @@ import { useAuditMode } from './utils/audit.js';
 const route = useRoute();
 const transitionName = ref('fade-up');
 const showTabBar = computed(() => route.meta.tabIndex !== undefined);
+const isOnboarded = computed(() => localStorage.getItem('hotel_onboarded') !== '0');
 const { isAudit } = useAuditMode();
 
 // 根据页面层级决定动效方向（回到 tab 页时无动画）
@@ -42,7 +43,8 @@ watch(() => route.path, (to, from) => {
   z-index: 1;
 }
 
-.app--audit {
+.app--audit,
+.app--no-nav {
   padding-bottom: 0;
 }
 
