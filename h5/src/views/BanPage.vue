@@ -10,7 +10,9 @@
         <Phone :size="16" />
         <a :href="`tel:${hotelPhone}`">{{ hotelPhone }}</a>
       </div>
-      <button class="ban__btn" @click="retry">重试</button>
+      <button class="ban__btn" @click="retry" :disabled="checking">
+        {{ checking ? '检查中...' : '重试' }}
+      </button>
     </div>
   </div>
 </template>
@@ -19,8 +21,10 @@
 import { ref, onMounted } from 'vue';
 import { ShieldOff, Phone } from 'lucide-vue-next';
 import api from '../utils/api.js';
+import { showToast } from '../utils/toast.js';
 
 const hotelPhone = ref('');
+const checking = ref(false);
 
 onMounted(async () => {
   try {
@@ -31,8 +35,24 @@ onMounted(async () => {
   }
 });
 
-function retry() {
-  window.location.replace('/h5/');
+async function retry() {
+  checking.value = true;
+  try {
+    // 调用 profile 检测封禁状态
+    const res = await api.getProfile();
+    if (res.code === 0) {
+      // 已解封 → 回到首页
+      window.location.replace('/h5/');
+    }
+  } catch (err) {
+    // 403: api.js 拦截器自动跳回封禁页，页面重载，无需额外处理
+    // 其他错误：网络问题等
+    if (err.message !== '403') {
+      showToast('网络错误，请稍后再试', 'error');
+    }
+  } finally {
+    checking.value = false;
+  }
 }
 </script>
 
@@ -107,4 +127,5 @@ function retry() {
   border-color: var(--neon-pink);
   color: var(--neon-pink);
 }
+.ban__btn:disabled { opacity: .5; cursor: default; }
 </style>
