@@ -47,7 +47,7 @@ async function request({ url, method = 'GET', data, silent = false }) {
       clearToken();
       localStorage.removeItem('hotel_onboarded');
       console.warn('[api] 403 Forbidden — 账号已封禁');
-      window.location.replace('/h5/#/banned');
+      window.location.replace('/h5/banned');
       throw new Error('403');
     }
 
