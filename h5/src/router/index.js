@@ -116,6 +116,12 @@ const routes = [
     component: () => import('../views/AuthFail.vue'),
     meta: { title: '需要登录' },
   },
+  {
+    path: '/banned',
+    name: 'banned',
+    component: () => import('../views/BanPage.vue'),
+    meta: { title: '账号已封禁' },
+  },
 ];
 
 const router = createRouter({

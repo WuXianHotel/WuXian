@@ -42,6 +42,13 @@ async function request({ url, method = 'GET', data, silent = false }) {
       throw new Error('401');
     }
 
+    if (res.status === 403) {
+      clearToken();
+      console.warn('[api] 403 Forbidden — 账号已封禁');
+      window.location.replace('/h5/#/banned');
+      throw new Error('403');
+    }
+
     const result = await res.json();
 
     if (result.code === 0) {

@@ -140,7 +140,7 @@ router.post('/login',
       }
 
       if (user.status !== 1) {
-        return res.status(403).json({ code: 403, msg: '账号已被封禁' });
+        return res.status(403).json({ code: 403, msg: '账号已被封禁，请联系酒店客服' });
       }
 
       await query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);

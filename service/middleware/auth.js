@@ -3,20 +3,30 @@ const jwt    = require('jsonwebtoken');
 const { query } = require('../config/db');
 
 /**
- * 小程序用户鉴权中间件
+ * 小程序用户鉴权中间件（含封禁检查）
  */
-function mpAuth(req, res, next) {
+async function mpAuth(req, res, next) {
   const token = extractToken(req);
   if (!token) return res.status(401).json({ code: 401, msg: '请先登录' });
 
   try {
     const payload = jwt.verify(token, process.env.MP_JWT_SECRET);
-    req.userId   = payload.userId;
-    req.openid   = payload.openid;
-    next();
+    req.userId = payload.userId;
+    req.openid = payload.openid;
   } catch {
     return res.status(401).json({ code: 401, msg: 'Token 无效或已过期，请重新登录' });
   }
+
+  // 检查用户是否被封禁
+  const [user] = await query(
+    'SELECT status FROM users WHERE id = ? LIMIT 1',
+    [req.userId],
+  );
+  if (!user || user.status !== 1) {
+    return res.status(403).json({ code: 403, msg: '账号已被封禁，请联系酒店客服' });
+  }
+
+  next();
 }
 
 /**
