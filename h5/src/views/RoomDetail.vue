@@ -30,6 +30,11 @@
         <div class="rd__date-item"><span>退房</span><strong>{{ checkOutLabel || '选择日期' }}</strong></div>
         <span class="rd__nights">{{ nights }}晚</span>
       </div>
+      <div class="rd__cal-head">
+        <button class="rd__cal-nav" :disabled="!canPrevMonth" @click="prevMonth">◂</button>
+        <span class="rd__cal-month">{{ calYear }}年{{ calMonth }}月</span>
+        <button class="rd__cal-nav" @click="nextMonth">▸</button>
+      </div>
       <div class="rd__cal-week"><span v-for="d in weekDays" :key="d">{{ d }}</span></div>
       <div class="rd__cal-grid">
         <div v-for="(day,i) in calendarDays" :key="i" class="rd__cal-cell" :class="[`rd__cal-cell--${day.type||'normal'}`]" @click="selectDate(day)">
@@ -95,20 +100,59 @@ const room = ref({}); const nights = ref(1);
 const checkIn = ref(''); const checkOut = ref('');
 const checkInLabel = ref(''); const checkOutLabel = ref('');
 const calendarDays = ref([]);
+const calYear = ref(new Date().getFullYear());
+const calMonth = ref(new Date().getMonth() + 1);
+const calPrices = ref({}); // 从 API 获取的价格日历数据
 const weekDays = ['日','一','二','三','四','五','六'];
 const reviews = ref([]);
 const ratingDist = ref([{star:5,pct:85},{star:4,pct:12},{star:3,pct:3},{star:2,pct:0}]);
 
+const today = new Date(); today.setHours(0, 0, 0, 0);
 const todayStr = ()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const addDays=(s,n)=>{const d=new Date(s);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
 const calcNights=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
 const fmtDate=ds=>{const d=new Date(ds);const wm=['周日','周一','周二','周三','周四','周五','周六'];return `${d.getMonth()+1}月${d.getDate()}日 ${wm[d.getDay()]}`;};
 
+// 月份导航
+const canPrevMonth = ref(false); // 当月不能往前翻
+function prevMonth() {
+  if (!canPrevMonth.value) return;
+  if (calMonth.value === 1) { calYear.value--; calMonth.value = 12; }
+  else { calMonth.value--; }
+  updateCanPrev();
+  loadCalendarPrices();
+}
+function nextMonth() {
+  if (calMonth.value === 12) { calYear.value++; calMonth.value = 1; }
+  else { calMonth.value++; }
+  updateCanPrev();
+  loadCalendarPrices();
+}
+function updateCanPrev() {
+  const now = new Date();
+  canPrevMonth.value = calYear.value > now.getFullYear() || (calYear.value === now.getFullYear() && calMonth.value > now.getMonth() + 1);
+}
+
+async function loadCalendarPrices() {
+  try {
+    const { default: api } = await import('../utils/api.js');
+    const res = await api.getRoomCalendar(route.params.id, { year: calYear.value, month: calMonth.value });
+    const list = res.data || [];
+    const map = {};
+    list.forEach(item => { map[item.date] = item.price; });
+    calPrices.value = map;
+  } catch {
+    calPrices.value = {};
+  }
+  buildCalendar();
+}
+
 onMounted(async()=>{
   const id=route.params.id;
   const ci=todayStr(),co=addDays(ci,1);
   checkIn.value=ci;checkOut.value=co;checkInLabel.value=fmtDate(ci);checkOutLabel.value=fmtDate(co);
-  try{const{default:api}=await import('../utils/api.js');const res=await api.getRoomDetail(id);const r=res.data||{};room.value=r;buildCalendar();
+  updateCanPrev();
+  try{const{default:api}=await import('../utils/api.js');const res=await api.getRoomDetail(id);const r=res.data||{};room.value=r;await loadCalendarPrices();
     // 使用后端返回的评价数据
     if(r.latestReviews?.length){
       reviews.value=r.latestReviews.map(rv=>({id:rv.id,nickname:rv.nickname||'用户',date:(rv.created_at||'').slice(0,10),content:rv.content}));
@@ -123,13 +167,25 @@ onMounted(async()=>{
 });
 
 function buildCalendar(){
-  const today=new Date();today.setHours(0,0,0,0);
-  const y=today.getFullYear(),m=today.getMonth();
-  const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
-  const days=[];
-  for(let i=0;i<fd;i++)days.push({date:'',day:'',type:'empty'});
-  for(let d=1;d<=dim;d++){const date=new Date(y,m,d);date.setHours(0,0,0,0);const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;let type='normal';if(date<today)type='past';else if(ds===checkIn.value||ds===checkOut.value)type='selected';else if(ds>checkIn.value&&ds<checkOut.value)type='in-range';else if(date.getTime()===today.getTime())type='today';days.push({date:ds,day:d,type,price:date>=today?room.value.price:null});}
-  calendarDays.value=days;
+  const y = calYear.value;
+  const m = calMonth.value - 1; // JS month 0-based
+  const fd = new Date(y, m, 1).getDay();
+  const dim = new Date(y, m + 1, 0).getDate();
+  const days = [];
+  for (let i = 0; i < fd; i++) days.push({ date: '', day: '', type: 'empty' });
+  for (let d = 1; d <= dim; d++) {
+    const date = new Date(y, m, d); date.setHours(0, 0, 0, 0);
+    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    let type = 'normal';
+    if (date < today) type = 'past';
+    else if (ds === checkIn.value || ds === checkOut.value) type = 'selected';
+    else if (ds > checkIn.value && ds < checkOut.value) type = 'in-range';
+    else if (date.getTime() === today.getTime()) type = 'today';
+    // 优先使用 API 返回的价格日历价格，否则用房型基础价格
+    const price = date >= today ? (calPrices.value[ds] ?? room.value.price) : null;
+    days.push({ date: ds, day: d, type, price });
+  }
+  calendarDays.value = days;
 }
 function selectDate(day){if(!day.date||day.type==='past')return;if(!checkIn.value||(checkIn.value&&checkOut.value)){checkIn.value=day.date;checkOut.value='';checkInLabel.value=fmtDate(day.date);checkOutLabel.value='';}else{if(day.date<=checkIn.value){checkIn.value=day.date;checkInLabel.value=fmtDate(day.date);}else{checkOut.value=day.date;checkOutLabel.value=fmtDate(day.date);nights.value=calcNights(checkIn.value,day.date);}}buildCalendar();}
 function goBook(){if(!checkIn.value||!checkOut.value){showToast('请先选择日期','warning');return;}router.push(`/order/create?roomId=${route.params.id}&checkIn=${checkIn.value}&checkOut=${checkOut.value}`);}
@@ -153,6 +209,11 @@ function goBook(){if(!checkIn.value||!checkOut.value){showToast('请先选择日
 .rd__date-pick{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);background:rgba(0,212,255,.04);border:1px solid var(--border-subtle);margin-bottom:14px;cursor:pointer}
 .rd__date-item{text-align:center}.rd__date-item span{display:block;font-size:10px;color:var(--text-muted)}.rd__date-item strong{font-size:14px;color:var(--text-primary)}
 .rd__arrow{color:var(--neon-cyan)}.rd__nights{padding:3px 10px;border-radius:var(--radius-full);background:rgba(0,212,255,.1);color:var(--neon-cyan);font-size:11px;font-weight:600}
+.rd__cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.rd__cal-nav{width:28px;height:28px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border-subtle);color:var(--text-secondary);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--dur-fast)}
+.rd__cal-nav:hover{color:var(--neon-cyan);border-color:var(--border-glow)}
+.rd__cal-nav:disabled{opacity:.3;cursor:default}
+.rd__cal-month{font-size:14px;font-weight:600;color:var(--text-primary)}
 .rd__cal-week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:4px}
 .rd__cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .rd__cal-cell{text-align:center;padding:6px 2px;font-size:12px;border-radius:6px;cursor:pointer;min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-secondary)}
