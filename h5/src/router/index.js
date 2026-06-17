@@ -122,11 +122,37 @@ const routes = [
     component: () => import('../views/BanPage.vue'),
     meta: { title: '账号已封禁' },
   },
+  {
+    path: '/onboard',
+    name: 'onboard',
+    component: () => import('../views/Onboard.vue'),
+    meta: { title: '完善信息' },
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory('/h5/'),
   routes,
+});
+
+// 全局守卫：检查是否已完成首次信息填写
+const ONBOARD_SKIP_ROUTES = ['/onboard', '/banned', '/auth-fail'];
+router.beforeEach((to, _from, next) => {
+  if (ONBOARD_SKIP_ROUTES.includes(to.path)) {
+    next();
+    return;
+  }
+  const token = getToken();
+  if (!token) {
+    next();
+    return;
+  }
+  // 有 token 但未完成引导 → 跳转引导页
+  if (!localStorage.getItem('hotel_h5_onboarded')) {
+    next('/onboard');
+    return;
+  }
+  next();
 });
 
 export default router;
