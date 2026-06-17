@@ -3,8 +3,19 @@
     <!-- Hero -->
     <div class="hero">
       <p class="hero__tag">WELCOME TO WUXIAN HOTEL</p>
-      <h1 class="hero__title">寻找你的专属住所</h1>
-      <div class="hero__search" v-if="!isAudit" @click="$router.push('/rooms')">
+      <h1 class="hero__title">{{ hasToken ? '寻找你的专属住所' : '柳州无限电竞酒店' }}</h1>
+
+      <!-- 未登录：欢迎 + 登录按钮 -->
+      <template v-if="!hasToken">
+        <p class="hero__welcome">沉浸式电竞体验，即刻开启你的专属旅程</p>
+        <button class="hero__login-btn" @click="doLogin">
+          <LogIn :size="18" :stroke-width="2" />
+          <span>登录 / 注册</span>
+        </button>
+      </template>
+
+      <!-- 已登录：搜索入口 -->
+      <div v-else-if="!isAudit" class="hero__search" @click="$router.push('/rooms')">
         <Search class="hero__search-icon" :size="16" :stroke-width="2" />
         <span>搜索房型、设施...</span>
       </div>
@@ -113,11 +124,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
-import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone } from 'lucide-vue-next';
+import { ref, onMounted, onUnmounted, reactive, watch, computed } from 'vue';
+import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, LogIn } from 'lucide-vue-next';
+import { getToken } from '../utils/auth.js';
 import { useAuditMode } from '../utils/audit.js';
 
 const { isAudit } = useAuditMode();
+const hasToken = computed(() => !!getToken());
 
 const rooms = ref([]);
 const loading = ref(true);
@@ -203,6 +216,17 @@ function onBannerClick(b) {
   }
 }
 
+// 登录
+function doLogin() {
+  if (isInMiniProgram()) {
+    wx.miniProgram.postMessage({ data: { action: 'reAuth' } });
+    wx.miniProgram.navigateBack({ delta: 0 });
+    return;
+  }
+  // 非小程序环境：跳转登录提示页
+  window.location.replace('/h5/#/auth-fail');
+}
+
 // 检测是否在小程序 WebView 中
 function isInMiniProgram() {
   if (typeof wx !== 'undefined' && wx.miniProgram) return true;
@@ -245,6 +269,16 @@ function callPhone(e) {
 }
 .hero__tag { font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: var(--space-xs); opacity: .8; }
 .hero__title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: var(--space-sm); letter-spacing: 1px; }
+.hero__welcome { font-size: 14px; color: var(--text-secondary); margin-bottom: var(--space-lg); line-height: 1.6; }
+.hero__login-btn {
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  padding: 12px 32px; border: 0; border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: all var(--dur-normal) var(--ease-out);
+}
+.hero__login-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow-cyan); }
+.hero__login-btn:active { transform: scale(.97); }
 .hero__search { display: flex; align-items: center; gap: var(--space-sm); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--text-muted); font-size: 13px; cursor: pointer; transition: border-color var(--dur-normal); }
 .hero__search:hover { border-color: var(--border-glow); }
 .hero__search-icon { color: var(--text-muted); flex-shrink: 0; }

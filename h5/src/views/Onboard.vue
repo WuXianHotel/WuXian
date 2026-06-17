@@ -89,6 +89,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { Check } from 'lucide-vue-next';
+import { verify, info as idInfo } from 'idcard-verify';
 import api from '../utils/api.js';
 import { showToast } from '../utils/toast.js';
 
@@ -111,28 +112,24 @@ function parseIdCard() {
   idAge.value = null;
   const val = form.idNumber;
   if (!val) return;
+  if (val.length < 18) return;
 
-  const match = val.match(/^(\d{6})(\d{8})([\dxX])$/);
-  if (!match) {
-    if (val.length >= 7) idErr.value = '身份证号格式不正确';
-    return;
-  }
-  const birth = match[2];
-  const y = parseInt(birth.slice(0, 4), 10);
-  const m = parseInt(birth.slice(4, 6), 10);
-  const d = parseInt(birth.slice(6, 8), 10);
-  const dt = new Date(y, m - 1, d);
-  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d || y < 1900) {
-    idErr.value = '出生日期无效';
+  if (!verify(val)) {
+    idErr.value = '身份证号不正确';
     return;
   }
 
-  const now = new Date();
-  let age = now.getFullYear() - y;
-  if (now.getMonth() * 100 + now.getDate() < (m - 1) * 100 + d) age--;
-  idBirth.value = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  idAge.value = age;
-  if (age < 18) idErr.value = '未满18岁无法预订';
+  const info = idInfo(val);
+  const birth = String(info.birthday);
+  const y = birth.slice(0, 4);
+  const m = birth.slice(4, 6);
+  const d = birth.slice(6, 8);
+  idBirth.value = `${y}-${m}-${d}`;
+  idAge.value = info.age;
+
+  if (info.age < 18) {
+    idErr.value = '未满18岁无法预订';
+  }
 }
 
 function showPrivacy() { modalType.value = 'privacy'; showModal.value = true; }
