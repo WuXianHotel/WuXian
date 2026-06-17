@@ -100,7 +100,7 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { BedSingle, User, FileText, ArrowRight } from 'lucide-vue-next';
-import { verify, info as idInfo } from 'idcard-verify';
+import { verify } from 'idcard-verify';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
 import { showToast } from '../utils/toast.js';
@@ -132,20 +132,33 @@ function parseIdCard(val) {
   if (!val) return;
   if (val.length < 18) return;
 
+  // 格式预检
+  if (!/^\d{17}[\dxX]$/.test(val)) {
+    idError.value = '身份证号格式不正确';
+    return;
+  }
+
+  // 校验码验证（idcard-verify 库）
   if (!verify(val)) {
     idError.value = '身份证号不正确';
     return;
   }
 
-  const info = idInfo(val);
-  const birth = String(info.birthday);
-  const y = birth.slice(0, 4);
-  const m = birth.slice(4, 6);
-  const d = birth.slice(6, 8);
-  idBirth.value = `${y}-${m}-${d}`;
-  idAge.value = info.age;
+  // 手动提取生日：第7-14位 YYYYMMDD
+  const birth = val.slice(6, 14);
+  const y = parseInt(birth.slice(0, 4), 10);
+  const m = parseInt(birth.slice(4, 6), 10);
+  const d = parseInt(birth.slice(6, 8), 10);
 
-  if (info.age < 18) {
+  idBirth.value = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  // 手动计算周岁
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age--;
+  idAge.value = age;
+
+  if (age < 18) {
     idError.value = '未满18岁，不能预订房间';
   }
 }
