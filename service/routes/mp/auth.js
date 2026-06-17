@@ -263,7 +263,7 @@ router.post('/bind-phone',
 router.get('/profile', mpAuth, async (req, res, next) => {
   try {
     const [user] = await query(
-      `SELECT u.id, u.nickname, u.avatar_url, u.phone, u.real_name, u.gender,
+      `SELECT u.id, u.nickname, u.avatar_url, u.phone, u.real_name, u.gender, u.id_number,
               m.member_no, m.level, m.points, m.total_nights, ml.name AS level_name, ml.discount, ml.icon
        FROM users u
        LEFT JOIN members m ON m.user_id = u.id
