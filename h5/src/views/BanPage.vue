@@ -32,9 +32,6 @@ onMounted(async () => {
 });
 
 function retry() {
-  localStorage.removeItem('hotel_h5_token');
-  localStorage.removeItem('hotel_h5_user');
-  localStorage.removeItem('hotel_onboarded');
   window.location.replace('/h5/');
 }
 </script>
