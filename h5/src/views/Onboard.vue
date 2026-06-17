@@ -172,7 +172,6 @@ async function submit() {
       idNumber: form.idNumber,
       nickname: form.nickname || undefined,
     });
-    localStorage.setItem('hotel_h5_onboarded', '1');
     showToast('信息已保存', 'success');
     window.location.replace('/h5/#/');
   } catch {

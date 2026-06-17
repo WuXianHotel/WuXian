@@ -2,7 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { getToken } from '../utils/auth.js';
 
-function requireAuth(to, from, next) {
+function requireAuth(to, _from, next) {
   const token = getToken();
   console.log('[router] requireAuth to=' + to.path + ', token=' + (token ? '有(len=' + token.length + ')' : '无'));
   if (!token) {
@@ -135,23 +135,8 @@ const router = createRouter({
   routes,
 });
 
-// 全局守卫：检查是否已完成首次信息填写
-const ONBOARD_SKIP_ROUTES = ['/onboard', '/banned', '/auth-fail'];
+// 全局守卫：首页通过接口判断引导状态，不再需要在路由层拦截
 router.beforeEach((to, _from, next) => {
-  if (ONBOARD_SKIP_ROUTES.includes(to.path)) {
-    next();
-    return;
-  }
-  const token = getToken();
-  if (!token) {
-    next();
-    return;
-  }
-  // 有 token 但未完成引导 → 跳转引导页
-  if (!localStorage.getItem('hotel_h5_onboarded')) {
-    next('/onboard');
-    return;
-  }
   next();
 });
 

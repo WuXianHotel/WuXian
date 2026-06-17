@@ -3,10 +3,13 @@
     <!-- Hero -->
     <div class="hero">
       <p class="hero__tag">WELCOME TO WUXIAN HOTEL</p>
-      <h1 class="hero__title">{{ isOnboarded ? '寻找你的专属住所' : '柳州无限电竞酒店' }}</h1>
+      <h1 class="hero__title">{{ isOnboarded === true ? '寻找你的专属住所' : '柳州无限电竞酒店' }}</h1>
+
+      <!-- 检查中：不显示任何互动 -->
+      <template v-if="isOnboarded === null"></template>
 
       <!-- 未完成引导：欢迎 + 登录/注册按钮 -->
-      <template v-if="!isOnboarded">
+      <template v-else-if="!isOnboarded">
         <p class="hero__welcome">沉浸式电竞体验，即刻开启你的专属旅程</p>
         <button class="hero__login-btn" @click="doLogin">
           <LogIn :size="18" :stroke-width="2" />
@@ -58,7 +61,7 @@
     </div>
 
     <!-- 快捷入口 -->
-    <div class="quick" v-if="isOnboarded && !isAudit">
+    <div class="quick" v-if="isOnboarded === true && !isAudit">
       <div v-for="item in quickItems" :key="item.path" class="quick__item" @click="$router.push(item.path)">
         <component :is="item.icon" :size="30" :stroke-width="1.5" class="quick__icon" />
         <span class="quick__label">{{ item.label }}</span>
@@ -66,7 +69,7 @@
     </div>
 
     <!-- 热门房型 -->
-    <div class="section" v-if="isOnboarded && !isAudit">
+    <div class="section" v-if="isOnboarded === true && !isAudit">
       <div class="section__head">
         <h3 class="section__title">热门房型</h3>
         <span class="section__more" @click="$router.push('/rooms')">查看全部 <ArrowRight :size="14" class="section__more-icon" /></span>
@@ -124,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, LogIn } from 'lucide-vue-next';
 import { getToken } from '../utils/auth.js';
@@ -133,8 +136,24 @@ import { useAuditMode } from '../utils/audit.js';
 const router = useRouter();
 const { isAudit } = useAuditMode();
 
-// 根据是否完成首次信息填写判断是否为"新用户"
-const isOnboarded = computed(() => !!localStorage.getItem('hotel_h5_onboarded'));
+// 通过接口判断是否已完成首次信息填写（null=检查中, true=已完成, false=未完成）
+const isOnboarded = ref(null);
+
+async function checkOnboardStatus() {
+  if (!getToken()) {
+    isOnboarded.value = false;
+    return;
+  }
+  try {
+    const { default: api } = await import('../utils/api.js');
+    const res = await api.getProfile();
+    const u = res.data || {};
+    // 手机号 + 真实姓名 + 身份证号 三者齐全才算已完成引导
+    isOnboarded.value = !!(u.phone && u.real_name && u.id_number);
+  } catch {
+    isOnboarded.value = false;
+  }
+}
 
 const rooms = ref([]);
 const loading = ref(true);
@@ -163,6 +182,7 @@ function fmtReviewDate(d) {
 }
 
 onMounted(async () => {
+  checkOnboardStatus();
   try {
     const { default: api } = await import('../utils/api.js');
     const [roomRes, configRes, bannerRes, reviewRes] = await Promise.all([
