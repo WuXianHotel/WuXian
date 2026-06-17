@@ -14,7 +14,7 @@ window.__H5_ENTRY_SEARCH = window.location.search;
 window.__H5_ENTRY_HASH = window.location.hash;
 
 // vConsole 调试面板开关（需要时改为 true）
-const ENABLE_VCONSOLE = true;
+const ENABLE_VCONSOLE = false;
 
 if (ENABLE_VCONSOLE) {
   import('vconsole').then(({ default: VConsole }) => {
