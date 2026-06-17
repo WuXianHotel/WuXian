@@ -3,10 +3,10 @@
     <!-- Hero -->
     <div class="hero">
       <p class="hero__tag">WELCOME TO WUXIAN HOTEL</p>
-      <h1 class="hero__title">{{ hasToken ? '寻找你的专属住所' : '柳州无限电竞酒店' }}</h1>
+      <h1 class="hero__title">{{ isOnboarded ? '寻找你的专属住所' : '柳州无限电竞酒店' }}</h1>
 
-      <!-- 未登录：欢迎 + 登录按钮 -->
-      <template v-if="!hasToken">
+      <!-- 未完成引导：欢迎 + 登录/注册按钮 -->
+      <template v-if="!isOnboarded">
         <p class="hero__welcome">沉浸式电竞体验，即刻开启你的专属旅程</p>
         <button class="hero__login-btn" @click="doLogin">
           <LogIn :size="18" :stroke-width="2" />
@@ -14,7 +14,7 @@
         </button>
       </template>
 
-      <!-- 已登录：搜索入口 -->
+      <!-- 已完成引导：搜索入口 -->
       <div v-else-if="!isAudit" class="hero__search" @click="$router.push('/rooms')">
         <Search class="hero__search-icon" :size="16" :stroke-width="2" />
         <span>搜索房型、设施...</span>
@@ -58,7 +58,7 @@
     </div>
 
     <!-- 快捷入口 -->
-    <div class="quick" v-if="!isAudit">
+    <div class="quick" v-if="isOnboarded && !isAudit">
       <div v-for="item in quickItems" :key="item.path" class="quick__item" @click="$router.push(item.path)">
         <component :is="item.icon" :size="30" :stroke-width="1.5" class="quick__icon" />
         <span class="quick__label">{{ item.label }}</span>
@@ -66,7 +66,7 @@
     </div>
 
     <!-- 热门房型 -->
-    <div class="section" v-if="!isAudit">
+    <div class="section" v-if="isOnboarded && !isAudit">
       <div class="section__head">
         <h3 class="section__title">热门房型</h3>
         <span class="section__more" @click="$router.push('/rooms')">查看全部 <ArrowRight :size="14" class="section__more-icon" /></span>
@@ -125,12 +125,16 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, watch, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, LogIn } from 'lucide-vue-next';
 import { getToken } from '../utils/auth.js';
 import { useAuditMode } from '../utils/audit.js';
 
+const router = useRouter();
 const { isAudit } = useAuditMode();
-const hasToken = computed(() => !!getToken());
+
+// 根据是否完成首次信息填写判断是否为"新用户"
+const isOnboarded = computed(() => !!localStorage.getItem('hotel_h5_onboarded'));
 
 const rooms = ref([]);
 const loading = ref(true);
@@ -216,8 +220,14 @@ function onBannerClick(b) {
   }
 }
 
-// 登录
+// 登录/注册 → 跳转引导页
 function doLogin() {
+  // 有 token → 直接去填写信息
+  if (getToken()) {
+    router.push('/onboard');
+    return;
+  }
+  // 无 token → 触发小程序重新授权
   if (isInMiniProgram()) {
     wx.miniProgram.postMessage({ data: { action: 'reAuth' } });
     wx.miniProgram.navigateBack({ delta: 0 });
