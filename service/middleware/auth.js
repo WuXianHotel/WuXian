@@ -31,7 +31,10 @@ async function mpAuth(req, res, next) {
 
 /**
  * 管理后台鉴权中间件
- * @param {...string} roles 允许的角色列表，不传则所有角色均可
+ * @param {...string} roles 允许的角色列表（兼容旧的角色名鉴权），不传则所有角色均可
+ *
+ * 会注入 req.adminId / req.adminRole / req.adminRoleId / req.adminName
+ * super 角色自动通过所有鉴权
  */
 function adminAuth(...roles) {
   return async (req, res, next) => {
@@ -47,19 +50,31 @@ function adminAuth(...roles) {
 
     // 查询管理员信息（确认账号未被禁用）
     const [admin] = await query(
-      'SELECT id, username, role, status FROM admin_users WHERE id = ? LIMIT 1',
+      'SELECT id, username, role, role_id, status FROM admin_users WHERE id = ? LIMIT 1',
       [payload.adminId],
     );
     if (!admin || admin.status !== 1) {
       return res.status(401).json({ code: 401, msg: '账号不存在或已被禁用' });
     }
+
+    // super 角色自动通过所有鉴权
+    if (admin.role === 'super') {
+      req.adminId     = admin.id;
+      req.adminRole   = admin.role;
+      req.adminRoleId = admin.role_id;
+      req.adminName   = admin.username;
+      return next();
+    }
+
+    // 旧的基于角色名的鉴权（向后兼容）
     if (roles.length && !roles.includes(admin.role)) {
       return res.status(403).json({ code: 403, msg: '权限不足' });
     }
 
-    req.adminId   = admin.id;
-    req.adminRole = admin.role;
-    req.adminName = admin.username;
+    req.adminId     = admin.id;
+    req.adminRole   = admin.role;
+    req.adminRoleId = admin.role_id;
+    req.adminName   = admin.username;
     next();
   };
 }

@@ -33,6 +33,7 @@ const adminSystemRouter = require('./routes/admin/system');
 const adminMallRouter  = require('./routes/admin/mall');
 const adminUploadRouter = require('./routes/admin/upload');
 const adminBannerRouter  = require('./routes/admin/banner');
+const adminRoleRouter    = require('./routes/admin/role');
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.use('/api/admin/system',  adminSystemRouter);
 app.use('/api/admin/mall',    adminMallRouter);
 app.use('/api/admin/upload',  adminUploadRouter);
 app.use('/api/admin/banners', adminBannerRouter);
+app.use('/api/admin',       adminRoleRouter);
 
 // ── 错误处理 ──────────────────────────────────────────────────────────────────
 app.use(notFound);

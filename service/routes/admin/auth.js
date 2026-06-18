@@ -38,12 +38,37 @@ router.post('/login',
       }
 
       const token = jwt.sign(
-        { adminId: admin.id, username: admin.username, role: admin.role },
+        { adminId: admin.id, username: admin.username, role: admin.role, roleId: admin.role_id },
         process.env.ADMIN_JWT_SECRET,
         { expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '8h' },
       );
       await query('UPDATE admin_users SET last_login = NOW() WHERE id = ?', [admin.id]);
-      return ok(res, { token, adminId: admin.id, username: admin.username, role: admin.role, realName: admin.real_name });
+
+      // 获取权限列表
+      let permissions = [];
+      if (admin.role === 'super') {
+        const perms = await query("SELECT `key` FROM permissions ORDER BY id");
+        permissions = perms.map(p => p.key);
+      } else if (admin.role_id) {
+        const perms = await query(
+          `SELECT p.key FROM permissions p
+           JOIN role_permissions rp ON rp.permission_id = p.id
+           WHERE rp.role_id = ?
+           ORDER BY p.id`,
+          [admin.role_id],
+        );
+        permissions = perms.map(p => p.key);
+      }
+
+      return ok(res, {
+        token,
+        adminId: admin.id,
+        username: admin.username,
+        role: admin.role,
+        roleId: admin.role_id,
+        realName: admin.real_name,
+        permissions,
+      });
     } catch (err) { next(err); }
   },
 );
@@ -55,10 +80,27 @@ router.post('/logout', adminAuth(), async (req, res) => ok(res, null, '已退出
 router.get('/me', adminAuth(), async (req, res, next) => {
   try {
     const [admin] = await query(
-      'SELECT id, username, real_name, role, last_login, created_at FROM admin_users WHERE id = ? LIMIT 1',
+      'SELECT id, username, real_name, role, role_id, last_login, created_at FROM admin_users WHERE id = ? LIMIT 1',
       [req.adminId],
     );
-    return ok(res, admin);
+
+    // 获取权限列表
+    let permissions = [];
+    if (admin.role === 'super') {
+      const perms = await query("SELECT `key` FROM permissions ORDER BY id");
+      permissions = perms.map(p => p.key);
+    } else if (admin.role_id) {
+      const perms = await query(
+        `SELECT p.key FROM permissions p
+         JOIN role_permissions rp ON rp.permission_id = p.id
+         WHERE rp.role_id = ?
+         ORDER BY p.id`,
+        [admin.role_id],
+      );
+      permissions = perms.map(p => p.key);
+    }
+
+    return ok(res, { ...admin, permissions });
   } catch (err) { next(err); }
 });
 

@@ -53,7 +53,11 @@ router.put('/settings',
 router.get('/admins', adminAuth('super'), async (req, res, next) => {
   try {
     const list = await query(
-      'SELECT id, username, real_name, role, status, last_login, created_at FROM admin_users ORDER BY id',
+      `SELECT au.id, au.username, au.real_name, au.role, au.role_id, au.status, au.last_login, au.created_at,
+              r.label AS role_label
+       FROM admin_users au
+       LEFT JOIN roles r ON r.id = au.role_id
+       ORDER BY au.id`,
     );
     return ok(res, list);
   } catch (err) { next(err); }
@@ -68,13 +72,19 @@ router.post('/admins',
   validate,
   async (req, res, next) => {
     try {
-      const { username, password, realName, role } = req.body;
+      const { username, password, realName, role, roleId } = req.body;
       const [exist] = await query('SELECT id FROM admin_users WHERE username = ? LIMIT 1', [username]);
       if (exist) return res.status(400).json({ code: 400, msg: '账号已存在' });
       const hash = await bcrypt.hash(password, 10);
+      // role_id 从 roles 表查询
+      let resolvedRoleId = roleId || null;
+      if (!resolvedRoleId && role) {
+        const [r] = await query('SELECT id FROM roles WHERE name = ? LIMIT 1', [role]);
+        resolvedRoleId = r ? r.id : null;
+      }
       await query(
-        'INSERT INTO admin_users (username, password, real_name, role) VALUES (?,?,?,?)',
-        [username, hash, realName || null, role],
+        'INSERT INTO admin_users (username, password, real_name, role, role_id) VALUES (?,?,?,?,?)',
+        [username, hash, realName || null, role, resolvedRoleId],
       );
       return ok(res, null, '管理员创建成功');
     } catch (err) { next(err); }
@@ -86,15 +96,21 @@ router.put('/admins/:id',
   adminAuth('super'),
   async (req, res, next) => {
     try {
-      const { realName, role, password } = req.body;
+      const { realName, role, password, roleId } = req.body;
       if (password) {
         if (password.length < 6) return res.status(400).json({ code: 400, msg: '密码至少6位' });
         const hash = await bcrypt.hash(password, 10);
         await query('UPDATE admin_users SET password = ? WHERE id = ?', [hash, req.params.id]);
       }
+      // 解析 role_id
+      let resolvedRoleId = roleId ?? null;
+      if (resolvedRoleId === undefined && role) {
+        const [r] = await query('SELECT id FROM roles WHERE name = ? LIMIT 1', [role]);
+        resolvedRoleId = r ? r.id : null;
+      }
       await query(
-        'UPDATE admin_users SET real_name = COALESCE(?,real_name), role = COALESCE(?,role) WHERE id = ?',
-        [realName ?? null, role ?? null, req.params.id],
+        'UPDATE admin_users SET real_name = COALESCE(?,real_name), role = COALESCE(?,role), role_id = COALESCE(?,role_id) WHERE id = ?',
+        [realName ?? null, role ?? null, resolvedRoleId, req.params.id],
       );
       return ok(res, null, '更新成功');
     } catch (err) { next(err); }

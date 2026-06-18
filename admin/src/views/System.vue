@@ -284,7 +284,7 @@ const resetTarget = ref(null)
 const resetPwd = ref('')
 const resetting = ref(false)
 const roleMap = { super:'超级管理员', front_desk:'前台', finance:'财务', operation:'运营' }
-const roleLabel = (r) => roleMap[r] || r
+const roleLabel = (row) => row.role_label || roleMap[row.role] || row.role
 const fmtDate = (d) => d ? new Date(d).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '-'
 
 async function loadAdmins() {

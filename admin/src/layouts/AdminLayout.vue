@@ -56,7 +56,7 @@ import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 import {
   SwitchButton, OfficeBuilding, DataAnalysis, House,
-  Document, User, ShoppingCart, DataLine, Setting, Picture
+  Document, User, ShoppingCart, DataLine, Setting, Picture, Key
 } from '@element-plus/icons-vue'
 
 const auth   = useAuthStore()
@@ -65,22 +65,29 @@ const router = useRouter()
 
 onMounted(() => { if (!auth.user) auth.fetchMe() })
 
-const navItems = [
-  { to: '/dashboard', icon: markRaw(DataAnalysis),  label: '仪表盘' },
-  { to: '/rooms',     icon: markRaw(House),          label: '房型管理' },
-  { to: '/orders',    icon: markRaw(Document),       label: '订单管理' },
-  { to: '/members',   icon: markRaw(User),           label: '会员管理' },
-  { to: '/mall',      icon: markRaw(ShoppingCart),   label: '积分商城' },
-  { to: '/banners',   icon: markRaw(Picture),        label: 'Banner管理' },
-  { to: '/reports',   icon: markRaw(DataLine),    label: '财务报表' },
-  { to: '/system',    icon: markRaw(Setting),        label: '系统设置' },
-]
+// 菜单配置：permission 字段用于权限过滤
+const allNavItems = [
+  { to: '/dashboard', icon: markRaw(DataAnalysis),  label: '仪表盘',     permission: 'dashboard:view' },
+  { to: '/rooms',     icon: markRaw(House),          label: '房型管理',   permission: 'rooms:view' },
+  { to: '/orders',    icon: markRaw(Document),       label: '订单管理',   permission: 'orders:view' },
+  { to: '/members',   icon: markRaw(User),           label: '会员管理',   permission: 'members:view' },
+  { to: '/mall',      icon: markRaw(ShoppingCart),   label: '积分商城',   permission: 'mall:view' },
+  { to: '/banners',   icon: markRaw(Picture),        label: 'Banner管理', permission: 'banners:view' },
+  { to: '/reports',   icon: markRaw(DataLine),       label: '财务报表',   permission: 'reports:view' },
+  { to: '/system',    icon: markRaw(Setting),        label: '系统设置',   permission: 'system:settings' },
+  { to: '/roles',     icon: markRaw(Key),            label: '角色权限',   permission: 'roles:manage' },
+];
+
+// 根据权限动态过滤菜单
+const navItems = computed(() =>
+  allNavItems.filter(item => !item.permission || auth.hasPermission(item.permission))
+);
 
 const roleMap = { super: '超级管理员', front_desk: '前台', finance: '财务', operation: '运营' }
 const roleLabel = computed(() => roleMap[auth.user?.role] || auth.user?.role || '')
 const userInitial = computed(() => (auth.user?.username || 'A')[0].toUpperCase())
 const currentTitle = computed(() => {
-  const matched = navItems.find(n => route.path.startsWith(n.to))
+  const matched = allNavItems.find(n => route.path.startsWith(n.to))
   return matched?.label || '管理后台'
 })
 const today = computed(() => new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }))

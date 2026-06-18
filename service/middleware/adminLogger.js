@@ -41,6 +41,11 @@ const ACTION_MAP = [
   [/\/banners$/,               'POST',   '新增Banner'],
   [/\/banners\/\d+$/,          'PUT',    '编辑Banner'],
   [/\/banners\/\d+$/,          'DELETE', '删除Banner'],
+  // RBAC 角色权限管理
+  [/\/roles$/,                  'POST',   '新增角色'],
+  [/\/roles\/\d+$/,             'PUT',    '编辑角色'],
+  [/\/roles\/\d+$/,             'DELETE', '删除角色'],
+  [/\/roles\/\d+\/permissions$/, 'PUT',   '设置角色权限'],
 ];
 
 function getAction(path, method) {
