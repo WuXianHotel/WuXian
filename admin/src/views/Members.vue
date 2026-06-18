@@ -480,7 +480,7 @@
           <span v-if="levelTarget?.level_name && levelTarget?.level !== undefined" style="margin-left:8px;color:var(--text-secondary);font-size:12px">（Lv.{{ levelTarget.level }}）</span>
         </el-form-item>
         <el-form-item label="目标等级" required>
-          <el-select v-model="levelForm.targetLevel" placeholder="请选择目标等级" style="width:100%">
+          <el-select v-model="levelAdjForm.targetLevel" placeholder="请选择目标等级" style="width:100%">
             <el-option
               v-for="lv in levels"
               :key="lv.level"
@@ -492,18 +492,18 @@
               <span style="float:right;color:var(--text-secondary);font-size:12px">Lv.{{ lv.level }}</span>
             </el-option>
           </el-select>
-          <div v-if="levelForm.targetLevel && levelTarget" class="level-change-preview">
+          <div v-if="levelAdjForm.targetLevel && levelTarget" class="level-change-preview">
             <span>{{ levelTarget.level_name || levelLabel(levelTarget.level) }}</span>
             <el-icon style="margin:0 6px"><Right /></el-icon>
-            <span>{{ levels.find(l => l.level === levelForm.targetLevel)?.name || '—' }}</span>
+            <span>{{ levels.find(l => l.level === levelAdjForm.targetLevel)?.name || '—' }}</span>
             <el-tag
-              v-if="levelForm.targetLevel > levelTarget.level"
+              v-if="levelAdjForm.targetLevel > levelTarget.level"
               size="small"
               type="success"
               style="margin-left:8px"
             >升级</el-tag>
             <el-tag
-              v-if="levelForm.targetLevel < levelTarget.level"
+              v-if="levelAdjForm.targetLevel < levelTarget.level"
               size="small"
               type="danger"
               style="margin-left:8px"
@@ -512,7 +512,7 @@
         </el-form-item>
         <el-form-item label="调整原因" required>
           <el-input
-            v-model="levelForm.remark"
+            v-model="levelAdjForm.remark"
             type="textarea"
             :rows="3"
             placeholder="请输入调整原因（必填，将记录到操作日志）"
@@ -520,7 +520,7 @@
             show-word-limit
           />
         </el-form-item>
-        <el-form-item v-if="levelForm.targetLevel < levelTarget?.level" label="降级说明">
+        <el-form-item v-if="levelAdjForm.targetLevel < levelTarget?.level" label="降级说明">
           <el-alert
             title="请注意：降级后会员将立即失去原等级对应的折扣、积分倍率等权益，已获取的历史积分不会扣除。"
             type="warning"
@@ -531,7 +531,7 @@
       </el-form>
       <template #footer>
         <el-button @click="showLevelAdjust=false">取消</el-button>
-        <el-button type="primary" @click="submitLevelAdjust" :loading="levelSaving">确认调整</el-button>
+        <el-button type="primary" @click="submitLevelAdjust" :loading="levelAdjSaving">确认调整</el-button>
       </template>
     </el-dialog>
 
@@ -866,31 +866,31 @@ async function submitWalletAdjust() {
 // ═══════════════════ 手动调整会员等级 ═══════════════════
 const showLevelAdjust = ref(false);
 const levelTarget = ref(null);
-const levelSaving = ref(false);
-const levelForm = ref({ targetLevel: null, remark: '' });
+const levelAdjSaving = ref(false);
+const levelAdjForm = ref({ targetLevel: null, remark: '' });
 
 function openLevelAdjust(m) {
   levelTarget.value = m;
-  levelForm.value = { targetLevel: null, remark: '' };
+  levelAdjForm.value = { targetLevel: null, remark: '' };
   showLevelAdjust.value = true;
   // 确保等级列表已加载
   if (!levels.value.length) loadLevelsData();
 }
 
 async function submitLevelAdjust() {
-  if (!levelForm.value.targetLevel) { toast?.error('请选择目标等级'); return; }
-  if (!levelForm.value.remark?.trim()) { toast?.error('请输入调整原因'); return; }
-  levelSaving.value = true;
+  if (!levelAdjForm.value.targetLevel) { toast?.error('请选择目标等级'); return; }
+  if (!levelAdjForm.value.remark?.trim()) { toast?.error('请输入调整原因'); return; }
+  levelAdjSaving.value = true;
   try {
     const res = await adjustLevel(levelTarget.value.id, {
-      targetLevel: levelForm.value.targetLevel,
-      remark: levelForm.value.remark.trim(),
+      targetLevel: levelAdjForm.value.targetLevel,
+      remark: levelAdjForm.value.remark.trim(),
     });
     toast?.success(res.msg || '等级调整成功');
     showLevelAdjust.value = false;
     load(); // 刷新会员列表
   } catch (e) { toast?.error(e?.msg || '操作失败'); }
-  levelSaving.value = false;
+  levelAdjSaving.value = false;
 }
 
 // ═══════════════════ 等级管理 Tab ═══════════════════
