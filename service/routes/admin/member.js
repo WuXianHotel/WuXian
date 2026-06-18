@@ -396,4 +396,92 @@ router.get('/:id/orders', adminAuth(), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── PATCH /:id/level  手动调整会员等级 ────────────────────────────────────────
+router.patch('/:id/level',
+  adminAuth('super', 'operation'),
+  body('targetLevel').isInt({ min: 1 }).withMessage('目标等级值必须为有效整数'),
+  body('remark').notEmpty().withMessage('调整原因不能为空'),
+  validate,
+  async (req, res, next) => {
+    try {
+      const { targetLevel, remark } = req.body;
+
+      // 获取当前会员信息
+      const [member] = await query(
+        'SELECT id, user_id, level FROM members WHERE id = ? LIMIT 1',
+        [req.params.id],
+      );
+      if (!member) return res.status(404).json({ code: 404, msg: '会员不存在' });
+
+      // 验证目标等级是否存在
+      const [targetLevelRow] = await query(
+        'SELECT id, level, name FROM member_levels WHERE level = ? LIMIT 1',
+        [targetLevel],
+      );
+      if (!targetLevelRow) return res.status(400).json({ code: 400, msg: '目标等级不存在' });
+
+      // 如果等级未变化
+      if (member.level === targetLevel) {
+        return res.status(400).json({ code: 400, msg: '目标等级与当前等级相同' });
+      }
+
+      // 在事务中更新等级并写入日志
+      const oldLevel = member.level;
+      await transaction(async conn => {
+        // 更新会员等级
+        await conn.execute(
+          'UPDATE members SET level = ? WHERE id = ?',
+          [targetLevel, req.params.id],
+        );
+
+        // 写入等级变更日志
+        await conn.execute(
+          `INSERT INTO member_level_logs (member_id, user_id, old_level, new_level, admin_id, admin_name, remark)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [member.id, member.user_id, oldLevel, targetLevel, req.adminId, req.adminName, remark],
+        );
+      });
+
+      // 获取等级名称用于返回消息
+      const [[oldLevelRow]] = await query(
+        'SELECT name FROM member_levels WHERE level = ? LIMIT 1',
+        [oldLevel],
+      );
+
+      const oldLabel = oldLevelRow?.name || `Lv${oldLevel}`;
+      const newLabel = targetLevelRow.name;
+
+      return ok(res, {
+        oldLevel,
+        newLevel: targetLevel,
+        oldLabel,
+        newLabel,
+      }, `已将等级从「${oldLabel}」调整为「${newLabel}」`);
+    } catch (err) { next(err); }
+  },
+);
+
+// ── GET /:id/level-logs  会员等级变更日志 ─────────────────────────────────────
+router.get('/:id/level-logs', adminAuth(), async (req, res, next) => {
+  try {
+    const [member] = await query('SELECT id, user_id FROM members WHERE id = ? LIMIT 1', [req.params.id]);
+    if (!member) return res.status(404).json({ code: 404, msg: '会员不存在' });
+
+    const { pageSize, offset, page: p } = parsePager(req.query);
+    const [[{ total }], list] = await Promise.all([
+      query('SELECT COUNT(*) AS total FROM member_level_logs WHERE member_id = ?', [req.params.id]),
+      query(
+        `SELECT mll.*, ml1.name AS old_level_name, ml2.name AS new_level_name
+         FROM member_level_logs mll
+         LEFT JOIN member_levels ml1 ON ml1.level = mll.old_level
+         LEFT JOIN member_levels ml2 ON ml2.level = mll.new_level
+         WHERE mll.member_id = ?
+         ORDER BY mll.created_at DESC LIMIT ? OFFSET ?`,
+        [req.params.id, pageSize, offset],
+      ),
+    ]);
+    return page(res, { list, total, page: p, pageSize });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

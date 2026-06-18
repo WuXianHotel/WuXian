@@ -77,12 +77,13 @@
           <el-table-column label="注册时间" min-width="120">
             <template #default="{ row }">{{ fmtDate(row.created_at) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="360" fixed="right">
+          <el-table-column label="操作" width="420" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="openPointsLogs(row)">积分明细</el-button>
               <el-button type="primary" link size="small" @click="openPoints(row)">调积分</el-button>
               <el-button type="success" link size="small" @click="openWalletLogs(row)">余额明细</el-button>
               <el-button type="success" link size="small" @click="openWalletAdjust(row)">调余额</el-button>
+              <el-button type="info" link size="small" @click="openLevelAdjust(row)">调等级</el-button>
               <el-button type="warning" link size="small" @click="toggleBan(row)">{{ row.status===1?'封禁':'解封' }}</el-button>
               <el-button type="danger" link size="small" @click="removeMember(row)">删除</el-button>
             </template>
@@ -466,6 +467,74 @@
       </template>
     </el-dialog>
 
+    <!-- 调整会员等级 Dialog -->
+    <el-dialog v-model="showLevelAdjust" width="460px" destroy-on-close>
+      <template #header>
+        <span>调整会员等级 — {{ levelTarget?.nickname || levelTarget?.phone }}</span>
+      </template>
+      <el-form label-width="80px">
+        <el-form-item label="当前等级">
+          <el-tag size="default" :type="levelType(levelTarget?.level)">
+            {{ levelTarget?.level_name || levelLabel(levelTarget?.level) }}
+          </el-tag>
+          <span v-if="levelTarget?.level_name && levelTarget?.level !== undefined" style="margin-left:8px;color:var(--text-secondary);font-size:12px">（Lv.{{ levelTarget.level }}）</span>
+        </el-form-item>
+        <el-form-item label="目标等级" required>
+          <el-select v-model="levelForm.targetLevel" placeholder="请选择目标等级" style="width:100%">
+            <el-option
+              v-for="lv in levels"
+              :key="lv.level"
+              :label="`${lv.name}（Lv.${lv.level}）`"
+              :value="lv.level"
+              :disabled="lv.level === levelTarget?.level"
+            >
+              <span>{{ lv.name }}</span>
+              <span style="float:right;color:var(--text-secondary);font-size:12px">Lv.{{ lv.level }}</span>
+            </el-option>
+          </el-select>
+          <div v-if="levelForm.targetLevel && levelTarget" class="level-change-preview">
+            <span>{{ levelTarget.level_name || levelLabel(levelTarget.level) }}</span>
+            <el-icon style="margin:0 6px"><Right /></el-icon>
+            <span>{{ levels.find(l => l.level === levelForm.targetLevel)?.name || '—' }}</span>
+            <el-tag
+              v-if="levelForm.targetLevel > levelTarget.level"
+              size="small"
+              type="success"
+              style="margin-left:8px"
+            >升级</el-tag>
+            <el-tag
+              v-if="levelForm.targetLevel < levelTarget.level"
+              size="small"
+              type="danger"
+              style="margin-left:8px"
+            >降级</el-tag>
+          </div>
+        </el-form-item>
+        <el-form-item label="调整原因" required>
+          <el-input
+            v-model="levelForm.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入调整原因（必填，将记录到操作日志）"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item v-if="levelForm.targetLevel < levelTarget?.level" label="降级说明">
+          <el-alert
+            title="请注意：降级后会员将立即失去原等级对应的折扣、积分倍率等权益，已获取的历史积分不会扣除。"
+            type="warning"
+            show-icon
+            :closable="false"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showLevelAdjust=false">取消</el-button>
+        <el-button type="primary" @click="submitLevelAdjust" :loading="levelSaving">确认调整</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 单会员积分明细 Dialog -->
     <el-dialog v-model="showPointsLogs" width="650px" destroy-on-close>
       <template #header>
@@ -536,12 +605,13 @@
 <script setup>
 import { ref, computed, onMounted, inject, markRaw } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { User, Plus, Lightning, CreditCard, Coin, TrendCharts, Goods, SetUp, Wallet, Money } from '@element-plus/icons-vue'
+import { User, Plus, Lightning, CreditCard, Coin, TrendCharts, Goods, SetUp, Wallet, Money, Right } from '@element-plus/icons-vue'
 import {
   getMemberStats, getMembers, adjustPoints, setMemberStatus, deleteMember,
   getPointsLogs, getPointsStats, getAllPointsLogs,
   getLevels, createLevel, updateLevel, deleteLevel,
-  getWalletStats, getAllWalletLogs, adjustWallet, getMemberWalletLogs
+  getWalletStats, getAllWalletLogs, adjustWallet, getMemberWalletLogs,
+  adjustLevel
 } from '@/api/member'
 import { getSettings, saveSettings } from '@/api/system'
 import { uploadToCos } from '@/api/upload'
@@ -793,6 +863,36 @@ async function submitWalletAdjust() {
   walletSaving.value = false
 }
 
+// ═══════════════════ 手动调整会员等级 ═══════════════════
+const showLevelAdjust = ref(false);
+const levelTarget = ref(null);
+const levelSaving = ref(false);
+const levelForm = ref({ targetLevel: null, remark: '' });
+
+function openLevelAdjust(m) {
+  levelTarget.value = m;
+  levelForm.value = { targetLevel: null, remark: '' };
+  showLevelAdjust.value = true;
+  // 确保等级列表已加载
+  if (!levels.value.length) loadLevelsData();
+}
+
+async function submitLevelAdjust() {
+  if (!levelForm.value.targetLevel) { toast?.error('请选择目标等级'); return; }
+  if (!levelForm.value.remark?.trim()) { toast?.error('请输入调整原因'); return; }
+  levelSaving.value = true;
+  try {
+    const res = await adjustLevel(levelTarget.value.id, {
+      targetLevel: levelForm.value.targetLevel,
+      remark: levelForm.value.remark.trim(),
+    });
+    toast?.success(res.msg || '等级调整成功');
+    showLevelAdjust.value = false;
+    load(); // 刷新会员列表
+  } catch (e) { toast?.error(e?.msg || '操作失败'); }
+  levelSaving.value = false;
+}
+
 // ═══════════════════ 等级管理 Tab ═══════════════════
 const levels = ref([])
 const levelsLoading = ref(false)
@@ -983,4 +1083,14 @@ async function removeMember(m) {
 .kpi-value { font-size: 22px; font-weight: 700; }
 .kpi-label { font-size: 12px; color: var(--text-secondary); }
 .field-inline-hint { margin-left: 12px; font-size: 12px; color: #94a3b8; }
+.level-change-preview {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
 </style>

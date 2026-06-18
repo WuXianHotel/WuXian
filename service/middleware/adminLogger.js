@@ -24,6 +24,7 @@ const ACTION_MAP = [
   [/\/orders\/.*\/refund$/,   'PATCH',  '退款审核'],
   [/\/members\/\d+\/points$/, 'PATCH',  '调整会员积分'],
   [/\/members\/\d+\/wallet$/, 'PATCH',  '调整会员余额'],
+  [/\/members\/\d+\/level$/,  'PATCH',  '调整会员等级'],
   [/\/members\/\d+\/status$/, 'PATCH',  '修改会员状态'],
   [/\/members\/\d+$/,         'DELETE', '删除会员'],
   [/\/members\/levels$/,      'POST',   '新增会员等级'],
