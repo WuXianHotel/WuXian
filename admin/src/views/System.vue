@@ -117,7 +117,7 @@
         <el-table :data="admins" v-loading="loadingAdmins" stripe style="width:100%">
           <el-table-column prop="username" label="用户名" />
           <el-table-column label="角色" width="120">
-            <template #default="{ row }"><el-tag size="small">{{ roleLabel(row.role) }}</el-tag></template>
+            <template #default="{ row }"><el-tag size="small">{{ roleLabel(row) }}</el-tag></template>
           </el-table-column>
           <el-table-column label="状态" width="80">
             <template #default="{ row }"><el-tag :type="row.status===1?'success':'danger'" size="small">{{ row.status===1?'正常':'禁用' }}</el-tag></template>
