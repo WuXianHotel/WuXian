@@ -101,6 +101,8 @@ const api = {
 
   // ─── 支付 ───
   walletPay: (orderNo) => request({ url: '/pay/wallet', method: 'POST', data: { orderNo } }),
+  wechatPay: (orderNo) => request({ url: '/pay/create', method: 'POST', data: { orderNo } }),
+  getPayStatus: (orderNo) => request({ url: `/pay/status/${orderNo}` }),
 
   // ─── 会员 ───
   getMemberInfo: () => request({ url: '/member/info' }),

@@ -6,3 +6,5 @@
 scripts
 screenshot
 DELIVERY.md
+service/certs/*.pem
+!service/certs/.gitkeep

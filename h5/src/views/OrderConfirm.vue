@@ -36,10 +36,24 @@
       <!-- 支付方式 + 支付按钮 -->
       <div class="ocf__card">
         <div class="ocf__card-title"><CreditCard :size="16" /> 支付方式</div>
-        <div class="ocf__card-body ocf__pay">
-          <Wallet :size="20" class="ocf__pay-icon" />
-          <span class="ocf__pay-text">钱包余额支付</span>
-          <CircleCheck :size="16" class="ocf__pay-check" />
+        <!-- 支付方式选择 -->
+        <div class="ocf__pay-methods">
+          <label
+            :class="['ocf__pay-method', { 'ocf__pay-method--active': payMethod === 'wechat' }]"
+            @click="payMethod = 'wechat'"
+          >
+            <span class="ocf__pay-method-icon ocf__pay-method-icon--wechat">微信</span>
+            <span class="ocf__pay-method-text">微信支付</span>
+            <CircleCheck v-if="payMethod === 'wechat'" :size="16" class="ocf__pay-check" />
+          </label>
+          <label
+            :class="['ocf__pay-method', { 'ocf__pay-method--active': payMethod === 'wallet' }]"
+            @click="payMethod = 'wallet'"
+          >
+            <Wallet :size="20" class="ocf__pay-method-icon" />
+            <span class="ocf__pay-method-text">钱包余额支付</span>
+            <CircleCheck v-if="payMethod === 'wallet'" :size="16" class="ocf__pay-check" />
+          </label>
         </div>
         <div class="ocf__card-body" v-if="order.status === 0">
           <button class="ocf__pay-btn" @click="payNow" :disabled="paying">
@@ -63,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ClipboardList, Wallet, CreditCard, CircleCheck } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
@@ -76,12 +90,15 @@ const router = useRouter();
 const order = ref({});
 const loading = ref(true);
 const paying = ref(false);
+const payMethod = ref('wechat');
 
 const showNotify = ref(false);
 const notifyPoints = ref(0);
 const notifyLevelUp = ref(null);
 
 const statusMap = { 0: '待支付', 1: '待入住', 2: '入住中', 3: '已退房', 4: '已取消', 5: '退款中', 6: '已退款' };
+
+let pollTimer = null;
 
 onMounted(async () => {
   const id = route.params.id;
@@ -90,6 +107,16 @@ onMounted(async () => {
     order.value = res.data || {};
   } catch { /* ignore */ }
   finally { loading.value = false; }
+
+  // 检查是否有待确认的微信支付（从小程序返回后）
+  const pendingOrderNo = sessionStorage.getItem('pendingPayOrderNo');
+  if (pendingOrderNo && pendingOrderNo === order.value?.order_no) {
+    pollPayStatus(pendingOrderNo);
+  }
+});
+
+onUnmounted(() => {
+  if (pollTimer) clearTimeout(pollTimer);
 });
 
 function onNotifyClose() {
@@ -98,6 +125,79 @@ function onNotifyClose() {
 }
 
 async function payNow() {
+  if (payMethod.value === 'wechat') {
+    return wechatPayNow();
+  }
+  return walletPayNow();
+}
+
+// 微信支付
+async function wechatPayNow() {
+  paying.value = true;
+  try {
+    const payRes = await api.wechatPay(order.value.order_no);
+    const payParams = payRes.data || {};
+
+    sessionStorage.setItem('pendingPayOrderNo', order.value.order_no);
+
+    if (typeof wx !== 'undefined' && wx.miniProgram) {
+      wx.miniProgram.postMessage({
+        data: {
+          action: 'requestPayment',
+          timeStamp: payParams.timeStamp,
+          nonceStr: payParams.nonceStr,
+          package: payParams.package,
+          signType: payParams.signType,
+          paySign: payParams.paySign,
+        },
+      });
+      wx.miniProgram.navigateBack();
+    } else {
+      showToast('微信支付仅在小程序中可用', 'error');
+      sessionStorage.removeItem('pendingPayOrderNo');
+    }
+  } catch {
+    sessionStorage.removeItem('pendingPayOrderNo');
+  }
+  finally { paying.value = false; }
+}
+
+// 轮询支付状态（支付回调异步，轮询最多30秒）
+function pollPayStatus(orderNo) {
+  let attempts = 0;
+  const maxAttempts = 30;
+
+  function check() {
+    if (attempts >= maxAttempts) {
+      sessionStorage.removeItem('pendingPayOrderNo');
+      return;
+    }
+    attempts++;
+    api.getPayStatus(orderNo).then(res => {
+      const status = res.data || {};
+      if (status.payStatus === 1) {
+        sessionStorage.removeItem('pendingPayOrderNo');
+        handlePaySuccess();
+      } else {
+        pollTimer = setTimeout(check, 1000);
+      }
+    }).catch(() => {
+      pollTimer = setTimeout(check, 1000);
+    });
+  }
+  check();
+}
+
+// 支付成功处理
+function handlePaySuccess() {
+  showToast('支付成功！', 'success');
+  setTimeout(() => {
+    router.replace(`/order/${order.value.order_no}`);
+  }, 1200);
+}
+
+// 钱包余额支付
+async function walletPayNow() {
   paying.value = true;
   try {
     const payRes = await api.walletPay(order.value.order_no);
@@ -151,4 +251,19 @@ async function payNow() {
 .ocf__pay-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 600; }
 .ocf__pay-btn:disabled { opacity: .6; }
 .ocf__pay-done { text-align: center; font-size: 16px; font-weight: 600; color: var(--neon-green); }
+
+.ocf__pay-methods { display: flex; gap: 10px; padding: 0 16px 12px; }
+.ocf__pay-method {
+  flex: 1; display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md); cursor: pointer; transition: border-color .2s;
+}
+.ocf__pay-method--active { border-color: var(--neon-cyan); background: rgba(0,212,255,.05); }
+.ocf__pay-method-icon { color: var(--neon-cyan); flex-shrink: 0; }
+.ocf__pay-method-icon--wechat {
+  width: 28px; height: 28px; border-radius: 6px; background: #07c160;
+  color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.ocf__pay-method-text { font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1; }
+.ocf__pay-check { color: var(--neon-cyan); flex-shrink: 0; }
 </style>

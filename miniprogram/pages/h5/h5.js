@@ -155,6 +155,26 @@ Page({
           wx.makePhoneCall({ phoneNumber: data.phoneNumber });
         }
         break;
+      case 'requestPayment':
+        // H5 请求发起微信支付
+        wx.requestPayment({
+          timeStamp: data.timeStamp,
+          nonceStr: data.nonceStr,
+          package: data.package,
+          signType: data.signType || 'RSA',
+          paySign: data.paySign,
+          success: () => {
+            console.log('[h5] 支付成功');
+            // 重新加载 H5，让 H5 轮询支付状态
+            this.initAuth();
+          },
+          fail: (err) => {
+            console.log('[h5] 支付取消或失败:', err.errMsg);
+            // 用户取消或支付失败，重新加载 H5
+            this.initAuth();
+          },
+        });
+        break;
       default:
         break;
     }

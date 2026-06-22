@@ -2,7 +2,7 @@
 /**
  * 小程序端 · 支付
  * POST /api/mp/pay/prepay         发起微信支付预下单
- * POST /api/mp/pay/notify         微信支付回调（无鉴权）
+ * POST /api/mp/pay/notify         微信支付回调（无鉴权，SDK验签）
  * GET  /api/mp/pay/status/:orderNo 查询支付状态
  */
 const router = require('express').Router();
@@ -13,9 +13,9 @@ const { validate, ok } = require('../../middleware/helper');
 const logger = require('../../config/logger');
 const mock   = require('../../config/mock');
 const { checkLevelUpgrade } = require('../../middleware/levelCheck');
+const { jsapiPrepay, buildPayParams, verifyAndDecryptNotify, isAvailable } = require('../../config/wechatpay');
 
 // ── POST /prepay | /create  发起预下单 ────────────────────────────────────────
-// /create 是前端调用的别名；同时兼容入参 orderNo（业务单号）或 orderId（数据库自增id）
 router.post(['/prepay', '/create'],
   mpAuth,
   // 入参归一化：把 orderId 解析为 orderNo
@@ -45,7 +45,7 @@ router.post(['/prepay', '/create'],
 
       let payParams;
       if (mock.wxPay) {
-        // 非生产 + MOCK_WX_PAY=true：返回 mock 预下单参数，前端识别后走 /pay/mock-paid
+        // Mock 模式：返回 mock 预下单参数
         payParams = {
           timeStamp: String(Math.floor(Date.now() / 1000)),
           nonceStr:  Math.random().toString(36).slice(2),
@@ -54,10 +54,30 @@ router.post(['/prepay', '/create'],
           paySign:   'MOCK_SIGN',
           orderNo,
         };
+      } else if (isAvailable) {
+        // 真实微信支付预下单
+        const [roomType] = await query(
+          'SELECT name FROM room_types WHERE id = ? LIMIT 1',
+          [order.room_type_id],
+        );
+        const description = roomType?.name || '酒店订单';
+
+        // 金额单位：元 → 分
+        const totalFen = Math.round(Number(order.pay_amount) * 100);
+
+        const prepayResult = await jsapiPrepay({
+          appid: process.env.WX_APPID,
+          outTradeNo: orderNo,
+          description,
+          total: totalFen,
+          openid: req.openid,
+          notifyUrl: process.env.WX_NOTIFY_URL,
+        });
+
+        payParams = buildPayParams(prepayResult.prepay_id);
+        payParams.orderNo = orderNo;
       } else {
-        // TODO: 调用真实微信支付 v3 API 获取 prepay_id + 构造签名
-        // 临时返回 501，避免上线后误用 mock 参数
-        return res.status(501).json({ code: 501, msg: '微信支付对接未完成，请实现真实预下单逻辑' });
+        return res.status(501).json({ code: 501, msg: '微信支付未配置' });
       }
 
       // 插入支付记录（处理中）
@@ -67,66 +87,107 @@ router.post(['/prepay', '/create'],
       );
 
       return ok(res, payParams);
-    } catch (err) { next(err); }
+    } catch (err) {
+      logger.error('[pay] 预下单失败:', err.message);
+      return res.status(500).json({ code: 500, msg: `预下单失败: ${err.message}` });
+    }
   },
 );
 
 // ── POST /notify  微信支付回调 ────────────────────────────────────────────────
+// V3 API 回调：签名验证 + AES-256-GCM 解密 + 幂等处理
 router.post('/notify', async (req, res) => {
   try {
-    // 实际生产：需验签 + 解密 AES-256-GCM
-    const notify = req.body;
-    logger.info('微信支付回调', notify);
+    const rawBody = req.body;
 
-    const orderNo = notify.out_trade_no || notify.attach;
-    if (!orderNo) return res.status(200).send('<xml><return_code>FAIL</return_code></xml>');
-
-    const [order] = await query(
-      'SELECT id, pay_status, pay_amount, user_id FROM orders WHERE order_no = ? LIMIT 1',
-      [orderNo],
-    );
-    if (!order || order.pay_status === 1) {
-      return res.status(200).send('<xml><return_code>SUCCESS</return_code></xml>');
+    // Mock 模式：直接解析
+    if (mock.wxPay) {
+      return handleNotifyBusiness(rawBody, res);
     }
 
-    await transaction(async conn => {
-      // 更新订单状态：已支付→待入住
-      await conn.execute(
-        'UPDATE orders SET status = 1, pay_status = 1 WHERE order_no = ? AND pay_status = 0',
-        [orderNo],
-      );
-      // 更新支付记录
-      await conn.execute(
-        'UPDATE payments SET status = 1, transaction_id = ?, pay_at = NOW(), raw_notify = ? WHERE order_no = ?',
-        [notify.transaction_id || null, JSON.stringify(notify), orderNo],
-      );
-      // 积分奖励（每消费1元得1积分）
-      const points = Math.floor(Number(order.pay_amount));
-      if (points > 0) {
-        const [{ balance }] = (await conn.execute(
-          'SELECT points AS balance FROM members WHERE user_id = ?', [order.user_id],
-        ))[0];
-        const newBalance = balance + points;
-        await conn.execute(
-          'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + (SELECT nights FROM orders WHERE order_no = ?), total_amount = total_amount + ? WHERE user_id = ?',
-          [newBalance, points, orderNo, order.pay_amount, order.user_id],
-        );
-        await conn.execute(
-          'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
-          [order.user_id, 'earn', points, newBalance, '订单支付奖励积分', orderNo],
-        );
-      }
-    });
+    // 真实模式：验签 + 解密
+    if (!isAvailable) {
+      logger.warn('[pay] 收到支付回调但微信支付未配置');
+      return res.status(200).json({ code: 'FAIL', message: '微信支付未配置' });
+    }
 
-    // 检查等级升级
-    await checkLevelUpgrade(order.user_id).catch(() => {});
+    const decrypted = verifyAndDecryptNotify(rawBody, req.headers);
+    logger.info(`[pay] 回调验签通过, out_trade_no=${decrypted.out_trade_no}`);
 
-    return res.status(200).send('<xml><return_code>SUCCESS</return_code></xml>');
+    return handleNotifyBusiness(decrypted, res);
   } catch (err) {
-    logger.error('支付回调处理失败', err);
-    return res.status(200).send('<xml><return_code>FAIL</return_code></xml>');
+    logger.error('[pay] 支付回调处理失败:', err.message);
+    // V3 通知要求返回 HTTP 200 + JSON
+    return res.status(200).json({ code: 'FAIL', message: err.message });
   }
 });
+
+/**
+ * 支付回调业务处理（幂等）
+ */
+async function handleNotifyBusiness(notifyData, res) {
+  const orderNo = notifyData.out_trade_no;
+  if (!orderNo) {
+    return res.status(200).json({ code: 'FAIL', message: '缺少订单号' });
+  }
+
+  const transactionId = notifyData.transaction_id || '';
+
+  const [order] = await query(
+    'SELECT id, pay_status, pay_amount, user_id FROM orders WHERE order_no = ? LIMIT 1',
+    [orderNo],
+  );
+
+  // 订单不存在或已处理，直接返回成功（幂等）
+  if (!order || order.pay_status === 1) {
+    logger.info(`[pay] 回调幂等跳过: orderNo=${orderNo}`);
+    return res.status(200).json({ code: 'SUCCESS' });
+  }
+
+  // 仅处理支付成功通知
+  const tradeState = notifyData.trade_state || 'SUCCESS';
+  if (tradeState !== 'SUCCESS') {
+    logger.warn(`[pay] 支付状态非成功: orderNo=${orderNo}, trade_state=${tradeState}`);
+    return res.status(200).json({ code: 'SUCCESS', message: `trade_state=${tradeState}` });
+  }
+
+  await transaction(async conn => {
+    // 更新订单状态：已支付→待入住
+    await conn.execute(
+      'UPDATE orders SET status = 1, pay_status = 1 WHERE order_no = ? AND pay_status = 0',
+      [orderNo],
+    );
+    // 更新支付记录
+    await conn.execute(
+      'UPDATE payments SET status = 1, transaction_id = ?, pay_at = NOW(), raw_notify = ? WHERE order_no = ?',
+      [transactionId, JSON.stringify(notifyData), orderNo],
+    );
+    // 积分奖励（每消费1元得1积分）
+    const points = Math.floor(Number(order.pay_amount));
+    if (points > 0) {
+      const [[{ balance }]] = await conn.execute(
+        'SELECT points AS balance FROM members WHERE user_id = ?', [order.user_id],
+      );
+      const newBalance = (balance || 0) + points;
+      await conn.execute(
+        'UPDATE members SET points = ?, points_total = points_total + ?, total_amount = total_amount + ? WHERE user_id = ?',
+        [newBalance, points, order.pay_amount, order.user_id],
+      );
+      await conn.execute(
+        'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
+        [order.user_id, 'earn', points, newBalance, '订单支付奖励积分', orderNo],
+      );
+    }
+  });
+
+  // 检查等级升级
+  await checkLevelUpgrade(order.user_id).catch(err =>
+    logger.error('[pay] 等级升级检查失败:', err)
+  );
+
+  logger.info(`[pay] 支付回调处理成功: orderNo=${orderNo}, transactionId=${transactionId}`);
+  return res.status(200).json({ code: 'SUCCESS' });
+}
 
 // ── GET /status/:orderNo ──────────────────────────────────────────────────────
 router.get('/status/:orderNo', mpAuth, async (req, res, next) => {
