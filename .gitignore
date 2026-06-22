@@ -8,3 +8,4 @@ screenshot
 DELIVERY.md
 service/certs/*.pem
 !service/certs/.gitkeep
+service/certs/*.p12
