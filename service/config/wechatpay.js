@@ -69,17 +69,29 @@ function getWxPay() {
 async function jsapiPrepay(params) {
   const pay = getWxPay();
   if (!pay) throw new Error('微信支付未初始化');
-  const result = await pay.transactions_jsapi({
-    description: params.description,
-    out_trade_no: params.outTradeNo,
-    notify_url: params.notifyUrl,
-    amount: { total: params.total, currency: 'CNY' },
-    payer: { openid: params.openid },
-  });
-  if (result.status === 200 && result.data && result.data.paySign) {
+  let result;
+  try {
+    result = await pay.transactions_jsapi({
+      description: params.description,
+      out_trade_no: params.outTradeNo,
+      notify_url: params.notifyUrl,
+      amount: { total: params.total, currency: 'CNY' },
+      payer: { openid: params.openid },
+    });
+  } catch (err) {
+    // SDK 内部抛错：网络问题 / 证书问题 / 签名问题
+    logger.error('[wechatpay] transactions_jsapi 抛错 msg=' + (err && err.message) + ' stack=' + (err && err.stack));
+    throw new Error('调用微信下单接口失败: ' + (err && err.message));
+  }
+  if (result && result.status === 200 && result.data && result.data.paySign) {
     return result.data;
   }
-  throw new Error('预下单失败: ' + JSON.stringify(result));
+  // 微信返回的业务错误（status !== 200），打出 status/code/message 帮助定位
+  const status = result && result.status;
+  const data = result && result.data;
+  logger.error('[wechatpay] 预下单返回异常 status=' + status + ' data=' + JSON.stringify(data));
+  const wxMsg = (data && (data.message || data.code)) || '未知错误';
+  throw new Error('微信下单失败[' + status + ']: ' + wxMsg);
 }
 
 // 兼容旧调用：基于 prepay_id 重新签名（实际推荐直接使用 jsapiPrepay 返回值）

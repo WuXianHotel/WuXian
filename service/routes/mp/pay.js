@@ -66,6 +66,8 @@ router.post(['/prepay', '/create'],
         // 金额单位：元 → 分
         const totalFen = Math.round(Number(order.pay_amount) * 100);
 
+        logger.info(`[pay] 预下单参数 orderNo=${orderNo} total=${totalFen} openid=${req.openid ? req.openid.slice(0, 6) + '***' : 'EMPTY'} notify=${process.env.WX_NOTIFY_URL}`);
+
         // SDK v2 直接返回 wx.requestPayment 所需字段
         const prepayResult = await jsapiPrepay({
           outTradeNo: orderNo,
@@ -88,8 +90,8 @@ router.post(['/prepay', '/create'],
 
       return ok(res, payParams);
     } catch (err) {
-      logger.error('[pay] 预下单失败:', err.message);
-      return res.status(500).json({ code: 500, msg: `预下单失败: ${err.message}` });
+      logger.error(`[pay] 预下单失败 msg=${err && err.message} stack=${err && err.stack}`);
+      return res.status(500).json({ code: 500, msg: `预下单失败: ${err && err.message}` });
     }
   },
 );
