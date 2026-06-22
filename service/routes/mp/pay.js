@@ -13,7 +13,7 @@ const { validate, ok } = require('../../middleware/helper');
 const logger = require('../../config/logger');
 const mock   = require('../../config/mock');
 const { checkLevelUpgrade } = require('../../middleware/levelCheck');
-const { jsapiPrepay, buildPayParams, verifyAndDecryptNotify, isAvailable } = require('../../config/wechatpay');
+const { jsapiPrepay, verifyAndDecryptNotify, isAvailable } = require('../../config/wechatpay');
 
 // ── POST /prepay | /create  发起预下单 ────────────────────────────────────────
 router.post(['/prepay', '/create'],
@@ -65,8 +65,8 @@ router.post(['/prepay', '/create'],
         // 金额单位：元 → 分
         const totalFen = Math.round(Number(order.pay_amount) * 100);
 
+        // SDK v2 直接返回 wx.requestPayment 所需字段
         const prepayResult = await jsapiPrepay({
-          appid: process.env.WX_APPID,
           outTradeNo: orderNo,
           description,
           total: totalFen,
@@ -74,8 +74,7 @@ router.post(['/prepay', '/create'],
           notifyUrl: process.env.WX_NOTIFY_URL,
         });
 
-        payParams = buildPayParams(prepayResult.prepay_id);
-        payParams.orderNo = orderNo;
+        payParams = { ...prepayResult, orderNo };
       } else {
         return res.status(501).json({ code: 501, msg: '微信支付未配置' });
       }
@@ -111,7 +110,7 @@ router.post('/notify', async (req, res) => {
       return res.status(200).json({ code: 'FAIL', message: '微信支付未配置' });
     }
 
-    const decrypted = verifyAndDecryptNotify(rawBody, req.headers);
+    const decrypted = await verifyAndDecryptNotify(rawBody, req.headers);
     logger.info(`[pay] 回调验签通过, out_trade_no=${decrypted.out_trade_no}`);
 
     return handleNotifyBusiness(decrypted, res);
