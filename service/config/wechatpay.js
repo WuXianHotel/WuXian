@@ -72,7 +72,11 @@ function getWxPay() {
     logger.info(`[wechatpay] 微信支付初始化成功 (mchid=${mchid})`);
     return wxpay;
   } catch (err) {
-    logger.error('[wechatpay] 微信支付初始化失败:', err.message || err, err.stack);
+    logger.error('[wechatpay] 微信支付初始化失败:');
+    logger.error('  message:', err.message || '(empty)');
+    logger.error('  code:', err.code || '(none)');
+    logger.error('  name:', err.name || '(none)');
+    if (err.stack) logger.error('  stack:', err.stack.split('\n').slice(0, 3).join('\n'));
     return null;
   }
 }
