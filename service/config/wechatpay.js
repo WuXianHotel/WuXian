@@ -96,18 +96,34 @@ function buildPayParams(prepayId) {
 }
 
 // 验签 + 解密支付通知；SDK v2 的 verifySign 返回 Promise
-async function verifyAndDecryptNotify(notifyBody, headers) {
+// 重要：rawBody 必须是微信原始下行字符串，验签后再 JSON.parse 得到结构体
+async function verifyAndDecryptNotify(rawBody, headers) {
   const pay = getWxPay();
   if (!pay) throw new Error('微信支付未初始化');
+
+  const bodyStr = Buffer.isBuffer(rawBody)
+    ? rawBody.toString('utf8')
+    : (typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody));
+
   const verified = await pay.verifySign({
-    body: notifyBody,
+    body: bodyStr,
     signature: headers['wechatpay-signature'],
     serial: headers['wechatpay-serial'],
     nonce: headers['wechatpay-nonce'],
     timestamp: headers['wechatpay-timestamp'],
   });
   if (!verified) throw new Error('通知签名验证失败');
-  if (!notifyBody.resource || !notifyBody.resource.ciphertext) throw new Error('通知数据格式异常');
+
+  let notifyBody;
+  try {
+    notifyBody = JSON.parse(bodyStr);
+  } catch (e) {
+    throw new Error('通知报文 JSON 解析失败');
+  }
+  if (!notifyBody.resource || !notifyBody.resource.ciphertext) {
+    throw new Error('通知数据格式异常');
+  }
+
   const apiSecret = process.env.WX_API_KEY;
   const decrypted = pay.decipher_gcm(
     notifyBody.resource.ciphertext,

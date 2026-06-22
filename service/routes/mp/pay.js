@@ -5,7 +5,8 @@
  * POST /api/mp/pay/notify         微信支付回调（无鉴权，SDK验签）
  * GET  /api/mp/pay/status/:orderNo 查询支付状态
  */
-const router = require('express').Router();
+const express = require('express');
+const router = express.Router();
 const { body } = require('express-validator');
 const { query, transaction } = require('../../config/db');
 const { mpAuth } = require('../../middleware/auth');
@@ -95,31 +96,42 @@ router.post(['/prepay', '/create'],
 
 // ── POST /notify  微信支付回调 ────────────────────────────────────────────────
 // V3 API 回调：签名验证 + AES-256-GCM 解密 + 幂等处理
-router.post('/notify', async (req, res) => {
-  try {
-    const rawBody = req.body;
+// 注意：微信 V3 验签依赖原始字节流，因此本路由必须用 express.raw 接收，
+// 不能复用全局的 express.json（会破坏字符顺序导致验签失败）。
+router.post(
+  '/notify',
+  express.raw({ type: '*/*', limit: '2mb' }),
+  async (req, res) => {
+    try {
+      const rawBuffer = req.body;
 
-    // Mock 模式：直接解析
-    if (mock.wxPay) {
-      return handleNotifyBusiness(rawBody, res);
+      // Mock 模式：直接解析原始 buffer 为对象
+      if (mock.wxPay) {
+        let parsed = rawBuffer;
+        if (Buffer.isBuffer(rawBuffer)) {
+          try { parsed = JSON.parse(rawBuffer.toString('utf8')); }
+          catch (e) { parsed = {}; }
+        }
+        return handleNotifyBusiness(parsed, res);
+      }
+
+      // 真实模式：验签 + 解密
+      if (!isAvailable) {
+        logger.warn('[pay] 收到支付回调但微信支付未配置');
+        return res.status(200).json({ code: 'FAIL', message: '微信支付未配置' });
+      }
+
+      const decrypted = await verifyAndDecryptNotify(rawBuffer, req.headers);
+      logger.info(`[pay] 回调验签通过, out_trade_no=${decrypted.out_trade_no}`);
+
+      return handleNotifyBusiness(decrypted, res);
+    } catch (err) {
+      logger.error('[pay] 支付回调处理失败:', err.message);
+      // V3 通知要求返回 HTTP 200 + JSON
+      return res.status(200).json({ code: 'FAIL', message: err.message });
     }
-
-    // 真实模式：验签 + 解密
-    if (!isAvailable) {
-      logger.warn('[pay] 收到支付回调但微信支付未配置');
-      return res.status(200).json({ code: 'FAIL', message: '微信支付未配置' });
-    }
-
-    const decrypted = await verifyAndDecryptNotify(rawBody, req.headers);
-    logger.info(`[pay] 回调验签通过, out_trade_no=${decrypted.out_trade_no}`);
-
-    return handleNotifyBusiness(decrypted, res);
-  } catch (err) {
-    logger.error('[pay] 支付回调处理失败:', err.message);
-    // V3 通知要求返回 HTTP 200 + JSON
-    return res.status(200).json({ code: 'FAIL', message: err.message });
-  }
-});
+  },
+);
 
 /**
  * 支付回调业务处理（幂等）
