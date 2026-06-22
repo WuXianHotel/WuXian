@@ -81,10 +81,16 @@ jobs:
           mkdir -p "$RELEASE_DIR" "$RELEASES_DIR"
           tar -xzf "/tmp/service-$SHA.tar.gz" -C "$RELEASE_DIR"
 
-          # 2. 链接持久化资源（.env / uploads / logs）
+          # 2. 链接持久化资源（.env / uploads / logs / certs）
+          # certs 存放微信支付 apiclient_key.pem / apiclient_cert.pem 等敏感证书，
+          # 不进 git，由运维手动放到 $APP_DIR/certs/。
           ln -sfn "$APP_DIR/.env" "$RELEASE_DIR/.env"
           ln -sfn "$APP_DIR/uploads" "$RELEASE_DIR/uploads"
           ln -sfn "$APP_DIR/logs" "$RELEASE_DIR/logs"
+          mkdir -p "$APP_DIR/certs"
+          # release 包里可能自带空的 certs 目录（含 .gitkeep），先删掉再软链
+          rm -rf "$RELEASE_DIR/certs"
+          ln -sfn "$APP_DIR/certs" "$RELEASE_DIR/certs"
 
           # 3. 切换 current 软链（原子切换）
           ln -sfn "$RELEASE_DIR" "$CURRENT"
