@@ -58,25 +58,32 @@ function getWxPay() {
   }
 
   try {
+    logger.info('[wechatpay] Step 1: 读取私钥...');
     const privateKey = loadPrivateKey();
-    const platformCert = loadPlatformCert();
+    logger.info(`[wechatpay] Step 1 OK: 私钥长度 ${privateKey.length} 字符`);
 
+    logger.info('[wechatpay] Step 2: 读取平台证书...');
+    const platformCert = loadPlatformCert();
+    logger.info(`[wechatpay] Step 2 OK: 平台证书 ${platformCert ? `长度 ${platformCert.length}` : '未提供，将自动下载'}`);
+
+    logger.info('[wechatpay] Step 3: 初始化 SDK...');
     wxpay = new WechatPay({
       mchid: String(mchid),
       serial_no: String(serialNo),
       privateKey,
       apiKey: String(apiKey),
-      certs: platformCert ? [platformCert] : [], // 预置平台证书，SDK 也可自动下载
+      certs: platformCert ? [platformCert] : [],
     });
+    logger.info('[wechatpay] Step 3 OK');
 
     logger.info(`[wechatpay] 微信支付初始化成功 (mchid=${mchid})`);
     return wxpay;
   } catch (err) {
     logger.error('[wechatpay] 微信支付初始化失败:');
-    logger.error('  message:', err.message || '(empty)');
-    logger.error('  code:', err.code || '(none)');
-    logger.error('  name:', err.name || '(none)');
-    if (err.stack) logger.error('  stack:', err.stack.split('\n').slice(0, 3).join('\n'));
+    logger.error('  typeof:', typeof err);
+    logger.error('  keys:', Object.keys(err || {}));
+    logger.error('  JSON:', JSON.stringify(err, Object.getOwnPropertyNames(err || {})));
+    logger.error('  toString:', String(err));
     return null;
   }
 }
