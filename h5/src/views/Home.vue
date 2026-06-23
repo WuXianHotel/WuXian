@@ -24,6 +24,12 @@
       </div>
     </div>
 
+    <!-- 公告 -->
+    <div class="notice">
+      <Megaphone :size="16" :stroke-width="1.5" />
+      <span>欢迎来到无限电竞酒店！</span>
+    </div>
+
     <!-- Banner 轮播 -->
     <div class="banner" v-if="banners.length">
       <div class="banner__track" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
@@ -109,6 +115,18 @@
       </div>
     </div>
 
+    <!-- 酒店特色 -->
+    <div class="section">
+      <div class="section__head"><h3 class="section__title">酒店特色</h3></div>
+      <div class="features">
+        <div v-for="f in featureList" :key="f.label" class="features__item">
+          <component :is="f.icon" :size="28" :stroke-width="1.5" class="features__icon" />
+          <span class="features__label">{{ f.label }}</span>
+          <span class="features__desc">{{ f.desc }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 住客好评 -->
     <div class="section" v-if="reviews.length">
       <div class="section__head"><h3 class="section__title">住客好评</h3></div>
@@ -123,13 +141,26 @@
         </div>
       </div>
     </div>
+
+    <!-- 周边推荐 -->
+    <div class="section">
+      <div class="section__head"><h3 class="section__title">周边推荐</h3></div>
+      <div class="nearby">
+        <div v-for="n in nearbyList" :key="n.name" class="nearby__item" @click="openNearby(n)">
+          <span class="nearby__icon">{{ n.emoji }}</span>
+          <span class="nearby__name">{{ n.name }}</span>
+          <span class="nearby__dist">{{ n.dist }}</span>
+          <ChevronRight :size="14" class="nearby__arrow" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, LogIn } from 'lucide-vue-next';
+import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, LogIn, Wifi, Monitor, Car, Shield, Sparkles, Clock } from 'lucide-vue-next';
 import { getToken } from '../utils/auth.js';
 import { useAuditMode } from '../utils/audit.js';
 
@@ -180,6 +211,24 @@ const quickItems = [
 const facilityMap = [
   { key: 'tv', name: '智能电视' }, { key: 'ac', name: '空调' },
   { key: 'wifi', name: '免费WiFi' }, { key: 'bathtub', name: '独立浴缸' },
+];
+
+// 酒店特色
+const featureList = [
+  { icon: Monitor, label: '高端电竞设备', desc: 'RTX 4060 + 165Hz 高刷屏' },
+  { icon: Wifi, label: '千兆光钎网络', desc: '游戏延迟 < 20ms' },
+  { icon: Sparkles, label: '舒适电竞房', desc: '人体工学椅 + 独立卫浴' },
+  { icon: Car, label: '免费停车', desc: '酒店专属停车场' },
+  { icon: Shield, label: '24h 安保', desc: '全天候监控保障安全' },
+  { icon: Clock, label: '灵活退房', desc: '会员延迟退房至 14:00' },
+];
+
+// 周边推荐
+const nearbyList = [
+  { name: '窑埠古镇', dist: '步行 2 分钟', emoji: '🏛️', lat: 24.327, lng: 109.264 },
+  { name: '柳州工业博物馆', dist: '步行 5 分钟', emoji: '🏭', lat: 24.330, lng: 109.265 },
+  { name: '柳江夜景', dist: '步行 8 分钟', emoji: '🌃', lat: 24.322, lng: 109.268 },
+  { name: '五星步行街', dist: '驾车 10 分钟', emoji: '🛍️', lat: 24.317, lng: 109.410 },
 ];
 
 // 最新评价
@@ -301,6 +350,24 @@ function callPhone(e) {
   window.location.href = `tel:${hotel.phone}`;
 }
 
+// 周边导航：复用酒店导航逻辑
+function openNearby(n) {
+  const isMini = typeof wx !== 'undefined' && wx.miniProgram;
+  const name = encodeURIComponent(n.name);
+  const lat = n.lat || 24.3282;
+  const lng = n.lng || 109.2622;
+
+  if (isMini) {
+    wx.miniProgram.navigateTo({
+      url: `/pages/location/location?lat=${lat}&lng=${lng}&name=${name}&addr=${name}`,
+    });
+    return;
+  }
+
+  const url = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title=${name}&referer=wxhotel`;
+  const w = window.open(url, '_blank');
+  if (!w) window.location.href = url;
+}
 </script>
 
 <style scoped>
@@ -375,6 +442,17 @@ function callPhone(e) {
 .room-card__btn { font-size: 12px; color: var(--neon-purple); font-weight: 600; display: flex; align-items: center; gap: 1px; transition: color var(--dur-fast); }
 .room-card:hover .room-card__btn { color: var(--neon-cyan); }
 
+/* 酒店特色 */
+.features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 14px; }
+.features__item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 8px; background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); text-align: center;
+}
+.features__icon { color: var(--neon-cyan); }
+.features__label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.features__desc { font-size: 11px; color: var(--text-muted); }
+
 /* 住客好评 */
 .reviews { display: flex; flex-direction: column; gap: var(--space-sm); }
 .reviews__item {
@@ -386,4 +464,17 @@ function callPhone(e) {
 .reviews__stars { font-size: 12px; color: var(--neon-gold); letter-spacing: 1px; }
 .reviews__text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-xs); }
 .reviews__date { font-size: 11px; color: var(--text-muted); }
+
+/* 周边推荐 */
+.nearby { padding: 0 14px; display: flex; flex-direction: column; gap: 8px; }
+.nearby__item {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); cursor: pointer; transition: border-color var(--dur-fast);
+}
+.nearby__item:hover { border-color: var(--border-glow); }
+.nearby__icon { font-size: 24px; flex-shrink: 0; }
+.nearby__name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+.nearby__dist { font-size: 11px; color: var(--text-muted); margin-left: auto; flex-shrink: 0; }
+.nearby__arrow { color: var(--text-muted); flex-shrink: 0; margin-left: 8px; }
 </style>
