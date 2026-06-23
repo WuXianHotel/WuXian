@@ -44,7 +44,14 @@ app.use(cors({
     : '*',
   credentials: true,
 }));
-app.use(express.json({ limit: '2mb' }));
+// 微信支付 V3 回调依赖原始字节流做验签，全局 JSON 解析会破坏签名
+// 因此需要在 express.json 之前跳过 /api/mp/pay/notify 路径
+app.use((req, res, next) => {
+  if (req.path === '/api/mp/pay/notify') {
+    return next();
+  }
+  express.json({ limit: '2mb' })(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 
 // 静态文件（上传图片）

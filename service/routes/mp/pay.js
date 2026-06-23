@@ -105,6 +105,8 @@ router.post(
   express.raw({ type: '*/*', limit: '2mb' }),
   async (req, res) => {
     try {
+      logger.info(`[pay] ⬇ 收到回调 RAW_LEN=${req.body ? req.body.length : 0} HEADER_SERIAL=${req.headers['wechatpay-serial'] || 'MISSING'} TIMESTAMP=${req.headers['wechatpay-timestamp'] || 'MISSING'}`);
+
       const rawBuffer = req.body;
 
       // Mock 模式：直接解析原始 buffer 为对象
@@ -123,12 +125,13 @@ router.post(
         return res.status(200).json({ code: 'FAIL', message: '微信支付未配置' });
       }
 
+      logger.info('[pay] Step A: 开始验签...');
       const decrypted = await verifyAndDecryptNotify(rawBuffer, req.headers);
-      logger.info(`[pay] 回调验签通过, out_trade_no=${decrypted.out_trade_no}`);
+      logger.info(`[pay] Step B: 验签+解密通过 out_trade_no=${decrypted.out_trade_no} trade_state=${decrypted.trade_state}`);
 
       return handleNotifyBusiness(decrypted, res);
     } catch (err) {
-      logger.error('[pay] 支付回调处理失败:', err.message);
+      logger.error(`[pay] 回调处理异常 msg=${err && err.message} stack=${err && err.stack}`);
       // V3 通知要求返回 HTTP 200 + JSON
       return res.status(200).json({ code: 'FAIL', message: err.message });
     }
@@ -178,14 +181,29 @@ async function handleNotifyBusiness(notifyData, res) {
     // 积分奖励（每消费1元得1积分）
     const points = Math.floor(Number(order.pay_amount));
     if (points > 0) {
-      const [[{ balance }]] = await conn.execute(
-        'SELECT points AS balance FROM members WHERE user_id = ?', [order.user_id],
+      // 安全读取会员积分（防止用户无 members 记录导致解构崩溃）
+      const [memberRows] = await conn.execute(
+        'SELECT id, points AS balance FROM members WHERE user_id = ?', [order.user_id],
       );
-      const newBalance = (balance || 0) + points;
-      await conn.execute(
-        'UPDATE members SET points = ?, points_total = points_total + ?, total_amount = total_amount + ? WHERE user_id = ?',
-        [newBalance, points, order.pay_amount, order.user_id],
-      );
+      const member = memberRows && memberRows.length > 0 ? memberRows[0] : null;
+      const currentBalance = member ? (member.balance || 0) : 0;
+      const newBalance = currentBalance + points;
+
+      if (member) {
+        await conn.execute(
+          'UPDATE members SET points = ?, points_total = points_total + ?, total_amount = total_amount + ? WHERE user_id = ?',
+          [newBalance, points, order.pay_amount, order.user_id],
+        );
+      } else {
+        // 用户无会员记录，插入一条（不阻塞支付流程）
+        logger.warn(`[pay] 用户 ${order.user_id} 无 members 记录，自动创建`);
+        const prefix = 'M' + new Date().toISOString().slice(0, 7).replace(/-/g, '');
+        await conn.execute(
+          'INSERT INTO members (user_id, member_no, level, points, points_total, total_amount) VALUES (?, CONCAT(?, LPAD(FLOOR(RAND()*1000000), 6, "0")), 1, ?, ?, ?)',
+          [order.user_id, prefix, newBalance, points, order.pay_amount],
+        );
+      }
+
       await conn.execute(
         'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
         [order.user_id, 'earn', points, newBalance, '订单支付奖励积分', orderNo],
@@ -252,14 +270,25 @@ router.post('/mock-paid', mpAuth,
       // 积分奖励（事务后处理，确保 levelCheck 可见）
       const pointsEarned = Math.floor(Number(order.pay_amount));
       if (pointsEarned > 0) {
-        const [{ balance }] = await query(
-          'SELECT points AS balance FROM members WHERE user_id = ?', [order.user_id],
+        const [member] = await query(
+          'SELECT id, points AS balance FROM members WHERE user_id = ?', [order.user_id],
         );
-        const newBalance = balance + pointsEarned;
-        await query(
-          'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + (SELECT nights FROM orders WHERE order_no = ?), total_amount = total_amount + ? WHERE user_id = ?',
-          [newBalance, pointsEarned, orderNo, order.pay_amount, order.user_id],
-        );
+        const currentBalance = member ? (member.balance || 0) : 0;
+        const newBalance = currentBalance + pointsEarned;
+
+        if (member) {
+          await query(
+            'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + (SELECT nights FROM orders WHERE order_no = ?), total_amount = total_amount + ? WHERE user_id = ?',
+            [newBalance, pointsEarned, orderNo, order.pay_amount, order.user_id],
+          );
+        } else {
+          const prefix = 'M' + new Date().toISOString().slice(0, 7).replace(/-/g, '');
+          await query(
+            'INSERT INTO members (user_id, member_no, level, points, points_total, total_nights, total_amount) VALUES (?, CONCAT(?, LPAD(FLOOR(RAND()*1000000), 6, "0")), 1, ?, ?, (SELECT nights FROM orders WHERE order_no = ?), ?)',
+            [order.user_id, prefix, newBalance, pointsEarned, orderNo, order.pay_amount],
+          );
+        }
+
         await query(
           'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
           [order.user_id, 'earn', pointsEarned, newBalance, '订单支付奖励积分(MOCK)', orderNo],
@@ -326,14 +355,25 @@ router.post('/wallet',
       // 积分奖励（事务结束后单独处理，确保积分变更对 levelCheck 可见）
       const pointsEarned = Math.floor(payAmount);
       if (pointsEarned > 0) {
-        const [{ bal }] = await query(
-          'SELECT points AS bal FROM members WHERE user_id = ?', [req.userId],
+        const [member] = await query(
+          'SELECT id, points AS bal FROM members WHERE user_id = ?', [req.userId],
         );
-        const newPointsBal = bal + pointsEarned;
-        await query(
-          'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + ?, total_amount = total_amount + ? WHERE user_id = ?',
-          [newPointsBal, pointsEarned, order.nights, payAmount, req.userId],
-        );
+        const currentBal = member ? (member.bal || 0) : 0;
+        const newPointsBal = currentBal + pointsEarned;
+
+        if (member) {
+          await query(
+            'UPDATE members SET points = ?, points_total = points_total + ?, total_nights = total_nights + ?, total_amount = total_amount + ? WHERE user_id = ?',
+            [newPointsBal, pointsEarned, order.nights, payAmount, req.userId],
+          );
+        } else {
+          const prefix = 'M' + new Date().toISOString().slice(0, 7).replace(/-/g, '');
+          await query(
+            'INSERT INTO members (user_id, member_no, level, points, points_total, total_nights, total_amount) VALUES (?, CONCAT(?, LPAD(FLOOR(RAND()*1000000), 6, "0")), 1, ?, ?, ?, ?)',
+            [req.userId, prefix, newPointsBal, pointsEarned, order.nights, payAmount],
+          );
+        }
+
         await query(
           'INSERT INTO points_logs (user_id, type, points, balance, remark, ref_id) VALUES (?,?,?,?,?,?)',
           [req.userId, 'earn', pointsEarned, newPointsBal, '订单支付奖励积分', orderNo],
