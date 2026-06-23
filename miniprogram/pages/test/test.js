@@ -1,6 +1,6 @@
-// pages/pay/pay.js
+// pages/test/test.js
 // 支付中转页：从 H5 携带 wx.requestPayment 参数跳过来，调起支付后返回 H5
-// H5 端通过 wx.miniProgram.navigateTo({ url: '/pages/pay/pay?p=<encoded>&orderNo=xxx' }) 进入
+// H5 端通过 wx.miniProgram.navigateTo({ url: '/pages/test/test?p=<encoded>&orderNo=xxx' }) 进入
 
 Page({
   data: {

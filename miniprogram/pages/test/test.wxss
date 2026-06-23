@@ -1,4 +1,4 @@
-/* pages/pay/pay.wxss */
+/* pages/test/test.wxss */
 .pay {
   display: flex;
   flex-direction: column;

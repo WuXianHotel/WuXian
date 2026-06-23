@@ -170,7 +170,7 @@ Page({
         break;
       // 注意：requestPayment 不再通过 postMessage 触发——
       // postMessage 只在页面退出/分享时才送达，无法实时拉起支付。
-      // H5 端改为 wx.miniProgram.navigateTo('/pages/pay/pay?p=...') 走支付中转页。
+      // H5 端改为 wx.miniProgram.navigateTo('/pages/test/test?p=...') 走支付中转页。
       default:
         break;
     }

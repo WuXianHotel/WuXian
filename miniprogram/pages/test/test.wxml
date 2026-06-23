@@ -1,4 +1,4 @@
-<!-- pages/pay/pay.wxml -->
+<!-- pages/test/test.wxml -->
 <view class="pay">
   <view class="pay__spinner"></view>
   <text class="pay__text">{{ statusText }}</text>
