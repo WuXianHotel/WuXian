@@ -1,0 +1,28 @@
+/* pages/pay/pay.wxss */
+.pay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #0a0e1a;
+}
+
+.pay__spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 4rpx solid rgba(255, 255, 255, .2);
+  border-top-color: #1aad19;
+  border-radius: 50%;
+  animation: pay-spin 1s linear infinite;
+  margin-bottom: 24rpx;
+}
+
+.pay__text {
+  font-size: 28rpx;
+  color: #fff;
+}
+
+@keyframes pay-spin {
+  to { transform: rotate(360deg); }
+}

@@ -17,7 +17,20 @@ Page({
   },
 
   onShow() {
-    // 从后台切回时，检查 H5 是否已加载
+    // 从支付中转页返回时，将支付结果以 URL hash 形式注入到 H5，让 H5 感知
+    const app = getApp();
+    const result = app.globalData && app.globalData.lastPayResult;
+    if (result && !result.consumed) {
+      result.consumed = true;
+      const cur = this.data.webviewUrl;
+      if (cur) {
+        // 用 hash 携带结果，H5 端通过 hashchange 监听；带时间戳保证唯一
+        const hash = `#payResult=${result.result}&orderNo=${encodeURIComponent(result.orderNo || '')}&ts=${result.ts}`;
+        // 移除旧 hash 后追加新 hash，触发 web-view 重新加载并通知 H5
+        const base = cur.split('#')[0];
+        this.setData({ webviewUrl: base + hash });
+      }
+    }
   },
 
   async initAuth() {
@@ -155,26 +168,9 @@ Page({
           wx.makePhoneCall({ phoneNumber: data.phoneNumber });
         }
         break;
-      case 'requestPayment':
-        // H5 请求发起微信支付
-        wx.requestPayment({
-          timeStamp: data.timeStamp,
-          nonceStr: data.nonceStr,
-          package: data.package,
-          signType: data.signType || 'RSA',
-          paySign: data.paySign,
-          success: () => {
-            console.log('[h5] 支付成功');
-            // 重新加载 H5，让 H5 轮询支付状态
-            this.initAuth();
-          },
-          fail: (err) => {
-            console.log('[h5] 支付取消或失败:', err.errMsg);
-            // 用户取消或支付失败，重新加载 H5
-            this.initAuth();
-          },
-        });
-        break;
+      // 注意：requestPayment 不再通过 postMessage 触发——
+      // postMessage 只在页面退出/分享时才送达，无法实时拉起支付。
+      // H5 端改为 wx.miniProgram.navigateTo('/pages/pay/pay?p=...') 走支付中转页。
       default:
         break;
     }

@@ -100,6 +100,10 @@ const statusMap = { 0: '待支付', 1: '待入住', 2: '入住中', 3: '已退�
 
 let pollTimer = null;
 
+function onHashChange() {
+  consumePayResultIfAny();
+}
+
 onMounted(async () => {
   const id = route.params.id;
   try {
@@ -108,7 +112,11 @@ onMounted(async () => {
   } catch { /* ignore */ }
   finally { loading.value = false; }
 
-  // 检查是否有待确认的微信支付（从小程序返回后）
+  // 首次进入：URL hash 里若已带 payResult（小程序回来后立即 setData 注入），消费它
+  consumePayResultIfAny();
+  window.addEventListener('hashchange', onHashChange);
+
+  // 兼容旧逻辑：如果还有 pendingPayOrderNo（异常路径），轮询一次
   const pendingOrderNo = sessionStorage.getItem('pendingPayOrderNo');
   if (pendingOrderNo && pendingOrderNo === order.value?.order_no) {
     pollPayStatus(pendingOrderNo);
@@ -117,6 +125,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (pollTimer) clearTimeout(pollTimer);
+  window.removeEventListener('hashchange', onHashChange);
 });
 
 function onNotifyClose() {
@@ -132,26 +141,29 @@ async function payNow() {
 }
 
 // 微信支付
+// 注意：postMessage 只在页面退出/分享时才送达小程序，无法实时拉起支付，
+// 所以这里改为 navigateTo 跳转到小程序支付中转页 /pages/pay/pay，
+// 由原生页面调用 wx.requestPayment。支付结果回到 H5 时通过 URL hash 下发。
 async function wechatPayNow() {
   paying.value = true;
   try {
     const payRes = await api.wechatPay(order.value.order_no);
     const payParams = payRes.data || {};
 
-    sessionStorage.setItem('pendingPayOrderNo', order.value.order_no);
+    const orderNo = order.value.order_no;
+    sessionStorage.setItem('pendingPayOrderNo', orderNo);
 
     if (typeof wx !== 'undefined' && wx.miniProgram) {
-      wx.miniProgram.postMessage({
-        data: {
-          action: 'requestPayment',
-          timeStamp: payParams.timeStamp,
-          nonceStr: payParams.nonceStr,
-          package: payParams.package,
-          signType: payParams.signType,
-          paySign: payParams.paySign,
-        },
-      });
-      wx.miniProgram.navigateBack();
+      // 仅透传 wx.requestPayment 所需字段（appId 在小程序内自动取）
+      const payload = {
+        timeStamp: String(payParams.timeStamp),
+        nonceStr: payParams.nonceStr,
+        package: payParams.package,
+        signType: payParams.signType || 'RSA',
+        paySign: payParams.paySign,
+      };
+      const url = `/pages/pay/pay?p=${encodeURIComponent(JSON.stringify(payload))}&orderNo=${encodeURIComponent(orderNo)}`;
+      wx.miniProgram.navigateTo({ url });
     } else {
       showToast('微信支付仅在小程序中可用', 'error');
       sessionStorage.removeItem('pendingPayOrderNo');
@@ -160,6 +172,38 @@ async function wechatPayNow() {
     sessionStorage.removeItem('pendingPayOrderNo');
   }
   finally { paying.value = false; }
+}
+
+// 监听支付结果回传（小程序通过修改 web-view URL hash 通知 H5）
+function parsePayResultFromHash() {
+  const hash = window.location.hash || '';
+  if (!hash.includes('payResult=')) return null;
+  const params = {};
+  hash.replace(/^#/, '').split('&').forEach(pair => {
+    const [k, v] = pair.split('=');
+    params[k] = decodeURIComponent(v || '');
+  });
+  return params;
+}
+
+function consumePayResultIfAny() {
+  const r = parsePayResultFromHash();
+  if (!r || !r.payResult) return;
+  // 清理 hash 防止重复触发
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  const pendingOrderNo = sessionStorage.getItem('pendingPayOrderNo');
+  if (r.orderNo && pendingOrderNo === r.orderNo) {
+    if (r.payResult === 'success') {
+      showToast('支付成功', 'success');
+      pollPayStatus(r.orderNo); // 兜底校验后端订单状态
+    } else if (r.payResult === 'cancel') {
+      showToast('已取消支付', 'warning');
+      sessionStorage.removeItem('pendingPayOrderNo');
+    } else {
+      showToast('支付失败，请重试', 'error');
+      sessionStorage.removeItem('pendingPayOrderNo');
+    }
+  }
 }
 
 // 轮询支付状态（支付回调异步，轮询最多30秒）

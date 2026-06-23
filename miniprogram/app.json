@@ -1,7 +1,8 @@
 {
   "pages": [
     "pages/h5/h5",
-    "pages/location/location"
+    "pages/location/location",
+    "pages/pay/pay"
   ],
   "window": {
     "backgroundTextStyle": "dark",
