@@ -9,9 +9,10 @@ const { ok } = require('../../middleware/helper');
 
 router.get('/', async (req, res, next) => {
   try {
-    const [hotelRows, systemRows] = await Promise.all([
+    const [hotelRows, systemRows, policyRows] = await Promise.all([
       query("SELECT `key`, `value`, `type` FROM settings WHERE `group` = 'hotel'"),
       query("SELECT `key`, `value` FROM settings WHERE `group` = 'system'"),
+      query("SELECT `key`, `value`, `type` FROM settings WHERE `group` = 'policy'"),
     ]);
 
     const config = {};
@@ -22,6 +23,11 @@ router.get('/', async (req, res, next) => {
     // 系统配置
     for (const r of systemRows) {
       config[r.key] = r.value;
+    }
+
+    // 政策配置（入住/退房时间等）
+    for (const r of policyRows) {
+      config[r.key] = r.type === 'number' ? Number(r.value) : r.value;
     }
     if (!config.app_version) config.app_version = '0.0.1';
 

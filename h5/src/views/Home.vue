@@ -154,13 +154,48 @@
         </div>
       </div>
     </div>
+
+    <!-- 入住须知 -->
+    <div class="section" v-if="hotel.check_in_time || hotel.check_out_time">
+      <div class="section__head"><h3 class="section__title">入住须知</h3></div>
+      <div class="policy">
+        <div class="policy__item">
+          <Clock :size="20" :stroke-width="1.5" class="policy__icon" />
+          <span class="policy__label">入住时间</span>
+          <span class="policy__value">{{ hotel.check_in_time }}</span>
+        </div>
+        <div class="policy__item">
+          <LogOut :size="20" :stroke-width="1.5" class="policy__icon" />
+          <span class="policy__label">退房时间</span>
+          <span class="policy__value">{{ hotel.check_out_time }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 评分概览 -->
+    <div class="section" v-if="reviewStats.total > 0">
+      <div class="section__head"><h3 class="section__title">住客评价</h3></div>
+      <div class="rating-overview">
+        <div class="rating-overview__score">{{ reviewStats.avg }}</div>
+        <div class="rating-overview__info">
+          <div class="rating-overview__stars">{{ '★'.repeat(Math.round(reviewStats.avg)) }}{{ '☆'.repeat(5 - Math.round(reviewStats.avg)) }}</div>
+          <span class="rating-overview__count">共 {{ reviewStats.total }} 条评价</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <footer class="home__footer">
+      <p class="home__footer-name">{{ hotel.name || '柳州无限电竞酒店' }}</p>
+      <p class="home__footer-copy">&copy; {{ new Date().getFullYear() }} WuXian Hotel</p>
+    </footer>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, LogIn, Wifi, Monitor, Car, Shield, Sparkles, Clock } from 'lucide-vue-next';
+import { Search, Megaphone, BedSingle, ChevronRight, ArrowRight, Gem, Gift, ClipboardList, MapPin, Phone, LogIn, Wifi, Monitor, Car, Shield, Sparkles, Clock, LogOut } from 'lucide-vue-next';
 import { getToken } from '../utils/auth.js';
 import { useAuditMode } from '../utils/audit.js';
 
@@ -200,7 +235,7 @@ const rooms = ref([]);
 const loading = ref(true);
 const banners = ref([]);
 const currentBanner = ref(0);
-const hotel = reactive({ address: '', phone: '', latitude: 0, longitude: 0 });
+const hotel = reactive({ name: '', address: '', phone: '', latitude: 0, longitude: 0, check_in_time: '', check_out_time: '' });
 const quickItems = [
   { path: '/rooms', icon: BedSingle, label: '客房预订' },
   { path: '/orders', icon: ClipboardList, label: '我的订单' },
@@ -234,6 +269,15 @@ const nearbyList = [
 // 最新评价
 const reviews = ref([]);
 
+// 评价统计
+const reviewStats = computed(() => {
+  const list = reviews.value;
+  if (!list.length) return { avg: 0, total: 0 };
+  const total = list.length;
+  const sum = list.reduce((s, r) => s + (r.score || 0), 0);
+  return { avg: (sum / total).toFixed(1), total };
+});
+
 function fmtReviewDate(d) {
   if (!d) return '';
   const dt = new Date(d);
@@ -255,10 +299,13 @@ onMounted(async () => {
       facilities: facilityMap.filter(f => r[f.key]).map(f => f.name),
     }));
     const cfg = configRes.data || {};
+    hotel.name = cfg.hotel_name || '';
     hotel.address = cfg.hotel_address || '';
     hotel.phone = cfg.hotel_phone || '';
     hotel.latitude = parseFloat(cfg.hotel_latitude) || 0;
     hotel.longitude = parseFloat(cfg.hotel_longitude) || 0;
+    hotel.check_in_time = cfg.check_in_time || '';
+    hotel.check_out_time = cfg.check_out_time || '';
     banners.value = bannerRes.data || [];
     reviews.value = reviewRes.data || [];
 
@@ -477,4 +524,34 @@ function openNearby(n) {
 .nearby__name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
 .nearby__dist { font-size: 11px; color: var(--text-muted); margin-left: auto; flex-shrink: 0; }
 .nearby__arrow { color: var(--text-muted); flex-shrink: 0; margin-left: 8px; }
+
+/* 入住须知 */
+.policy { padding: 0 14px; display: flex; gap: var(--space-sm); }
+.policy__item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 14px 8px; background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.policy__icon { color: var(--neon-cyan); margin-bottom: 2px; }
+.policy__label { font-size: 11px; color: var(--text-muted); }
+.policy__value { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+
+/* 评分概览 */
+.rating-overview {
+  padding: 0 14px; display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md); background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.rating-overview__score { font-size: 36px; font-weight: 800; color: var(--neon-gold); line-height: 1; }
+.rating-overview__info { display: flex; flex-direction: column; gap: 2px; }
+.rating-overview__stars { font-size: 14px; color: var(--neon-gold); letter-spacing: 2px; }
+.rating-overview__count { font-size: 12px; color: var(--text-muted); }
+
+/* 底部 */
+.home__footer {
+  margin-top: var(--space-lg); padding: var(--space-xl) var(--space-md) var(--space-lg);
+  text-align: center; border-top: 1px solid var(--border-subtle);
+}
+.home__footer-name { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: var(--space-xs); }
+.home__footer-copy { font-size: 11px; color: var(--text-muted); }
 </style>
