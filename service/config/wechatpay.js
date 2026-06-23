@@ -62,6 +62,8 @@ function getWxPay() {
     //   新商户号（2024年底后）：WX_PLATFORM_PUBLIC_KEY_PATH → 直接注入到证书缓存
     //   旧商户号：未配置时走 SDK 的 fetchCertificates 动态下载
     logger.info('[wechatpay] Step 4 预加载平台证书/公钥...');
+    const envPath = process.env.WX_PLATFORM_PUBLIC_KEY_PATH;
+    logger.info(`[wechatpay] Step 4 配置检查: WX_PLATFORM_PUBLIC_KEY_PATH=${envPath || '(未设置)'} WX_PLATFORM_KEY_SERIAL=${process.env.WX_PLATFORM_KEY_SERIAL || '(未设置)'}`);
     const platformPublicKey = loadFileBuffer('WX_PLATFORM_PUBLIC_KEY_PATH', false);
 
     if (platformPublicKey) {
