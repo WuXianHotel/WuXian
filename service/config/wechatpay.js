@@ -66,16 +66,36 @@ function getWxPay() {
 
     if (platformPublicKey) {
       // 新机制：微信支付公钥（直接验签，无需调用 /v3/certificates）
+      // 支持两种格式：
+      //   1. X.509证书格式 -----BEGIN CERTIFICATE-----  自动提取序列号和公钥
+      //   2. 裸公钥格式   -----BEGIN PUBLIC KEY-----      需要 WX_PLATFORM_KEY_SERIAL 指定序列号
       try {
-        const cert = x509.Certificate.fromPEM(platformPublicKey);
-        const serial = cert.serialNumber;
-        const publicKeyPem = cert.publicKey.toPEM();
+        const pemStr = platformPublicKey.toString();
+        const isCert = pemStr.includes('BEGIN CERTIFICATE');
+
+        let serial;
+        let publicKeyPem;
+
+        if (isCert) {
+          // X.509 证书格式：自动提取
+          const cert = x509.Certificate.fromPEM(platformPublicKey);
+          serial = cert.serialNumber.toUpperCase();
+          publicKeyPem = cert.publicKey.toPEM();
+        } else {
+          // 裸公钥格式：需要手动指定序列号
+          serial = process.env.WX_PLATFORM_KEY_SERIAL;
+          if (!serial) {
+            throw new Error('裸公钥格式需要配置 WX_PLATFORM_KEY_SERIAL（在微信商户平台公钥页面可查看序列号）');
+          }
+          serial = serial.toUpperCase();
+          publicKeyPem = pemStr;
+        }
+
         WechatPay.certificates = WechatPay.certificates || {};
-        WechatPay.certificates[serial.toUpperCase()] = publicKeyPem;
-        logger.info(`[wechatpay] Step 4 OK 平台公钥已缓存 serial=${serial.toUpperCase()}`);
+        WechatPay.certificates[serial] = publicKeyPem;
+        logger.info(`[wechatpay] Step 4 OK 平台公钥已缓存 serial=${serial} format=${isCert ? 'CERT' : 'PUBKEY'}`);
       } catch (err) {
         logger.error(`[wechatpay] Step 4 平台公钥解析失败: ${err && err.message}，将回退到动态下载`);
-        // 回退到旧机制
         fallbackFetchCerts(wxpay, apiKey);
       }
     } else {
