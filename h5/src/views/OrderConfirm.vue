@@ -142,7 +142,7 @@ async function payNow() {
 
 // 微信支付
 // 注意：postMessage 只在页面退出/分享时才送达小程序，无法实时拉起支付，
-// 所以这里改为 navigateTo 跳转到小程序支付中转页 /pages/pay/pay，
+// 所以这里改为 navigateTo 跳转到小程序支付中转页 /pages/test/test，
 // 由原生页面调用 wx.requestPayment。支付结果回到 H5 时通过 URL hash 下发。
 async function wechatPayNow() {
   paying.value = true;
@@ -162,7 +162,7 @@ async function wechatPayNow() {
         signType: payParams.signType || 'RSA',
         paySign: payParams.paySign,
       };
-      const url = `/pages/pay/pay?p=${encodeURIComponent(JSON.stringify(payload))}&orderNo=${encodeURIComponent(orderNo)}`;
+      const url = `/pages/test/test?p=${encodeURIComponent(JSON.stringify(payload))}&orderNo=${encodeURIComponent(orderNo)}`;
       wx.miniProgram.navigateTo({ url });
     } else {
       showToast('微信支付仅在小程序中可用', 'error');

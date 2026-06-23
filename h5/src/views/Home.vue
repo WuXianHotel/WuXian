@@ -142,18 +142,6 @@
       </div>
     </div>
 
-    <!-- 周边推荐 -->
-    <div class="section">
-      <div class="section__head"><h3 class="section__title">周边推荐</h3></div>
-      <div class="nearby">
-        <div v-for="n in nearbyList" :key="n.name" class="nearby__item" @click="openNearby(n)">
-          <span class="nearby__icon">{{ n.emoji }}</span>
-          <span class="nearby__name">{{ n.name }}</span>
-          <span class="nearby__dist">{{ n.dist }}</span>
-          <ChevronRight :size="14" class="nearby__arrow" />
-        </div>
-      </div>
-    </div>
 
     <!-- 入住须知 -->
     <div class="section" v-if="hotel.check_in_time || hotel.check_out_time">
@@ -171,6 +159,20 @@
         </div>
       </div>
     </div>
+
+    <!-- 周边推荐 -->
+    <div class="section">
+      <div class="section__head"><h3 class="section__title">周边推荐</h3></div>
+      <div class="nearby">
+        <div v-for="n in nearbyList" :key="n.name" class="nearby__item" @click="openNearby(n)">
+          <span class="nearby__icon">{{ n.emoji }}</span>
+          <span class="nearby__name">{{ n.name }}</span>
+          <span class="nearby__dist">{{ n.dist }}</span>
+          <ChevronRight :size="14" class="nearby__arrow" />
+        </div>
+      </div>
+    </div>
+
 
     <!-- 评分概览 -->
     <div class="section" v-if="reviewStats.total > 0">
