@@ -391,4 +391,23 @@ router.post('/wallet',
   },
 );
 
+// ── GET /pay-text  支付页文案配置（审核模式切换）────────────────────────────
+// 编辑 config/pay-text.json 后重启服务即可生效，无需改代码
+// ── GET /page-text  支付页文案（与首页一致的审核模式判断）────────────────────
+// app_version === '0.0.1' → 返回 page-text-audit.json，否则 page-text-normal.json
+router.get('/page-text', async (_req, res, next) => {
+  try {
+    const [setting] = await query(
+      "SELECT `value` FROM settings WHERE `key` = 'app_version' LIMIT 1",
+    );
+    const appVersion = setting ? setting.value : '';
+    const mode = appVersion === '0.0.1' ? 'audit' : 'normal';
+
+    const resolved = require.resolve(`../../config/page-text-${mode}.json`);
+    delete require.cache[resolved];
+    const config = require(`../../config/page-text-${mode}.json`);
+    return ok(res, config);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

@@ -1,0 +1,9 @@
+{
+  "navTitle": "支付中",
+  "paying": "正在拉起微信支付...",
+  "success": "支付成功",
+  "cancel": "已取消支付",
+  "fail": "支付失败",
+  "paramsError": "支付参数缺失",
+  "payError": "调起支付异常"
+}

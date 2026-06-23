@@ -20,10 +20,30 @@ App({
       this.globalData.userInfo = userInfo;
     }
 
+    // 拉取支付页文案配置（审核模式切换）
+    this.fetchPayText();
+
     // 静默登录：无 token 时自动用 wx.login code 换取 JWT
     if (!token) {
       this.login().catch(() => {});
     }
+  },
+
+  // 拉取支付页文案（审核/正常模式）
+  fetchPayText() {
+    wx.request({
+      url: `${this.globalData.apiBase}/api/mp/pay/page-text`,
+      method: 'GET',
+      success: (res) => {
+        const body = res.data || {};
+        if (body.code === 0 && body.data) {
+          this.globalData.payText = body.data;
+        }
+      },
+      fail: (err) => {
+        console.warn('[app] 获取支付文案失败:', err);
+      },
+    });
   },
 
   // 全局登录（静默登录）
