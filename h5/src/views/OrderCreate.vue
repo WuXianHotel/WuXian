@@ -116,6 +116,8 @@ const checkOut = ref('');
 const nights = ref(1);
 
 const form = reactive({ guestName: '', idNumber: '', guestPhone: '', remark: '' });
+// 记录从 profile 回填的初始值，用于判断订单提交后是否需要同步回 profile
+const profileSnapshot = { guestName: '', idNumber: '', guestPhone: '' };
 
 const roomTotal = computed(() => (room.value.price || 0) * nights.value);
 
@@ -163,17 +165,38 @@ function parseIdCard(val) {
   }
 }
 
+// 并行加载房型详情 + 当前用户资料（用于回填入住人信息）
 onMounted(async () => {
   const { roomId, checkIn: ci, checkOut: co } = route.query;
   checkIn.value = ci || '';
   checkOut.value = co || '';
   if (ci && co) nights.value = Math.round((new Date(co)-new Date(ci))/86400000);
 
-  try {
-    const res = await api.getRoomDetail(roomId);
-    room.value = res.data || {};
-  } catch { /* ignore */ }
-  finally { loading.value = false; }
+  const [roomRes, profileRes] = await Promise.allSettled([
+    api.getRoomDetail(roomId),
+    api.getProfile(),
+  ]);
+
+  if (roomRes.status === 'fulfilled') {
+    room.value = roomRes.value.data || {};
+  }
+
+  // 回填用户已实名认证的信息：姓名 / 身份证号 / 手机号
+  if (profileRes.status === 'fulfilled') {
+    const u = profileRes.value.data || {};
+    if (u.real_name) form.guestName = u.real_name;
+    if (u.id_number) {
+      form.idNumber = u.id_number;
+      parseIdCard(u.id_number); // 触发出生日期/年龄校验展示
+    }
+    if (u.phone) form.guestPhone = u.phone;
+    // 记录快照，用于判断提交后是否需要同步
+    profileSnapshot.guestName = form.guestName;
+    profileSnapshot.idNumber = form.idNumber;
+    profileSnapshot.guestPhone = form.guestPhone;
+  }
+
+  loading.value = false;
 });
 
 async function submitOrder() {
@@ -196,6 +219,16 @@ async function submitOrder() {
       remark: form.remark,
     });
     const order = res.data || {};
+
+    // 如果用户填写了 profile 中没有的信息，静默同步回 profile（下次自动回填）
+    const diff = {};
+    if (form.guestName && form.guestName !== profileSnapshot.guestName) diff.realName = form.guestName;
+    if (form.guestPhone && form.guestPhone !== profileSnapshot.guestPhone) diff.phone = form.guestPhone;
+    if (form.idNumber && form.idNumber !== profileSnapshot.idNumber) diff.idNumber = form.idNumber;
+    if (Object.keys(diff).length > 0) {
+      api.updateProfile(diff).catch(() => { /* 静默失败，不影响下单流程 */ });
+    }
+
     router.push(`/order/confirm/${order.orderNo}`);
   } catch { /* handled by api */ }
   finally { submitting.value = false; }
