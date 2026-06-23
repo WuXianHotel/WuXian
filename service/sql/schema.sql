@@ -319,7 +319,8 @@ INSERT IGNORE INTO `settings` (`key`, `value`, `type`, `label`, `group`) VALUES
 ('points_deduct_enabled','1',                          'number', '是否开启积分抵扣','points'),
 ('hotel_latitude',   '24.3282',                        'number', '酒店纬度',     'hotel'),
 ('hotel_longitude',  '109.2622',                       'number', '酒店经度',     'hotel'),
-('app_version',      '0.0.1',                          'string', '小程序版本控制','system');
+('app_version',      '0.0.1',                          'string', '小程序版本控制','system'),
+('vconsole_enabled', 'false',                          'string', 'H5调试面板','system');
 
 -- ────────────────────────────────────────────────────────────
 -- 18. 钱包流水
