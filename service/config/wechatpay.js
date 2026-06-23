@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const WechatPay = require('wechatpay-node-v3');
+const x509 = require('@fidm/x509');
 const logger = require('./logger');
 
 // 读取本地证书 / 私钥文件，返回 Buffer（SDK v2 要求 Buffer 而非字符串）
@@ -57,37 +58,31 @@ function getWxPay() {
     });
     logger.info('[wechatpay] Step 3 OK');
 
-    // 预加载微信平台证书（避免首次回调时动态下载失败）
-    logger.info('[wechatpay] Step 4 预加载平台证书...');
-    const _originalFetch = wxpay.fetchCertificates.bind(wxpay);
-    wxpay.fetchCertificates = async function (apiSecret) {
-      const url = 'https://api.mch.weixin.qq.com/v3/certificates';
+    // 预加载微信支付平台公钥 / 平台证书
+    //   新商户号（2024年底后）：WX_PLATFORM_PUBLIC_KEY_PATH → 直接注入到证书缓存
+    //   旧商户号：未配置时走 SDK 的 fetchCertificates 动态下载
+    logger.info('[wechatpay] Step 4 预加载平台证书/公钥...');
+    const platformPublicKey = loadFileBuffer('WX_PLATFORM_PUBLIC_KEY_PATH', false);
+
+    if (platformPublicKey) {
+      // 新机制：微信支付公钥（直接验签，无需调用 /v3/certificates）
       try {
-        // 直接调用原始方法
-        await _originalFetch(apiSecret);
-        logger.info('[wechatpay] fetchCertificates 成功，平台证书已缓存');
+        const cert = x509.Certificate.fromPEM(platformPublicKey);
+        const serial = cert.serialNumber;
+        const publicKeyPem = cert.publicKey.toPEM();
+        WechatPay.certificates = WechatPay.certificates || {};
+        WechatPay.certificates[serial.toUpperCase()] = publicKeyPem;
+        logger.info(`[wechatpay] Step 4 OK 平台公钥已缓存 serial=${serial.toUpperCase()}`);
       } catch (err) {
-        // 出错时补充诊断：用自己的方式再发一次请求，看 HTTP 状态码
-        logger.error('[wechatpay] fetchCertificates 失败: ' + (err && err.message));
-        try {
-          const auth = this.buildAuthorization('GET', url);
-          const hdrs = this.getHeaders(auth, { 'Content-Type': 'application/json' });
-          const res = await this.httpService.get(url, hdrs);
-          logger.error(
-            `[wechatpay] ⚠️ 证书下载诊断：HTTP ${res.status} ` +
-            `data=${JSON.stringify(res.data || {}).slice(0, 500)}`
-          );
-        } catch (e2) {
-          logger.error(`[wechatpay] ⚠️ 证书下载诊断：网络请求异常 ${e2 && e2.message}`);
-        }
-        throw err;
+        logger.error(`[wechatpay] Step 4 平台公钥解析失败: ${err && err.message}，将回退到动态下载`);
+        // 回退到旧机制
+        fallbackFetchCerts(wxpay, apiKey);
       }
-    };
-    wxpay.fetchCertificates(String(apiKey)).then(() => {
-      logger.info('[wechatpay] Step 4 OK 平台证书缓存成功');
-    }).catch(err => {
-      logger.error('[wechatpay] Step 4 预加载平台证书失败: ' + (err && err.message) + '，回调时将会重试下载');
-    });
+    } else {
+      // 旧机制：动态下载平台证书
+      logger.info('[wechatpay] Step 4 未配置平台公钥，使用传统平台证书下载方式');
+      fallbackFetchCerts(wxpay, apiKey);
+    }
 
     logger.info('[wechatpay] 初始化成功 mchid=' + mchid);
     return wxpay;
@@ -95,6 +90,39 @@ function getWxPay() {
     logger.error('[wechatpay] 初始化失败 typeof=' + typeof err + ' keys=' + Object.keys(err || {}).join(',') + ' str=' + String(err) + ' stack=' + (err && err.stack));
     return null;
   }
+}
+
+/**
+ * 旧机制：通过 SDK 动态下载平台证书（新商户号返回 404，仅旧商户号可用）
+ */
+function fallbackFetchCerts(wxpay, apiKey) {
+  const _originalFetch = wxpay.fetchCertificates.bind(wxpay);
+  wxpay.fetchCertificates = async function (apiSecret) {
+    const url = 'https://api.mch.weixin.qq.com/v3/certificates';
+    try {
+      await _originalFetch(apiSecret);
+      logger.info('[wechatpay] fetchCertificates 成功，平台证书已缓存');
+    } catch (err) {
+      logger.error('[wechatpay] fetchCertificates 失败: ' + (err && err.message));
+      try {
+        const auth = this.buildAuthorization('GET', url);
+        const hdrs = this.getHeaders(auth, { 'Content-Type': 'application/json' });
+        const res = await this.httpService.get(url, hdrs);
+        logger.error(
+          `[wechatpay] ⚠️ 证书下载诊断：HTTP ${res.status} ` +
+          `data=${JSON.stringify(res.data || {}).slice(0, 500)}`
+        );
+      } catch (e2) {
+        logger.error(`[wechatpay] ⚠️ 证书下载诊断：网络请求异常 ${e2 && e2.message}`);
+      }
+      throw err;
+    }
+  };
+  wxpay.fetchCertificates(String(apiKey)).then(() => {
+    logger.info('[wechatpay] Step 4 OK 平台证书缓存成功');
+  }).catch(err => {
+    logger.error('[wechatpay] Step 4 预加载平台证书失败: ' + (err && err.message) + '，回调时将会重试下载');
+  });
 }
 
 // 小程序/JSAPI 预下单：返回值已包含 wx.requestPayment 所需字段（appId/timeStamp/nonceStr/package/signType/paySign）
