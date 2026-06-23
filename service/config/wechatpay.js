@@ -57,6 +57,14 @@ function getWxPay() {
     });
     logger.info('[wechatpay] Step 3 OK');
 
+    // 预加载微信平台证书（避免首次回调时动态下载失败）
+    logger.info('[wechatpay] Step 4 预加载平台证书...');
+    wxpay.fetchCertificates(String(apiKey)).then(() => {
+      logger.info('[wechatpay] Step 4 OK 平台证书缓存成功');
+    }).catch(err => {
+      logger.error('[wechatpay] Step 4 预加载平台证书失败: ' + (err && err.message) + '，回调时将会重试下载');
+    });
+
     logger.info('[wechatpay] 初始化成功 mchid=' + mchid);
     return wxpay;
   } catch (err) {
@@ -123,6 +131,16 @@ async function verifyAndDecryptNotify(rawBody, headers) {
     serial: headers['wechatpay-serial'],
     nonce: headers['wechatpay-nonce'],
     timestamp: headers['wechatpay-timestamp'],
+    apiSecret: process.env.WX_API_KEY, // APIv3 密钥，用于解密平台证书
+  }).catch(err => {
+    // 验签/证书下载失败时输出更多诊断信息
+    logger.error(
+      `[wechatpay] verifySign 失败 msg=${err && err.message} ` +
+      `serial=${headers['wechatpay-serial']} ` +
+      `ts=${headers['wechatpay-timestamp']} ` +
+      `bodyLen=${bodyStr.length}`
+    );
+    throw err;
   });
   if (!verified) throw new Error('通知签名验证失败');
 
