@@ -8,6 +8,7 @@ const router = require('express').Router();
 const { query } = require('../../config/db');
 const { adminAuth } = require('../../middleware/auth');
 const { parsePager, ok, page } = require('../../middleware/helper');
+const { diagnosticFetchCerts } = require('../../config/wechatpay');
 
 router.get('/list', adminAuth('super', 'finance'), async (req, res, next) => {
   try {
@@ -30,6 +31,14 @@ router.get('/list', adminAuth('super', 'finance'), async (req, res, next) => {
       ),
     ]);
     return page(res, { list, total, page: p, pageSize });
+  } catch (err) { next(err); }
+});
+
+// GET /api/admin/pay/certs-status  诊断微信支付平台证书状态（必须放在 /:orderNo 之前）
+router.get('/certs-status', adminAuth('super'), async (_req, res, next) => {
+  try {
+    const result = await diagnosticFetchCerts();
+    return ok(res, result);
   } catch (err) { next(err); }
 });
 

@@ -59,6 +59,30 @@ function getWxPay() {
 
     // 预加载微信平台证书（避免首次回调时动态下载失败）
     logger.info('[wechatpay] Step 4 预加载平台证书...');
+    const _originalFetch = wxpay.fetchCertificates.bind(wxpay);
+    wxpay.fetchCertificates = async function (apiSecret) {
+      const url = 'https://api.mch.weixin.qq.com/v3/certificates';
+      try {
+        // 直接调用原始方法
+        await _originalFetch(apiSecret);
+        logger.info('[wechatpay] fetchCertificates 成功，平台证书已缓存');
+      } catch (err) {
+        // 出错时补充诊断：用自己的方式再发一次请求，看 HTTP 状态码
+        logger.error('[wechatpay] fetchCertificates 失败: ' + (err && err.message));
+        try {
+          const auth = this.buildAuthorization('GET', url);
+          const hdrs = this.getHeaders(auth, { 'Content-Type': 'application/json' });
+          const res = await this.httpService.get(url, hdrs);
+          logger.error(
+            `[wechatpay] ⚠️ 证书下载诊断：HTTP ${res.status} ` +
+            `data=${JSON.stringify(res.data || {}).slice(0, 500)}`
+          );
+        } catch (e2) {
+          logger.error(`[wechatpay] ⚠️ 证书下载诊断：网络请求异常 ${e2 && e2.message}`);
+        }
+        throw err;
+      }
+    };
     wxpay.fetchCertificates(String(apiKey)).then(() => {
       logger.info('[wechatpay] Step 4 OK 平台证书缓存成功');
     }).catch(err => {
@@ -174,4 +198,27 @@ module.exports = {
   buildPayParams: buildPayParams,
   verifyAndDecryptNotify: verifyAndDecryptNotify,
   get isAvailable() { return getWxPay() !== null; },
+  // 诊断：直接请求微信证书下载接口，返回完整响应信息
+  async diagnosticFetchCerts() {
+    const pay = getWxPay();
+    if (!pay) return { ok: false, error: '微信支付未初始化' };
+    const url = 'https://api.mch.weixin.qq.com/v3/certificates';
+    try {
+      const auth = pay.buildAuthorization('GET', url);
+      const hdrs = pay.getHeaders(auth, { 'Content-Type': 'application/json' });
+      const res = await pay.httpService.get(url, hdrs);
+      const body = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      // 检查静态缓存中已有的证书序列号
+      const cachedCount = Object.keys(pay.constructor.certificates || {}).length;
+      return {
+        ok: res.status === 200,
+        status: res.status,
+        statusText: res.statusText || '',
+        data: body.slice(0, 2000),
+        cachedCertCount: cachedCount,
+      };
+    } catch (err) {
+      return { ok: false, error: err && err.message, stack: err && err.stack };
+    }
+  },
 };
