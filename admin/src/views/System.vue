@@ -103,6 +103,20 @@
               <el-button @click="versionMode = appVersion">取消</el-button>
             </el-form-item>
           </el-form>
+          <el-divider />
+          <el-form label-width="100px">
+            <el-form-item label="vConsole">
+              <el-switch
+                v-model="vconsoleEnabled"
+                active-text="开启"
+                inactive-text="关闭"
+                @change="saveVconsole"
+              />
+              <el-tooltip content="开启后 H5 页面右下角出现绿色调试面板，可查看日志、网络请求等；关闭后刷新页面即隐藏" placement="top">
+                <el-icon style="margin-left:8px;color:var(--text-secondary);cursor:help"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </el-form-item>
+          </el-form>
         </div>
       </el-card>
 
@@ -221,6 +235,18 @@ const saving = ref(false)
 const appVersion = computed(() => settings.value.app_version || '0.0.1')
 const versionMode = ref('')
 const savingVersion = ref(false)
+
+// vConsole
+const vconsoleEnabled = computed({
+  get: () => settings.value.vconsole_enabled === 'true',
+  set: (val) => { settings.value.vconsole_enabled = val ? 'true' : 'false'; },
+})
+async function saveVconsole() {
+  try {
+    await saveSettings({ vconsole_enabled: settings.value.vconsole_enabled });
+    toast?.success(settings.value.vconsole_enabled === 'true' ? 'vConsole 已开启' : 'vConsole 已关闭');
+  } catch (e) { toast?.error(e?.msg || '保存失败'); }
+}
 
 onMounted(async () => {
   try {
