@@ -208,6 +208,13 @@ const { isAudit } = useAuditMode();
 const isOnboarded = ref(null);
 
 async function checkOnboardStatus() {
+  // 审核模式：跳过登录，模拟已完成引导（不展示登录按钮）
+  if (isAudit.value) {
+    isOnboarded.value = true;
+    localStorage.setItem('hotel_onboarded', '1');
+    return;
+  }
+
   if (!getToken()) {
     isOnboarded.value = false;
     localStorage.setItem('hotel_onboarded', '0');

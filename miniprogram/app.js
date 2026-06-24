@@ -20,13 +20,12 @@ App({
       this.globalData.userInfo = userInfo;
     }
 
-    // 拉取支付页文案配置（审核模式切换）
+    // 拉取支付页文案配置 + 审核模式检测
     this.fetchPayText();
+    this.fetchConfig();
 
-    // 静默登录：无 token 时自动用 wx.login code 换取 JWT
-    if (!token) {
-      this.login().catch(() => {});
-    }
+    // 审核模式下跳过登录（符合微信审核规范：不得强制登录才能体验）
+    // isAudit 由 fetchConfig 异步设置，login 通过 callback 模式在获取到后再决定
   },
 
   // 拉取支付页文案（审核/正常模式）
@@ -42,6 +41,35 @@ App({
       },
       fail: (err) => {
         console.warn('[app] 获取支付文案失败:', err);
+      },
+    });
+  },
+
+  // 拉取系统配置，检测审核模式
+  fetchConfig() {
+    wx.request({
+      url: `${this.globalData.apiBase}/api/mp/config`,
+      method: 'GET',
+      success: (res) => {
+        const body = res.data || {};
+        const cfg = body.data || {};
+        const isAudit = cfg.app_version === '0.0.1';
+        this.globalData.isAudit = isAudit;
+        console.log('[app] 审核模式:', isAudit);
+
+        // 审核模式：跳过登录
+        if (isAudit) return;
+
+        // 正常模式：按原逻辑静默登录
+        if (!this.globalData.token) {
+          this.login().catch(() => {});
+        }
+      },
+      fail: () => {
+        // API 不可用：正常模式强制尝试登录
+        if (!this.globalData.token) {
+          this.login().catch(() => {});
+        }
       },
     });
   },
@@ -118,9 +146,9 @@ App({
     });
   },
 
-  // 确保已登录；未登录时先触发登录再继续
+  // 确保已登录；审核模式下直接放行
   ensureLogin() {
-    if (this.globalData.token) {
+    if (this.globalData.isAudit || this.globalData.token) {
       return Promise.resolve();
     }
     wx.showLoading({ title: '登录中...' });

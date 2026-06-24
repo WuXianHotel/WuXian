@@ -37,11 +37,20 @@ Page({
     this.setData({ loading: true, errorMsg: '' });
 
     try {
-      // 确保已登录（静默登录或复用已有 token）
-      await app.ensureLogin();
-
       const token = app.globalData.token;
-      const apiBase = app.globalData.apiBase;
+      const isAudit = app.globalData.isAudit;
+
+      // 审核模式：直接加载 H5，不强制登录
+      if (isAudit) {
+        const apiBase = app.globalData.apiBase;
+        const webviewUrl = `${apiBase}/h5/?audit=1`;
+        console.log('[h5] 审核模式，跳过鉴权:', webviewUrl);
+        this.setData({ webviewUrl, loading: false });
+        return;
+      }
+
+      // 正常模式：确保已登录
+      await app.ensureLogin();
 
       if (!token) {
         this.setData({ errorMsg: '登录失败，请重试', loading: false });
@@ -49,7 +58,7 @@ Page({
       }
 
       // 构造 H5 URL，携带 token 和原始路由信息
-      const webviewUrl = this.buildUrl(apiBase, token);
+      const webviewUrl = this.buildUrl(app.globalData.apiBase, token);
       console.log('[h5] webview URL:', webviewUrl);
 
       this.setData({ webviewUrl, loading: false });

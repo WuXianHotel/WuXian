@@ -10,13 +10,19 @@
       </div>
       <h2 class="auth-fail__title">需要授权</h2>
       <p class="auth-fail__desc">请点击下方按钮重新获取授权</p>
-      <button class="auth-fail__btn" @click="retry">重新授权</button>
+      <div class="auth-fail__actions">
+        <button class="auth-fail__btn auth-fail__btn--primary" @click="retry">重新授权</button>
+        <button class="auth-fail__btn auth-fail__btn--secondary" @click="goHome">返回首页</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 function retry() {
   // 通知小程序重新登录
@@ -29,8 +35,14 @@ function retry() {
   }
 }
 
+function goHome() {
+  router.push('/');
+}
+
 // 自动尝试从 URL 重新提取 token
 onMounted(() => {
+  // 如果 URL 带 audit=1，说明审核模式，已跳过登录，不重复刷新
+  if (window.location.search.indexOf('audit=1') >= 0) return;
   // 延迟一小段时间让 getToken() 有机会再运行一次
   const s = window.location.search;
   const h = window.location.hash;
@@ -69,17 +81,23 @@ onMounted(() => {
   line-height: 1.6;
   margin-bottom: 24px;
 }
+.auth-fail__actions {
+  display: flex; flex-direction: column; gap: var(--space-sm); align-items: center;
+}
 .auth-fail__btn {
   padding: 10px 32px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--neon-cyan);
-  background: rgba(0,212,255,.1);
-  color: var(--neon-cyan);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  border: 1px solid var(--neon-cyan);
 }
-.auth-fail__btn:hover {
-  background: rgba(0,212,255,.2);
+.auth-fail__btn--primary {
+  background: rgba(0,212,255,.1); color: var(--neon-cyan);
 }
+.auth-fail__btn--primary:hover { background: rgba(0,212,255,.2); }
+.auth-fail__btn--secondary {
+  background: transparent; color: var(--text-muted); border-color: var(--border-subtle);
+}
+.auth-fail__btn--secondary:hover { color: var(--text-secondary); }
 </style>

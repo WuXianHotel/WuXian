@@ -2,7 +2,21 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { getToken } from '../utils/auth.js';
 
+function isAuditMode() {
+  // 检查 URL 参数或 localStorage（initAuditMode 缓存）
+  if (window.location.search.indexOf('audit=1') >= 0) return true;
+  if (localStorage.getItem('hotel_h5_audit') === '1') return true;
+  return false;
+}
+
 function requireAuth(to, _from, next) {
+  // 审核模式：跳过登录，直接放行
+  if (isAuditMode()) {
+    console.log('[router] 审核模式，跳过鉴权');
+    next();
+    return;
+  }
+
   const token = getToken();
   console.log('[router] requireAuth to=' + to.path + ', token=' + (token ? '有(len=' + token.length + ')' : '无'));
   if (!token) {
