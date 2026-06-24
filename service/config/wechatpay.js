@@ -248,6 +248,31 @@ module.exports = {
   buildPayParams: buildPayParams,
   verifyAndDecryptNotify: verifyAndDecryptNotify,
   get isAvailable() { return getWxPay() !== null; },
+
+  // 申请退款
+  async refundsApply(params) {
+    const pay = getWxPay();
+    if (!pay) throw new Error('微信支付未初始化');
+    const result = await pay.refunds({
+      out_trade_no: params.outTradeNo,
+      out_refund_no: params.outRefundNo,
+      amount: {
+        refund: params.refund,
+        total: params.total,
+        currency: 'CNY',
+      },
+      reason: params.reason || '用户申请退款',
+    });
+    if (result && result.status === 200) {
+      logger.info(`[wechatpay] 退款申请成功 outTradeNo=${params.outTradeNo} outRefundNo=${params.outRefundNo}`);
+      return result.data;
+    }
+    const errMsg = (result && result.data && (result.data.message || result.data.code))
+      || `HTTP ${result && result.status}`;
+    logger.error(`[wechatpay] 退款申请失败: ${errMsg}`);
+    throw new Error(`退款申请失败: ${errMsg}`);
+  },
+
   // 诊断：直接请求微信证书下载接口，返回完整响应信息
   async diagnosticFetchCerts() {
     const pay = getWxPay();
