@@ -6,6 +6,7 @@ App({
     userInfo: null,
     token: '',
     apiBase: 'https://wuxian-hotel.online', // 生产环境域名，开发时可按需修改
+    isAudit: false,
   },
 
   onLaunch() {
@@ -22,7 +23,7 @@ App({
 
     // 拉取支付页文案配置 + 审核模式检测
     this.fetchPayText();
-    this.fetchConfig();
+    this.globalData._configPromise = this.fetchConfig();
 
     // 审核模式下跳过登录（符合微信审核规范：不得强制登录才能体验）
     // isAudit 由 fetchConfig 异步设置，login 通过 callback 模式在获取到后再决定
@@ -45,32 +46,37 @@ App({
     });
   },
 
-  // 拉取系统配置，检测审核模式
+  // 拉取系统配置，检测审核模式（返回 Promise 供 h5.js await）
   fetchConfig() {
-    wx.request({
-      url: `${this.globalData.apiBase}/api/mp/config`,
-      method: 'GET',
-      success: (res) => {
-        const body = res.data || {};
-        const cfg = body.data || {};
-        const isAudit = cfg.app_version === '0.0.1';
-        this.globalData.isAudit = isAudit;
-        console.log('[app] 审核模式:', isAudit);
+    return new Promise((resolve) => {
+      wx.request({
+        url: `${this.globalData.apiBase}/api/mp/config`,
+        method: 'GET',
+        success: (res) => {
+          const body = res.data || {};
+          const cfg = body.data || {};
+          const isAudit = cfg.app_version === '0.0.1';
+          this.globalData.isAudit = isAudit;
+          console.log('[app] 审核模式:', isAudit);
 
-        // 审核模式：跳过登录
-        if (isAudit) return;
+          // 审核模式：跳过登录
+          if (isAudit) { resolve(); return; }
 
-        // 正常模式：按原逻辑静默登录
-        if (!this.globalData.token) {
-          this.login().catch(() => {});
-        }
-      },
-      fail: () => {
-        // API 不可用：正常模式强制尝试登录
-        if (!this.globalData.token) {
-          this.login().catch(() => {});
-        }
-      },
+          // 正常模式：按原逻辑静默登录
+          if (!this.globalData.token) {
+            this.login().then(() => resolve()).catch(() => resolve());
+          } else {
+            resolve();
+          }
+        },
+        fail: () => {
+          // API 调用失败（无关审核），尝试正常登录流程
+          if (!this.globalData.token) {
+            this.login().catch(() => {});
+          }
+          resolve();
+        },
+      });
     });
   },
 

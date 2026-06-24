@@ -37,11 +37,14 @@ Page({
     this.setData({ loading: true, errorMsg: '' });
 
     try {
-      const token = app.globalData.token;
-      const isAudit = app.globalData.isAudit;
+      // 等待 app.onLaunch 拉取配置完成，确保 isAudit 已设置
+      if (app.globalData._configPromise) {
+        await app.globalData._configPromise;
+        delete app.globalData._configPromise;
+      }
 
       // 审核模式：直接加载 H5，不强制登录
-      if (isAudit) {
+      if (app.globalData.isAudit) {
         const apiBase = app.globalData.apiBase;
         const webviewUrl = `${apiBase}/h5/?audit=1`;
         console.log('[h5] 审核模式，跳过鉴权:', webviewUrl);
@@ -52,6 +55,7 @@ Page({
       // 正常模式：确保已登录
       await app.ensureLogin();
 
+      const token = app.globalData.token;
       if (!token) {
         this.setData({ errorMsg: '登录失败，请重试', loading: false });
         return;
