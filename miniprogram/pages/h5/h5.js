@@ -43,11 +43,11 @@ Page({
         delete app.globalData._configPromise;
       }
 
-      // 审核模式：直接加载 H5，不强制登录
+      // 审核模式：加载 H5，携带已有的 token（如有）用于 API 请求
       if (app.globalData.isAudit) {
-        const apiBase = app.globalData.apiBase;
-        const webviewUrl = `${apiBase}/h5/?audit=1`;
-        console.log('[h5] 审核模式，跳过鉴权:', webviewUrl);
+        const token = app.globalData.token || '';
+        const webviewUrl = `${app.globalData.apiBase}/h5/?audit=1${token ? '&token=' + encodeURIComponent(token) : ''}`;
+        console.log('[h5] 审核模式:', webviewUrl);
         this.setData({ webviewUrl, loading: false });
         return;
       }

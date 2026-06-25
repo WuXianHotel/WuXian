@@ -59,15 +59,12 @@ App({
           this.globalData.isAudit = isAudit;
           console.log('[app] 审核模式:', isAudit);
 
-          // 审核模式：跳过登录
-          if (isAudit) { resolve(); return; }
-
-          // 正常模式：按原逻辑静默登录
+          // 无论何种模式，都尝试静默登录（获取 token 供 H5 API 使用）
+          // 审核模式下登录失败不阻塞页面加载
           if (!this.globalData.token) {
-            this.login().then(() => resolve()).catch(() => resolve());
-          } else {
-            resolve();
+            this.login().catch(() => {});
           }
+          resolve();
         },
         fail: () => {
           // API 调用失败（无关审核），尝试正常登录流程
