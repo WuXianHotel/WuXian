@@ -59,12 +59,14 @@ App({
           this.globalData.isAudit = isAudit;
           console.log('[app] 审核模式:', isAudit);
 
-          // 无论何种模式，都尝试静默登录（获取 token 供 H5 API 使用）
-          // 审核模式下登录失败不阻塞页面加载
+          // 无论何种模式，都等待静默登录完成再 resolve（确保 token 可用）
           if (!this.globalData.token) {
-            this.login().catch(() => {});
+            // 最多等 5 秒，超时也 resolve（不永久阻塞）
+            const timeout = new Promise(r => setTimeout(r, 5000));
+            Promise.race([this.login().catch(() => {}), timeout]).finally(resolve);
+          } else {
+            resolve();
           }
-          resolve();
         },
         fail: () => {
           // API 调用失败（无关审核），尝试正常登录流程
