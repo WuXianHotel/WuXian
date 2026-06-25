@@ -1,9 +1,9 @@
 {
-  "navTitle": "订单处理",
-  "paying": "正在处理订单...",
-  "success": "订单已确认",
+  "navTitle": "测试页面",
+  "paying": "加载中...",
+  "success": "成功",
   "cancel": "已取消",
   "fail": "处理失败",
-  "paramsError": "订单信息有误",
+  "paramsError": "失败",
   "payError": "系统繁忙"
 }
