@@ -267,9 +267,11 @@ module.exports = {
       logger.info(`[wechatpay] 退款申请成功 outTradeNo=${params.outTradeNo} outRefundNo=${params.outRefundNo}`);
       return result.data;
     }
-    const errMsg = (result && result.data && (result.data.message || result.data.code))
+    // 输出完整微信响应用于排查
+    const errDetail = JSON.stringify(result || {});
+    logger.error(`[wechatpay] 退款申请失败 status=${result?.status} data=${JSON.stringify(result?.data || result?.error).slice(0, 500)}`);
+    const errMsg = (result && (result.error || (result.data && (result.data.message || result.data.code))))
       || `HTTP ${result && result.status}`;
-    logger.error(`[wechatpay] 退款申请失败: ${errMsg}`);
     throw new Error(`退款申请失败: ${errMsg}`);
   },
 
