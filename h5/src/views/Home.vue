@@ -116,7 +116,7 @@
     </div>
 
     <!-- 酒店特色 -->
-    <div class="section">
+    <div class="section" v-if="isAudit">
       <div class="section__head"><h3 class="section__title">酒店特色</h3></div>
       <div class="features">
         <div v-for="f in featureList" :key="f.label" class="features__item">
@@ -144,7 +144,7 @@
 
 
     <!-- 入住须知 -->
-    <div class="section" v-if="hotel.check_in_time || hotel.check_out_time">
+    <div class="section" v-if="isAudit && (hotel.check_in_time || hotel.check_out_time)">
       <div class="section__head"><h3 class="section__title">入住须知</h3></div>
       <div class="policy">
         <div class="policy__item">
@@ -161,7 +161,7 @@
     </div>
 
     <!-- 周边推荐 -->
-    <div class="section">
+    <div class="section" v-if="isAudit">
       <div class="section__head"><h3 class="section__title">周边推荐</h3></div>
       <div class="nearby">
         <div v-for="n in nearbyList" :key="n.name" class="nearby__item" @click="openNearby(n)">
