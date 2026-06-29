@@ -89,6 +89,10 @@
     <!-- Refund Dialog -->
     <el-dialog v-model="showRefund" title="退款审核" width="500px" destroy-on-close>
       <p style="color:#64748b;margin-bottom:16px">订单 {{ refundOrder?.order_no }} — 申请退款 ¥{{ refundOrder?.pay_amount }}</p>
+      <el-alert type="info" :closable="false" show-icon style="margin-bottom:16px">
+        <template #title>线下退款提示</template>
+        审核通过后，请通过线下方式（银行转账、现金等）完成退款，系统仅记录退款状态。
+      </el-alert>
       <el-form label-width="80px">
         <el-form-item label="审核结果">
           <el-select v-model="refundResult" style="width:100%">
@@ -275,7 +279,7 @@ function openRefund(o) { refundOrder.value = o; showRefund.value = true; refundR
 async function submitRefund() {
   try {
     await auditRefund(refundOrder.value.order_no, { action: refundResult.value, remark: refundRemark.value })
-    toast?.success(refundResult.value === 'approve' ? '退款已批准' : '退款已拒绝')
+    toast?.success(refundResult.value === 'approve' ? '退款审核通过，请线下处理退款' : '退款已拒绝')
     showRefund.value = false; refreshAll()
   } catch (e) { toast?.error(e?.msg || '操作失败') }
 }

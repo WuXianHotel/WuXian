@@ -19,6 +19,16 @@
       <div class="od__section">
         <div class="od__row"><span>应付金额</span><span class="od__total-price">¥{{ order.pay_amount }}</span></div>
       </div>
+      <!-- 退款中 / 已退款：显示退款信息 -->
+      <div class="od__section" v-if="order.status === 5 || order.status === 6">
+        <div class="od__refund-info">
+          <div class="od__refund-icon">{{ order.status === 5 ? '⏳' : '✅' }}</div>
+          <div class="od__refund-text">
+            <p class="od__refund-title">{{ order.status === 5 ? '退款处理中' : '已退款' }}</p>
+            <p class="od__refund-desc">退款金额将在线下完成处理（银行转账、现金等方式），不通过微信原路退回，请留意工作人员联系。</p>
+          </div>
+        </div>
+      </div>
       <!-- 待支付：支付 + 取消 -->
       <div class="od__actions" v-if="order.status === 0">
         <button class="od__btn od__btn--pay" @click="goPay">立即支付</button>
@@ -106,4 +116,10 @@ async function cancelOrder() {
 .od__btn--pay:active { transform: scale(.97); }
 .od__btn--cancel { background: transparent; color: var(--text-muted); border: 1px solid var(--border-subtle); }
 .od__btn--danger { background: transparent; color: var(--neon-pink); border: 1px solid var(--neon-pink); }
+/* 退款信息 */
+.od__refund-info { display: flex; gap: 12px; align-items: flex-start; }
+.od__refund-icon { font-size: 28px; line-height: 1; flex-shrink: 0; }
+.od__refund-text { flex: 1; }
+.od__refund-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.od__refund-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
 </style>

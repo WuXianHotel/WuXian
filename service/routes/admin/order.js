@@ -13,8 +13,6 @@
 const router = require('express').Router();
 const { body } = require('express-validator');
 const { query, transaction } = require('../../config/db');
-const { refundsApply, isAvailable: wxPayAvailable } = require('../../config/wechatpay');
-const logger = require('../../config/logger');
 const { adminAuth } = require('../../middleware/auth');
 const { validate, parsePager, ok, page } = require('../../middleware/helper');
 
@@ -261,68 +259,19 @@ router.patch('/:orderNo/refund',
         return ok(res, null, '退款申请已拒绝');
       }
 
-      // 审核通过 → 完成退款
+      // 审核通过 → 线下退款
       // 业务逻辑：
-      //   1) 微信支付订单：调用微信退款 API 原路退回
-      //   2) 余额支付订单：退款金额回退到用户钱包余额
-      //   3) 扣除/退还本单积分变更
-      const [payment] = await query(
-        'SELECT method, transaction_id, amount FROM payments WHERE order_no = ? AND status = 1 LIMIT 1',
-        [req.params.orderNo],
-      );
-      const isWechatPay = payment && payment.method === 'wechat';
-
-      // 微信支付订单：先调用微信退款 API
-      let wxRefundId = null;
-      if (isWechatPay) {
-        if (!wxPayAvailable) {
-          return res.status(501).json({ code: 501, msg: '微信支付未配置，无法原路退款' });
-        }
-        try {
-          // 金额单位：元 → 分
-          const refundFen = Math.round(Number(refund.amount) * 100);
-          const totalFen = Math.round(Number(payment.amount) * 100);
-          const result = await refundsApply({
-            outTradeNo: req.params.orderNo,
-            outRefundNo: refund.refund_no,
-            refund: refundFen,
-            total: totalFen,
-            reason: remark || '用户申请退款',
-          });
-          wxRefundId = result.refund_id || result.out_refund_no || '';
-          logger.info(`[refund] 微信退款成功 orderNo=${req.params.orderNo} wxRefundId=${wxRefundId}`);
-        } catch (err) {
-          logger.error(`[refund] 微信退款失败 orderNo=${req.params.orderNo} msg=${err.message}`);
-          return res.status(502).json({ code: 502, msg: `微信退款失败: ${err.message}` });
-        }
-      }
-
+      //   1) 更新退款单和订单状态，由管理员线下处理退款
+      //   2) 扣除/退还本单积分变更
       await transaction(async conn => {
         // (1) 更新退款单、订单状态
         await conn.execute(
-          'UPDATE refunds SET status = 3, auditor_id = ?, audit_remark = ?, audit_at = NOW(), refund_at = NOW()' +
-          (wxRefundId ? ', wx_refund_id = ?' : '') + ' WHERE id = ?',
-          wxRefundId ? [req.adminId, remark || null, wxRefundId, refund.id] : [req.adminId, remark || null, refund.id],
+          'UPDATE refunds SET status = 3, auditor_id = ?, audit_remark = ?, audit_at = NOW(), refund_at = NOW() WHERE id = ?',
+          [req.adminId, remark || null, refund.id],
         );
         await conn.execute('UPDATE orders SET status = 6 WHERE order_no = ?', [req.params.orderNo]);
 
-        // (2) 余额退款仅对余额支付订单（微信支付已原路退回，不重复回钱包）
-        if (!isWechatPay) {
-          await conn.execute(
-            'UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?',
-            [refund.amount, refund.user_id],
-          );
-          const [[user]] = await conn.execute(
-            'SELECT wallet_balance FROM users WHERE id = ? LIMIT 1',
-            [refund.user_id],
-          );
-          await conn.execute(
-            'INSERT INTO wallet_logs (user_id, type, amount, balance, remark, ref_order_no) VALUES (?, ?, ?, ?, ?, ?)',
-            [refund.user_id, 'refund', refund.amount, user.wallet_balance, '订单退款', req.params.orderNo],
-          );
-        }
-
-        // (3) 计算本单积分变动：earn 正数累加（奖励）、use 负数累加（抵扣）
+        // (2) 计算本单积分变动：earn 正数累加（奖励）、use 负数累加（抵扣）
         const [pointsRows] = await conn.execute(
           "SELECT type, SUM(points) AS sum FROM points_logs WHERE ref_id = ? AND type IN ('earn','use') GROUP BY type",
           [req.params.orderNo],
@@ -361,8 +310,7 @@ router.patch('/:orderNo/refund',
           );
         }
       });
-      const msg = isWechatPay ? '退款审核通过，已原路退回' : '退款审核通过，金额已退回会员余额';
-      return ok(res, null, msg);
+      return ok(res, null, '退款审核通过，请线下处理退款');
     } catch (err) { next(err); }
   },
 );
