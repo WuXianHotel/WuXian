@@ -30,9 +30,19 @@
         </div>
       </div>
       <!-- 待支付：支付 + 取消 -->
+      <div class="od__section" v-if="order.status === 0 && !isExpired">
+        <div class="od__countdown">
+          <span class="od__countdown-label">订单将在 </span>
+          <span class="od__countdown-time">{{ countdownText }}</span>
+          <span class="od__countdown-label"> 后自动取消</span>
+        </div>
+      </div>
+      <div class="od__section" v-if="order.status === 0 && isExpired">
+        <div class="od__countdown od__countdown--expired">订单已超时取消</div>
+      </div>
       <div class="od__actions" v-if="order.status === 0">
-        <button class="od__btn od__btn--pay" @click="goPay">立即支付</button>
-        <button class="od__btn od__btn--cancel" @click="cancelOrder">取消订单</button>
+        <button class="od__btn od__btn--pay" @click="goPay" :disabled="isExpired">{{ isExpired ? '已超时取消' : '立即支付' }}</button>
+        <button class="od__btn od__btn--cancel" @click="cancelOrder" v-if="!isExpired">取消订单</button>
       </div>
       <!-- 待入住：取消 -->
       <div class="od__actions" v-if="order.status === 1">
@@ -43,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import NavBar from '../components/NavBar.vue';
 import api from '../utils/api.js';
@@ -57,16 +67,54 @@ const loading = ref(true);
 
 const statusMap = { 0: '待支付', 1: '待入住', 2: '入住中', 3: '已退房', 4: '已取消', 5: '退款中', 6: '已退款' };
 
+// 待支付倒计时（15分钟）
+const PAY_TIMEOUT_MS = 15 * 60 * 1000;
+const countdown = ref(0);
+let countdownTimer = null;
+const countdownText = computed(() => {
+  if (countdown.value <= 0) return '已超时';
+  const m = Math.floor(countdown.value / 60);
+  const s = countdown.value % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+});
+const isExpired = computed(() => countdown.value <= 0);
+
+function startCountdown(createdAt) {
+  if (!createdAt) return;
+  const expiredAt = new Date(createdAt).getTime() + PAY_TIMEOUT_MS;
+  const update = () => {
+    const remaining = Math.max(0, Math.ceil((expiredAt - Date.now()) / 1000));
+    countdown.value = remaining;
+    if (remaining <= 0) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      // 刷新订单状态
+      api.getOrderDetail(order.value.order_no).then(res => {
+        order.value = res.data || {};
+      }).catch(() => {});
+    }
+  };
+  update();
+  countdownTimer = setInterval(update, 1000);
+}
+
 onMounted(async () => {
   const id = route.params.id;
   try {
     const res = await api.getOrderDetail(id);
     order.value = res.data || {};
+    if (order.value.status === 0 && order.value.created_at) {
+      startCountdown(order.value.created_at);
+    }
   } catch {
     // ignore
   } finally {
     loading.value = false;
   }
+});
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer);
 });
 
 function getFirstImg(images) {
@@ -122,4 +170,9 @@ async function cancelOrder() {
 .od__refund-text { flex: 1; }
 .od__refund-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
 .od__refund-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+/* 支付倒计时 */
+.od__countdown { text-align: center; font-size: 13px; color: var(--text-muted); }
+.od__countdown-time { font-weight: 700; color: var(--neon-gold); }
+.od__countdown--expired { color: var(--neon-pink); font-weight: 600; }
+.od__btn:disabled { opacity: .5; pointer-events: none; }
 </style>

@@ -56,8 +56,17 @@
           </label>
         </div>
         <div class="ocf__card-body" v-if="order.status === 0">
-          <button class="ocf__pay-btn" @click="payNow" :disabled="paying">
-            {{ paying ? '支付中...' : `立即支付 ¥${order.pay_amount}` }}
+          <!-- 支付倒计时 -->
+          <div class="ocf__countdown" v-if="!isExpired">
+            <span class="ocf__countdown-label">订单将在</span>
+            <span class="ocf__countdown-time">{{ countdownText }}</span>
+            <span class="ocf__countdown-label">后自动取消</span>
+          </div>
+          <div class="ocf__countdown ocf__countdown--expired" v-else>
+            <span>订单已超时取消</span>
+          </div>
+          <button class="ocf__pay-btn" @click="payNow" :disabled="paying || isExpired">
+            {{ isExpired ? '订单已超时取消' : paying ? '支付中...' : `立即支付 ¥${order.pay_amount}` }}
           </button>
         </div>
         <div class="ocf__card-body" v-else>
@@ -77,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ClipboardList, Wallet, CreditCard, CircleCheck } from 'lucide-vue-next';
 import NavBar from '../components/NavBar.vue';
@@ -98,6 +107,37 @@ const notifyLevelUp = ref(null);
 
 const statusMap = { 0: '待支付', 1: '待入住', 2: '入住中', 3: '已退房', 4: '已取消', 5: '退款中', 6: '已退款' };
 
+// 待支付倒计时（15分钟）
+const PAY_TIMEOUT_MS = 15 * 60 * 1000;
+const countdown = ref(0);
+let countdownTimer = null;
+const countdownText = computed(() => {
+  if (countdown.value <= 0) return '已超时';
+  const m = Math.floor(countdown.value / 60);
+  const s = countdown.value % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+});
+const isExpired = computed(() => countdown.value <= 0);
+
+function startCountdown(createdAt) {
+  if (!createdAt) return;
+  const expiredAt = new Date(createdAt).getTime() + PAY_TIMEOUT_MS;
+  const update = () => {
+    const remaining = Math.max(0, Math.ceil((expiredAt - Date.now()) / 1000));
+    countdown.value = remaining;
+    if (remaining <= 0) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      // 刷新订单状态
+      api.getOrderDetail(order.value.order_no).then(res => {
+        order.value = res.data || {};
+      }).catch(() => {});
+    }
+  };
+  update();
+  countdownTimer = setInterval(update, 1000);
+}
+
 let pollTimer = null;
 
 function onHashChange() {
@@ -109,6 +149,9 @@ onMounted(async () => {
   try {
     const res = await api.getOrderDetail(id);
     order.value = res.data || {};
+    if (order.value.status === 0 && order.value.created_at) {
+      startCountdown(order.value.created_at);
+    }
   } catch { /* ignore */ }
   finally { loading.value = false; }
 
@@ -125,6 +168,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (pollTimer) clearTimeout(pollTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
   window.removeEventListener('hashchange', onHashChange);
 });
 
@@ -310,4 +354,8 @@ async function walletPayNow() {
 }
 .ocf__pay-method-text { font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1; }
 .ocf__pay-check { color: var(--neon-cyan); flex-shrink: 0; }
+/* 支付倒计时 */
+.ocf__countdown { text-align: center; padding: 8px 0 12px; font-size: 12px; color: var(--text-muted); }
+.ocf__countdown-time { font-weight: 700; color: var(--neon-gold); margin: 0 4px; font-size: 14px; }
+.ocf__countdown--expired { color: var(--neon-pink); font-weight: 600; }
 </style>

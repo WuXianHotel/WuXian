@@ -102,6 +102,10 @@ app.use('/api/admin',       adminRoleRouter);
 app.use(notFound);
 app.use(errorHandler);
 
+// ── 定时任务 ──────────────────────────────────────────────────────────────────
+const autoCancel = require('./tasks/autoCancel');
+autoCancel.start();
+
 // ── 启动 ──────────────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT || '3000', 10);
 app.listen(PORT, () => {
