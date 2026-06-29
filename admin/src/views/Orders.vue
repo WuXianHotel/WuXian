@@ -23,6 +23,10 @@
 
     <!-- Table -->
     <el-card shadow="hover">
+      <el-tag v-if="filter.userId" type="info" closable style="margin-bottom:12px" @close="filter.userId=''; page=1; load()">
+        按会员筛选中
+        <el-button link size="small" @click.stop="filter.userId=''; page=1; load()" style="margin-left:4px">清除筛选</el-button>
+      </el-tag>
       <el-table :data="orders" v-loading="loading" stripe style="width:100%">
         <el-table-column prop="order_no" label="订单号">
           <template #default="{ row }"><span class="mono">{{ row.order_no }}</span></template>
@@ -134,18 +138,20 @@
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { getOrderStats, getOrders, getOrder, checkin, checkout, auditRefund } from '@/api/order'
 import { getRoomList } from '@/api/room'
 
 const toast   = inject('toast')
+const route  = useRoute()
 const loading = ref(true)
 const orders  = ref([])
 const total   = ref(0)
 const page    = ref(1)
 const pageSize = 15
 const rawStats  = ref({})
-const filter    = ref({ orderNo: '', phone: '', status: '', dateRange: null })
+const filter    = ref({ orderNo: '', phone: '', userId: '', status: '', dateRange: null })
 const detailOrder = ref(null)
 const showDetail = ref(false)
 const refundOrder = ref(null)
@@ -205,6 +211,7 @@ async function load() {
     if (f.status)    params.status    = f.status
     if (f.orderNo)   params.orderNo   = f.orderNo
     if (f.phone)     params.phone     = f.phone
+    if (f.userId)    params.userId    = f.userId
     if (f.dateRange && f.dateRange.length === 2) {
       params.startDate = f.dateRange[0]
       params.endDate   = f.dateRange[1]
@@ -226,10 +233,14 @@ async function refreshAll() {
 }
 
 onMounted(() => {
-  refreshAll()
+  // 如果从会员页面跳转过来（携带 userId 查询参数），自动按会员筛选
+  if (route.query.userId) {
+    filter.value.userId = route.query.userId;
+  }
+  refreshAll();
 })
 
-function resetFilter() { filter.value = { orderNo:'', phone:'', status:'', dateRange: null }; page.value=1; load() }
+function resetFilter() { filter.value = { orderNo:'', phone:'', userId:'', status:'', dateRange: null }; page.value=1; load() }
 
 async function viewDetail(o) {
   try { const res = await getOrder(o.order_no); detailOrder.value = res.data }

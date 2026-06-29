@@ -59,10 +59,11 @@ router.get('/stats', adminAuth(), async (req, res, next) => {
 router.get('/', adminAuth(), async (req, res, next) => {
   try {
     const { pageSize, offset, page: p } = parsePager(req.query);
-    const { orderNo, phone, roomTypeId, status, startDate, endDate } = req.query;
+    const { orderNo, phone, userId, roomTypeId, status, startDate, endDate } = req.query;
     const cond = []; const params = [];
 
     if (orderNo)    { cond.push('o.order_no LIKE ?');            params.push(`%${orderNo}%`); }
+    if (userId)     { cond.push('o.user_id = ?');                params.push(Number(userId)); }
     if (roomTypeId) { cond.push('o.room_type_id = ?');           params.push(Number(roomTypeId)); }
     if (status !== undefined && status !== '') {
                       cond.push('o.status = ?');                 params.push(Number(status)); }

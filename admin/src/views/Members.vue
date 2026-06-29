@@ -79,6 +79,7 @@
           </el-table-column>
           <el-table-column label="操作" width="420" fixed="right">
             <template #default="{ row }">
+              <el-button type="primary" link size="small" @click="viewMemberOrders(row)">订单</el-button>
               <el-button type="primary" link size="small" @click="openPointsLogs(row)">积分明细</el-button>
               <el-button type="primary" link size="small" @click="openPoints(row)">调积分</el-button>
               <el-button type="success" link size="small" @click="openWalletLogs(row)">余额明细</el-button>
@@ -604,6 +605,7 @@
 
 <script setup>
 import { ref, computed, onMounted, inject, markRaw } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { User, Plus, Lightning, CreditCard, Coin, TrendCharts, Goods, SetUp, Wallet, Money, Right } from '@element-plus/icons-vue'
 import {
@@ -617,6 +619,7 @@ import { getSettings, saveSettings } from '@/api/system'
 import { uploadToCos } from '@/api/upload'
 
 const toast   = inject('toast')
+const router  = useRouter()
 const activeTab = ref('members')
 
 // ═══════════════════ 会员列表相关 ═══════════════════
@@ -1002,6 +1005,11 @@ const logsLoading = ref(false)
 const logsTotal = ref(0)
 const logsPage = ref(1)
 const logsPageSize = 15
+
+// 查看会员订单 → 跳转到订单列表页并按用户ID筛选
+function viewMemberOrders(m) {
+  router.push({ path: '/orders', query: { userId: m.user_id } })
+}
 
 function openPointsLogs(m) {
   logsTarget.value = m
