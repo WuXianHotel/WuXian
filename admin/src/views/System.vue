@@ -410,3 +410,8 @@ async function loadLogs() {
   loadingLogs.value = false
 }
 </script>
+
+<style scoped>
+/* 操作列按钮与下拉菜单对齐 */
+:deep(td .el-dropdown) { vertical-align: middle; }
+</style>

@@ -1108,6 +1108,8 @@ async function removeMember(m) {
 </script>
 
 <style scoped>
+/* 操作列按钮与下拉菜单对齐 */
+:deep(td .el-dropdown) { vertical-align: middle; }
 .kpi-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 .kpi-value { font-size: 22px; font-weight: 700; }
 .kpi-label { font-size: 12px; color: var(--text-secondary); }
