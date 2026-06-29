@@ -139,12 +139,21 @@
           <el-table-column label="创建时间" width="140">
             <template #default="{ row }">{{ fmtDate(row.created_at) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="240">
+          <el-table-column label="操作" width="160" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="openEditAdmin(row)">编辑</el-button>
-              <el-button type="warning" link size="small" @click="toggleAdminStatus(row)">{{ row.status===1?'禁用':'启用' }}</el-button>
-              <el-button type="success" link size="small" @click="openResetPwd(row)">重置密码</el-button>
-              <el-button type="danger" link size="small" @click="delAdmin(row)">删除</el-button>
+              <el-dropdown trigger="click" @command="(cmd) => handleAdminAction(cmd, row)">
+                <el-button link size="small" type="info">
+                  更多<el-icon style="margin-left:2px"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="toggle">{{ row.status===1?'禁用':'启用' }}</el-dropdown-item>
+                    <el-dropdown-item command="resetPwd">重置密码</el-dropdown-item>
+                    <el-dropdown-item command="delete" divided style="color:var(--el-color-danger)">删除</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
@@ -214,7 +223,7 @@
 <script setup>
 import { ref, computed, onMounted, inject, markRaw } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { OfficeBuilding, User, EditPen, Setting, QuestionFilled } from '@element-plus/icons-vue'
+import { OfficeBuilding, User, EditPen, Setting, QuestionFilled, ArrowDown } from '@element-plus/icons-vue'
 import { getSettings, saveSettings, getAdmins, createAdmin, updateAdmin, setAdminStatus, deleteAdmin, getLogs } from '@/api/system'
 import MapPicker from '@/components/MapPicker.vue'
 
@@ -377,6 +386,15 @@ async function delAdmin(a) {
     await ElMessageBox.confirm(`确认删除管理员 ${a.username}？`, '确认删除', { type: 'warning' })
     await deleteAdmin(a.id); toast?.success('删除成功'); loadAdmins()
   } catch (e) { if (e !== 'cancel') toast?.error(e?.msg || '删除失败') }
+}
+
+// 下拉菜单操作分发
+function handleAdminAction(cmd, row) {
+  switch (cmd) {
+    case 'toggle':   toggleAdminStatus(row); break;
+    case 'resetPwd': openResetPwd(row); break;
+    case 'delete':   delAdmin(row); break;
+  }
 }
 
 // Logs

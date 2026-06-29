@@ -77,16 +77,25 @@
           <el-table-column label="注册时间" min-width="120">
             <template #default="{ row }">{{ fmtDate(row.created_at) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="440" fixed="right">
+          <el-table-column label="操作" width="200" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="viewMemberOrders(row)">订单</el-button>
               <el-button type="primary" link size="small" @click="openPointsLogs(row)">积分明细</el-button>
-              <el-button type="primary" link size="small" @click="openPoints(row)">调积分</el-button>
-              <el-button type="success" link size="small" @click="openWalletLogs(row)">余额明细</el-button>
-              <el-button type="success" link size="small" @click="openWalletAdjust(row)">调余额</el-button>
-              <el-button type="info" link size="small" @click="openLevelAdjust(row)">调等级</el-button>
-              <el-button type="warning" link size="small" @click="toggleBan(row)">{{ row.status===1?'封禁':'解封' }}</el-button>
-              <el-button type="danger" link size="small" @click="removeMember(row)">删除</el-button>
+              <el-dropdown trigger="click" @command="(cmd) => handleMemberAction(cmd, row)">
+                <el-button link size="small" type="info">
+                  更多<el-icon style="margin-left:2px"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="points">调积分</el-dropdown-item>
+                    <el-dropdown-item command="walletLogs">余额明细</el-dropdown-item>
+                    <el-dropdown-item command="wallet">调余额</el-dropdown-item>
+                    <el-dropdown-item command="level">调等级</el-dropdown-item>
+                    <el-dropdown-item command="ban" :divided="true">{{ row.status===1?'封禁':'解封' }}</el-dropdown-item>
+                    <el-dropdown-item command="delete" style="color:var(--el-color-danger)">删除</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
@@ -607,7 +616,7 @@
 import { ref, computed, onMounted, inject, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { User, Plus, Lightning, CreditCard, Coin, TrendCharts, Goods, SetUp, Wallet, Money, Right } from '@element-plus/icons-vue'
+import { User, Plus, Lightning, CreditCard, Coin, TrendCharts, Goods, SetUp, Wallet, Money, Right, ArrowDown } from '@element-plus/icons-vue'
 import {
   getMemberStats, getMembers, adjustPoints, setMemberStatus, deleteMember,
   getPointsLogs, getPointsStats, getAllPointsLogs,
@@ -1008,7 +1017,19 @@ const logsPageSize = 15
 
 // 查看会员订单 → 跳转到订单列表页并按用户ID筛选
 function viewMemberOrders(m) {
-  router.push({ path: '/orders', query: { userId: m.user_id } })
+  router.push({ path: '/orders', query: { userId: m.user_id } });
+}
+
+// 下拉菜单操作分发
+function handleMemberAction(cmd, row) {
+  switch (cmd) {
+    case 'points':     openPoints(row); break;
+    case 'walletLogs': openWalletLogs(row); break;
+    case 'wallet':     openWalletAdjust(row); break;
+    case 'level':      openLevelAdjust(row); break;
+    case 'ban':        toggleBan(row); break;
+    case 'delete':     removeMember(row); break;
+  }
 }
 
 function openPointsLogs(m) {

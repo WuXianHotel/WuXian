@@ -52,11 +52,20 @@
             <span class="price-unit">/晚</span>
             <span class="room-count">共 {{ r.room_count }} 间</span>
           </div>
-          <div style="display:flex;">
+          <div style="display:flex;align-items:center;gap:6px;">
             <el-button size="small" @click="openRoomMgr(r)">房间管理</el-button>
             <el-button size="small" @click="openEdit(r)">编辑</el-button>
-            <el-button size="small" @click="toggleStatus(r)">{{ r.status===1?'下架':'上架' }}</el-button>
-            <el-button size="small" type="danger" plain @click="confirmDelete(r)">删除</el-button>
+            <el-dropdown trigger="click" @command="(cmd) => handleRoomAction(cmd, r)">
+              <el-button size="small">
+                更多<el-icon style="margin-left:2px"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="toggle">{{ r.status===1?'下架':'上架' }}</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided style="color:var(--el-color-danger)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </div>
       </el-card>
@@ -280,7 +289,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, inject } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { Plus, Picture, Delete } from '@element-plus/icons-vue'
+import { Plus, Picture, Delete, ArrowDown } from '@element-plus/icons-vue'
 import { getRooms, createRoom, updateRoom, setStatus, deleteRoom, getRoomList, addRoom, setRoomStatus, deleteRoomItem, getAllRooms } from '@/api/room'
 import { uploadToCos } from '@/api/upload'
 
@@ -473,6 +482,14 @@ async function confirmDelete(r) {
     toast?.success('删除成功')
     load()
   } catch (e) { if (e !== 'cancel') toast?.error(e?.msg || '删除失败') }
+}
+
+// 下拉菜单操作分发
+function handleRoomAction(cmd, r) {
+  switch (cmd) {
+    case 'toggle': toggleStatus(r); break;
+    case 'delete': confirmDelete(r); break;
+  }
 }
 
 // ── 房间管理 ────────────────────────────────────────────────────────────────
